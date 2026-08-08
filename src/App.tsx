@@ -199,6 +199,12 @@ export default function App() {
         occasion: data.occasion || occasion,
         top_garment: data.top_garment,
         bottom_garment: data.bottom_garment,
+        // The server already fails closed on this: a response only ever
+        // reaches here once it has passed the same guardrail check
+        // discovery runs, read from these typed attributes — never from
+        // compliance_check below, which is kept only as the model's own
+        // (untrusted) annotation.
+        attributes: data.attributes,
         // Fail CLOSED. Modest wear and the other Style Like You rules are hard
         // guardrails, not preferences — a look whose compliance the model did
         // not assert is unverified, and unverified must never render as

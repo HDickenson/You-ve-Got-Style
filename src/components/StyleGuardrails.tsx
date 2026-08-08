@@ -1,6 +1,7 @@
 import React, { useId } from 'react';
 import { Lock } from 'lucide-react';
 import { StyleConstraints } from '../types';
+import { GuardrailKey, HARD_RULES, SOFT_RULES } from '../lib/guardrails';
 import { ActionRow, AppContainer, Stack } from './layout';
 import { Button, Slider, Switch } from './ui';
 import { Price } from './brand';
@@ -14,54 +15,16 @@ interface StyleGuardrailsProps {
   onSaveAndProceed: () => void;
 }
 
-type RuleKey =
-  | 'modestWear'
-  | 'sleevesBelowElbow'
-  | 'hemlineBelowKnee'
-  | 'noTrousers'
-  | 'noNeonColors'
-  | 'noLoudPrints';
-
-interface Rule {
-  key: RuleKey;
-  label: string;
-  /** Only where the label leaves something genuinely unsaid. */
-  detail?: string;
-}
+type RuleKey = GuardrailKey;
 
 /**
- * Absolute. The recommendation prompt is instructed never to violate these, so
- * the screen must not present them as taste — they sit on their own sand plane,
- * ruled like a document, above the preferences that only reorder things.
+ * Absolute vs. preference — read from `lib/guardrails`, the same source
+ * discovery filters against. Duplicating this list here is how a screen ends
+ * up promising "never shown to you" for a rule the deck no longer enforces;
+ * one list, read by both, is what keeps the promise true.
  */
-const HARD: ReadonlyArray<Rule> = [
-  {
-    key: 'modestWear',
-    label: 'Modest coverage',
-    detail: 'High necklines, full coverage, opaque fabric.',
-  },
-  { key: 'sleevesBelowElbow', label: 'Sleeves past the elbow' },
-  {
-    key: 'hemlineBelowKnee',
-    label: 'Hemlines below the knee',
-    detail: 'Midi, maxi and floor lengths only.',
-  },
-  { key: 'noTrousers', label: 'Skirts and dresses only' },
-];
-
-/** Taste. These weight what surfaces first; they never remove a look. */
-const SOFT: ReadonlyArray<Rule> = [
-  {
-    key: 'noNeonColors',
-    label: 'Quiet colour',
-    detail: 'Leans to neutrals, earth and jewel tones.',
-  },
-  {
-    key: 'noLoudPrints',
-    label: 'Restrained print',
-    detail: 'Prefers solid and texture over bold pattern.',
-  },
-];
+const HARD = HARD_RULES;
+const SOFT = SOFT_RULES;
 
 const FABRICS: ReadonlyArray<string> = [
   'Mulberry Silk',

@@ -3,6 +3,8 @@ import path from "path";
 import { createServer as createViteServer } from "vite";
 import { GoogleGenAI, Type } from "@google/genai";
 import dotenv from "dotenv";
+import { evaluateLook } from "./src/lib/guardrails";
+import type { GarmentAttributes, StyleConstraints } from "./src/types";
 
 dotenv.config();
 
@@ -84,87 +86,214 @@ async function startServer() {
           hemlineBelowKnee: true,
           noNeonColors: true,
           noLoudPrints: true,
-        },
+        } as StyleConstraints,
         userPrompt = "",
       } = req.body;
+
+      const ATTRIBUTE_KEYS = [
+        "hemline",
+        "sleeveLength",
+        "neckline",
+        "opacity",
+        "bottomCategory",
+        "pattern",
+      ] as const;
+
+      function hasCompleteAttributes(value: unknown): value is GarmentAttributes {
+        if (!value || typeof value !== "object") return false;
+        const record = value as Record<string, unknown>;
+        return ATTRIBUTE_KEYS.every((key) => typeof record[key] === "string");
+      }
+
+      // Worst-cased on purpose, not left unchecked. A candidate whose source
+      // never stated its attributes gets none of the benefit of the doubt an
+      // absent field would otherwise buy it — it fails every active hard
+      // guardrail, exactly as a garment that stated them and failed honestly
+      // would.
+      const UNVERIFIABLE_ATTRIBUTES: GarmentAttributes = {
+        hemline: "mini",
+        sleeveLength: "sleeveless",
+        neckline: "strapless",
+        opacity: "sheer",
+        bottomCategory: "trousers",
+        pattern: "printed",
+      };
+
+      // The model's own "compliance_check" is a claim the same model that
+      // wrote the garment copy also wrote — it is never trusted as the
+      // gate. Every candidate look, model-generated or fallback, is read
+      // against the guardrails the same way discovery reads it: from typed
+      // attributes, never from parsing the garment description.
+      const validate = (candidate: { attributes?: unknown }) =>
+        evaluateLook(
+          {
+            attributes: hasCompleteAttributes(candidate.attributes)
+              ? candidate.attributes
+              : UNVERIFIABLE_ATTRIBUTES,
+            colorPalette: [],
+          },
+          constraints,
+        );
 
       const ai = getAiClient();
 
       if (!ai) {
-        // Safe rich fallback if API key is not present or pending configuration
-        return res.json({
+        // Safe rich fallback if API key is not present or pending configuration.
+        const fallback = {
           look_title: `${occasion} Executive Suite`,
           occasion,
           top_garment: "Modest Silk Crepe High-Neck Blouse with Fitted Cuffs",
           bottom_garment: constraints.noTrousers
             ? "Pleated Silk-Chiffon Ankle-Length Column Skirt"
             : "Structured Wool-Crepe Wide-Leg High-Waist Trousers",
-          compliance_check: true,
           capsule_synergy: "Pairs elegantly with monochrome trench coats and cashmere shawls.",
-        });
+          attributes: {
+            hemline: "floor",
+            sleeveLength: "long",
+            neckline: "high",
+            opacity: "opaque",
+            bottomCategory: constraints.noTrousers ? "skirt" : "trousers",
+            pattern: "solid",
+          } as GarmentAttributes,
+        };
+        const fallbackCheck = validate(fallback);
+        if (!fallbackCheck.passesHard) {
+          return res.status(422).json({
+            error: "Could not compose a look that honours your guardrails.",
+            missed: fallbackCheck.hardMissed,
+          });
+        }
+        return res.json(fallback);
       }
 
       const systemInstruction = `You are the backend intelligence for "You've Got Style," an elite AI styling assistant for time-poor professionals in the Middle East.
 
-Your goal is to evaluate a user's measurements and their "Style Like You" constraints to generate highly curated, occasion-specific clothing recommendations. 
+Your goal is to evaluate a user's measurements and their "Style Like You" constraints to generate highly curated, occasion-specific clothing recommendations.
 
 BEHAVIORAL RULES:
 1. Strict adherence to constraints: If a user specifies "modest wear" or "no trousers," or "sleeves below the elbow," you must NEVER recommend items that violate this.
 2. Capsule mentality: Recommend items that can be mixed and matched with luxury staple wardrobes.
-3. Premium quality: Focus on business-professional, smart-casual, and high-quality aesthetics (e.g. Chanel, Loro Piana, Khaite, Zimmermann).`;
+3. Premium quality: Focus on business-professional, smart-casual, and high-quality aesthetics (e.g. Chanel, Loro Piana, Khaite, Zimmermann).
+4. Structural honesty: "attributes" is read by code to verify compliance, not by a person to enjoy — it must precisely and honestly describe the same garments named in top_garment/bottom_garment. A mismatch between the prose and the attributes is treated as a failure, not as flavour text.`;
 
-      const prompt = `User Height: ${heightCm}cm. Occasion: "${occasion}".
-Constraints: Modest Wear = ${constraints.modestWear}, Sleeves Below Elbow = ${constraints.sleevesBelowElbow}, No Trousers = ${constraints.noTrousers}, Hemline Below Knee = ${constraints.hemlineBelowKnee}, No Neon = ${constraints.noNeonColors}, No Loud Prints = ${constraints.noLoudPrints}.
+      const buildPrompt = (retryNote?: string) => `User Height: ${heightCm}cm. Occasion: "${occasion}".
+Constraints: Modest Wear = ${constraints.modestWear}, Sleeves Below Elbow = ${constraints.sleevesBelowElbow}, No Trousers = ${constraints.noTrousers}, Hemline Below Knee = ${constraints.hemlineBelowKnee}, No Neon = ${constraints.noNeonColors}, No Loud Prints = ${constraints.noLoudPrints}.${
+        constraints.maxPriceAED !== undefined
+          ? ` The customer prefers not to spend more than AED ${constraints.maxPriceAED}.`
+          : ""
+      }
 Additional user request: "${userPrompt}".
-Please generate a curated luxury look that complies 100% with these guardrails.`;
+Please generate a curated luxury look that complies 100% with these guardrails.${
+        retryNote ? ` ${retryNote}` : ""
+      }`;
 
-      const response = await ai.models.generateContent({
-        model: "gemini-3.6-flash",
-        contents: prompt,
-        config: {
-          systemInstruction,
-          responseMimeType: "application/json",
-          responseSchema: {
+      const responseSchema = {
+        type: Type.OBJECT,
+        properties: {
+          look_title: {
+            type: Type.STRING,
+            description: "A catchy name for the curated look (e.g., 'Executive Boardroom').",
+          },
+          occasion: {
+            type: Type.STRING,
+            description: "The target occasion for the look.",
+          },
+          top_garment: {
+            type: Type.STRING,
+            description: "Detailed description of the top piece.",
+          },
+          bottom_garment: {
+            type: Type.STRING,
+            description: "Detailed description of the bottom piece.",
+          },
+          compliance_check: {
+            type: Type.BOOLEAN,
+            description: "True if the outfit explicitly meets the user's 'Style Like You' constraints.",
+          },
+          capsule_synergy: {
+            type: Type.STRING,
+            description: "A short note on how these items can be mixed with standard wardrobe staples.",
+          },
+          attributes: {
             type: Type.OBJECT,
+            description:
+              "Discrete structural facts about the garments — the fields guardrails are actually verified against. Every field is required and must agree with top_garment/bottom_garment.",
             properties: {
-              look_title: {
+              hemline: {
                 type: Type.STRING,
-                description: "A catchy name for the curated look (e.g., 'Executive Boardroom').",
+                enum: ["mini", "knee", "midi", "maxi", "floor"],
+                description:
+                  "Where the lowest edge of the outfit sits. Full-length trousers count as 'floor'.",
               },
-              occasion: {
+              sleeveLength: {
                 type: Type.STRING,
-                description: "The target occasion for the look.",
+                enum: ["sleeveless", "short", "elbow", "three-quarter", "long"],
+                description: "How far the sleeve extends down the arm.",
               },
-              top_garment: {
+              neckline: {
                 type: Type.STRING,
-                description: "Detailed description of the top piece.",
+                enum: ["high", "crew", "scoop", "v-neck", "plunge", "off-shoulder", "halter", "strapless"],
+                description: "The neckline shape.",
               },
-              bottom_garment: {
+              opacity: {
                 type: Type.STRING,
-                description: "Detailed description of the bottom piece.",
+                enum: ["opaque", "semi-sheer", "sheer"],
+                description: "Fabric opacity.",
               },
-              compliance_check: {
-                type: Type.BOOLEAN,
-                description: "True if the outfit explicitly meets the user's 'Style Like You' constraints.",
-              },
-              capsule_synergy: {
+              bottomCategory: {
                 type: Type.STRING,
-                description: "A short note on how these items can be mixed with standard wardrobe staples.",
+                enum: ["trousers", "skirt", "dress", "jumpsuit"],
+                description: "The garment category of the lower body / overall silhouette.",
+              },
+              pattern: {
+                type: Type.STRING,
+                enum: ["solid", "textured", "printed"],
+                description: "Whether the fabric carries a visible print.",
               },
             },
-            required: [
-              "look_title",
-              "occasion",
-              "top_garment",
-              "bottom_garment",
-              "compliance_check",
-            ],
+            required: ["hemline", "sleeveLength", "neckline", "opacity", "bottomCategory", "pattern"],
           },
         },
-      });
+        required: [
+          "look_title",
+          "occasion",
+          "top_garment",
+          "bottom_garment",
+          "compliance_check",
+          "attributes",
+        ],
+      };
 
-      const jsonText = response.text || "{}";
-      const parsedData = JSON.parse(jsonText);
+      const generate = async (retryNote?: string) => {
+        const response = await ai.models.generateContent({
+          model: "gemini-3.6-flash",
+          contents: buildPrompt(retryNote),
+          config: { systemInstruction, responseMimeType: "application/json", responseSchema },
+        });
+        return JSON.parse(response.text || "{}");
+      };
+
+      let parsedData = await generate();
+      let check = validate(parsedData);
+
+      // One retry, with the violated rules spelled out, gives the model a
+      // real chance before this fails closed — but the retry's output is
+      // held to exactly the same check, not waved through because it is a
+      // second attempt.
+      if (!check.passesHard) {
+        parsedData = await generate(
+          `The previous attempt broke these guardrails: ${check.hardMissed.join("; ")}. Regenerate a look that avoids all of them.`,
+        );
+        check = validate(parsedData);
+      }
+
+      if (!check.passesHard) {
+        return res.status(422).json({
+          error: "Could not compose a look that honours your guardrails.",
+          missed: check.hardMissed,
+        });
+      }
+
       res.json(parsedData);
     } catch (err: any) {
       console.error("Style recommendation error:", err);
