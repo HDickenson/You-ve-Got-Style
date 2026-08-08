@@ -37,6 +37,20 @@ const SCREENS = [
 
 const JOURNEY = ['01-onboarding', '02-sizing', '03-guardrails', '04-discovery', '05-capsule'];
 
+// Screens the harness cannot currently reach, stated in the page rather than
+// left to be inferred from an absence. `?phase=onboarding` returns the consent
+// gate — HandsFreeCapture returns early while `consented` is false — so the
+// capture studio behind it, which is where the photography and the voice
+// trigger live, is never captured. Tracked as YGS-30.
+const UNCAPTURED = [
+  ['Capture studio — front frame', 'The pose outline and the live camera preview.'],
+  ['Capture studio — side frame', 'The quarter-turn prompt after the first frame lands.'],
+  ['Voice trigger, listening', '“Say &ldquo;Snap&rdquo; or tap” — the hands-free moment the product is named for.'],
+  ['Held frame — review and retake', 'The frame held before it is accepted.'],
+  ['Camera blocked', 'The upload fallback when the camera is refused at the OS prompt.'],
+  ['Not level yet', 'The alignment state that gates the shutter.'],
+];
+
 const FONTS = {
   display: 'src/assets/fonts/bodoni-moda-latin-var.woff2',
   text: 'src/assets/fonts/schibsted-grotesk-latin-var.woff2',
@@ -93,6 +107,10 @@ function main() {
        This page is incomplete — re-run <code>npm run capture</code>.</p>`
     : '';
 
+  const uncaptured = UNCAPTURED.map(
+    ([name, why]) => `<li><strong>${esc(name)}</strong> &mdash; ${why}</li>`
+  ).join('');
+
   const html = `<title>You&#39;ve Got Style — build preview</title>
 <style>
 @font-face { font-family:"YGS Display"; font-weight:400 900; font-display:swap;
@@ -143,16 +161,24 @@ figcaption{display:flex;justify-content:space-between;gap:12px;font-size:10.5px;
 .journey{margin-top:clamp(56px,7vw,92px);padding-top:36px;border-top:1px solid var(--edge)}
 .jstrip{display:grid;gap:16px;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));margin-top:20px}
 .jstrip figcaption{justify-content:flex-start}
+.gap{margin-top:clamp(56px,7vw,92px);padding-top:36px;border-top:1px solid var(--edge)}
+.gaps{margin:22px 0 0;padding:0;list-style:none;display:grid;gap:2px;
+  grid-template-columns:1fr;max-width:74ch}
+@media (min-width:720px){.gaps{grid-template-columns:1fr 1fr;gap:2px 40px;max-width:none}}
+.gaps li{padding:11px 0;border-bottom:1px solid var(--edge);color:var(--fg-muted);font-size:.95rem}
+.gaps strong{color:var(--fg);font-weight:600;display:block}
+.foot{margin-top:22px;color:var(--fg-muted);font-size:.92rem;max-width:64ch}
 code{font-family:ui-monospace,Menlo,monospace;font-size:.86em;
   background:color-mix(in srgb,var(--fg) 8%,transparent);padding:.12em .4em;border-radius:4px}
 </style>
 <div class="wrap">
   <header class="masthead">
     <p class="eyebrow">You&#39;ve Got Style &middot; build preview</p>
-    <h1>Every screen, on every device it claims to support.</h1>
+    <h1>Five phases, three viewports, and the walk between them.</h1>
     <p class="lede">Captured from the running application by <code>npm run capture</code> &mdash;
-      not mocked, not redrawn. Five screens at three viewports, plus one walk through the
-      journey a customer actually takes.</p>
+      not mocked, not redrawn. This is the phase map, not the whole product: the capture
+      studio behind the consent gate is not reachable by the harness yet, and what is
+      missing is listed below rather than left to be noticed.</p>
     <dl class="meta">
       <div><dt>Commit</dt><dd>${esc(git('rev-parse', '--short', 'HEAD'))}</dd></div>
       <div><dt>Branch</dt><dd>${esc(git('rev-parse', '--abbrev-ref', 'HEAD'))}</dd></div>
@@ -167,6 +193,18 @@ code{font-family:ui-monospace,Menlo,monospace;font-size:.86em;
       <p>The same screens reached by clicking rather than by seeding state. This is the pass
          that proves a customer can get there.</p></div>
     <div class="jstrip">${journey}</div>
+  </section>
+  <section class="gap">
+    <div class="head"><h2>Not in this preview</h2>
+      <p>The harness seeds a phase with <code>?phase=</code>, and
+         <code>?phase=onboarding</code> lands on the consent gate &mdash; the capture
+         component returns early while consent is withheld. Everything behind it is a state
+         of that same phase, so none of it has a URL the harness can reach. That includes
+         the photography and the voice trigger, which is to say the part of this product
+         that is most its own.</p></div>
+    <ul class="gaps">${uncaptured}</ul>
+    <p class="foot">Six states below one seeded phase. Listing them here because a preview
+      that shows one of six and says nothing reads as coverage.</p>
   </section>
 </div>
 `;
