@@ -104,6 +104,51 @@ failed; if it reads as the product paying attention it has worked.
 
 ---
 
+## D5 — This is a lab build. English only, and it says so (YGS-39)
+
+English-only is acceptable. Presenting it as UAE-ready is not.
+
+## What proceeds
+
+Kai's mechanical sweep, already dispatched and unaffected by this answer: `lang` and `dir`
+declared explicitly, physical properties made logical, the slider gradient made
+direction-aware. Zero visible change under LTR, and cheaper now than at sixteen screens.
+
+**The catalogue is unblocked.** Curate in English. The second data-entry pass was the reason
+this needed answering before YGS-28 started, and the answer removes it.
+
+## What is deferred, by name
+
+Arabic strings, an i18n layer, an Arabic display face beside Bodoni, RTL composition review,
+and the swipe-direction judgement. These become a named future phase in ROADMAP rather than
+an omission — the distinction being that a reader can see they were considered.
+
+## The obligation this creates
+
+A lab build may be English-only. It may not imply a readiness it does not have. So the
+product must not claim UAE or KSA service, compliance or residency anywhere a customer can
+read it.
+
+Checked. No PDPL, compliance or data-residency claims survive in the UI — the earlier sweep
+worked. Regional vocabulary that remains is either data (`GCC_LUXURY_BRANDS`, brand
+countries) or flavour (`Dubai Networking Soirée`), and neither asserts a capability.
+
+**One exception, and it is a real claim.** `CheckoutModal.tsx:18-20`:
+
+```ts
+{ city: 'Dubai',     when: 'Same day' },
+{ city: 'Abu Dhabi', when: 'Next morning' },
+{ city: 'Riyadh',    when: 'Within 24 hours' },
+```
+
+Three delivery promises with no logistics, no carrier, no inventory and no order behind
+them. Same class as "Your size is held while you finish here" — a specific, checkable
+service claim the code cannot back, sitting on the screen where a customer commits money.
+
+Raised against YGS-2.
+
+---
+
 ## Standing rules established during the sprint
 
 - **Delivered means pushed.** Work not reachable on the remote is not delivered. Two agents
@@ -116,3 +161,5 @@ failed; if it reads as the product paying attention it has worked.
   "Your size is held while you finish here", which is a factual assertion about system state
   with no inventory behind it.
 - **Prefer absence to fabrication.** If a value cannot be computed, show nothing.
+- **A lab build may be incomplete; it may not imply readiness it does not have.** English-only
+  is fine. "Same day" delivery to Dubai, with no logistics behind it, is not.

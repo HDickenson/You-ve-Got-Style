@@ -158,6 +158,26 @@ Not a phase; continuous, and mostly landed.
 
 ---
 
+---
+
+## Named and deferred — Arabic and RTL
+
+**D5: this is a lab build**, demonstrating a GCC product to an English-speaking audience.
+English-only is an accepted position, not an oversight.
+
+Deferred, by name: Arabic strings, an i18n layer, an Arabic display face that sits beside
+Bodoni without reading as a fallback, RTL composition review of the two-column tablet
+layouts, and whether swipe direction should mirror.
+
+Landing now instead, because it is correct either way and cheap at six screens: `lang` and
+`dir` declared explicitly, physical spacing properties made logical, and the slider fill
+made direction-aware.
+
+**The obligation that comes with the position:** the product must not claim UAE or KSA
+service, compliance or residency anywhere a customer can read it. Verified — no PDPL or
+data-residency claims survive in the UI. One delivery-timing claim was found and raised
+against YGS-2.
+
 ## Out of scope, and why
 
 Named so their absence is a decision rather than an oversight. Each is in the product plan.
