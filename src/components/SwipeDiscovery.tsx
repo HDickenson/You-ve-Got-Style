@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { Bookmark, ShoppingBag, X } from 'lucide-react';
 import { FashionLook, StyleConstraints, BrandSizeMapping, CapturedProfile } from '../types';
+import { evaluateLook, filterByHardGuardrails, withinPriceCeiling } from '../lib/guardrails';
 import { OccasionTitle, YMark } from './brand';
 import { Button, Separator } from './ui';
 import { AppContainer, Stack } from './layout';
@@ -48,53 +49,6 @@ const SWIPE_COMMIT = 96;
  */
 const PLATE = 'mx-auto w-full max-w-[420px]';
 
-/**
- * The guardrails, read against the look.
- *
- * There is no score in the data model, and a number with nothing behind it is
- * precisely the "AI Recommendation: 92%" theatre the contract rules out — but a
- * compliance count is the same machinery wearing a fraction, and "2/4" under a
- * heading that says "Why this works" is the intelligence arguing with itself.
- * So this returns an outcome, not a score: whether the look holds the
- * guardrails the user switched on, and if it does not, what it misses in words
- * the screen can say out loud. One legible rule per guardrail; guardrails that
- * are off are counted neither for nor against, and with none switched on there
- * is nothing to report, so this returns null and the panel says nothing.
- */
-function readGuardrails(look: FashionLook, constraints: StyleConstraints) {
-  const text = [
-    look.top_garment,
-    look.bottom_garment,
-    look.dress_garment ?? '',
-    look.tags.join(' '),
-  ]
-    .join(' ')
-    .toLowerCase();
-
-  const checks: ReadonlyArray<[boolean, boolean, string]> = [
-    [constraints.modestWear, look.compliance_check, 'the cut is not a modest one'],
-    [
-      constraints.sleevesBelowElbow,
-      text.includes('sleeve'),
-      'the sleeves stop above the elbow',
-    ],
-    [constraints.noTrousers, !text.includes('trouser'), 'it puts you in trousers'],
-    [
-      constraints.hemlineBelowKnee,
-      !text.includes('mini'),
-      'the hemline sits above the knee',
-    ],
-    [constraints.noNeonColors, !text.includes('neon'), 'the colour runs neon'],
-    [constraints.noLoudPrints, !text.includes('print'), 'the print is a loud one'],
-  ];
-
-  const active = checks.filter(([on]) => on);
-  if (!active.length) return null;
-
-  const missed = active.filter(([, held]) => !held).map(([, , said]) => said);
-  return { within: missed.length === 0, missed };
-}
-
 /** "a" · "a and b" · "a, b and c" — a sentence, not a list widget. */
 function asSentence(parts: readonly string[]) {
   if (parts.length < 2) return parts.join('');
@@ -137,20 +91,32 @@ export const SwipeDiscovery: React.FC<SwipeDiscoveryProps> = ({
     return () => clearTimeout(timer);
   }, [note]);
 
-  const filteredLooks = looks.filter((look) => {
-    if (selectedOccasion !== 'All Occasions' && look.occasion !== selectedOccasion) {
-      return false;
-    }
-    // Hard guardrail filter check
-    if (constraints.noTrousers && look.bottom_garment.toLowerCase().includes('trouser')) {
-      return false;
-    }
-    return true;
+  const byOccasion = looks.filter(
+    (look) => selectedOccasion === 'All Occasions' || look.occasion === selectedOccasion,
+  );
+
+  // Fail closed: every active hard guardrail is enforced here, on the look's
+  // own words, not on whatever the model that wrote those words claims about
+  // itself. A look that misses one never becomes a card — it does not reach
+  // the deck to be swiped past or rendered with a badge it does not earn.
+  const eligibleLooks = filterByHardGuardrails(byOccasion, constraints);
+
+  // The spend ceiling is a preference: it reorders, it does not exclude. A
+  // stable sort keeps everything else about the deck's order untouched.
+  const filteredLooks = [...eligibleLooks].sort((a, b) => {
+    const aOver = withinPriceCeiling(a.priceAED, constraints) ? 0 : 1;
+    const bOver = withinPriceCeiling(b.priceAED, constraints) ? 0 : 1;
+    return aOver - bOver;
   });
 
-  const activeLook = filteredLooks.length
+  const candidateLook = filteredLooks.length
     ? filteredLooks[currentIndex % filteredLooks.length]
     : null;
+
+  // Belt and braces: even if a hard-violating look somehow reached this list,
+  // it is refused here too rather than rendered and merely mislabelled.
+  const activeLook =
+    candidateLook && evaluateLook(candidateLook, constraints).passesHard ? candidateLook : null;
 
   const say = (text: string) => setNote({ text, id: Date.now() });
 
@@ -221,7 +187,27 @@ export const SwipeDiscovery: React.FC<SwipeDiscoveryProps> = ({
     else if (travelled < -SWIPE_COMMIT) decide('pass');
   };
 
-  const guardrails = activeLook ? readGuardrails(activeLook, constraints) : null;
+  // Hard guardrails never reach here missed — activeLook is already refused
+  // otherwise. What is left to report is soft: quiet colour, restrained
+  // print, and (disclosed rather than silently sorted-around) the spend
+  // ceiling, which is a preference and so never removed this look either.
+  const report = activeLook ? evaluateLook(activeLook, constraints) : null;
+  const overCeiling = activeLook ? !withinPriceCeiling(activeLook.priceAED, constraints) : false;
+  const softMissed: readonly string[] = report
+    ? [
+        ...report.softMissed,
+        ...(overCeiling
+          ? [
+              `it runs AED ${(
+                activeLook!.priceAED - (constraints.maxPriceAED as number)
+              ).toLocaleString('en-US')} over your ceiling`,
+            ]
+          : []),
+      ]
+    : [];
+  const hasGuardrailSignal =
+    (report ? report.active.length > 0 : false) || constraints.maxPriceAED !== undefined;
+  const withinGuardrails = hasGuardrailSignal && softMissed.length === 0;
   const size = activeLook?.brand_sizes?.[0] ?? brandSizes[0];
 
   // The garments, as the card states them. A dress replaces the pair.
@@ -453,18 +439,21 @@ export const SwipeDiscovery: React.FC<SwipeDiscoveryProps> = ({
                   {activeLook.capsule_synergy}
                 </p>
 
-                {guardrails || size ? (
+                {hasGuardrailSignal || size ? (
                   <>
                     <Separator className="my-4" />
 
-                    {guardrails?.within || size ? (
+                    {withinGuardrails || size ? (
                       <div className="flex flex-wrap items-baseline gap-x-8 gap-y-3">
                         {/* The one place gold is permitted here: a completed
                             intelligence result. A look that misses something is
                             not a result to gild, so it says what it misses in a
                             sentence instead — never a fraction the heading
-                            above it would have to argue with. */}
-                        {guardrails?.within ? (
+                            above it would have to argue with. Only soft signals
+                            land here: an active look never carries a missed
+                            hard guardrail, so there is nothing hard to weigh
+                            against this badge. */}
+                        {withinGuardrails ? (
                           <p className="text-control font-medium uppercase text-gold">
                             Within your guardrails
                           </p>
@@ -483,9 +472,9 @@ export const SwipeDiscovery: React.FC<SwipeDiscoveryProps> = ({
                       </div>
                     ) : null}
 
-                    {guardrails && !guardrails.within ? (
+                    {softMissed.length > 0 ? (
                       <p className="mt-4 max-w-measure text-body text-fg-muted">
-                        Worth knowing: {asSentence(guardrails.missed)}.
+                        Worth knowing: {asSentence(softMissed)}.
                       </p>
                     ) : null}
                   </>
