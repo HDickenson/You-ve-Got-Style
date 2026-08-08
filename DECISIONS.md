@@ -1,0 +1,165 @@
+# Decisions log — YGS
+
+Rulings by the human owner, recorded when made. Each states what was decided, what was
+declined, and what it changes. Later work does not get to reinterpret these.
+
+---
+
+## D1 — Sizing: drop the pretence (YGS-4)
+
+**Decided.** The product stops presenting itself as photogrammetry and becomes an honest
+height-and-measurements grading tool.
+
+Chest, waist, hips and inseam become editable, pre-filled from height and marked as
+estimates until the customer changes them. The existing brand-size matcher — which already
+matches real per-brand size tables by nearest fit — starts receiving real numbers.
+
+**Declined:** making the capture actually measure (too large, and the on-device pipeline the
+plan describes does not exist); and keeping capture while merely softening the language.
+
+**Changes:** all "photogrammetry / 3D / volumetric / body mesh / scan" out of copy and code,
+including the function name `calculatePhotogrammetryMeasurements` and the fabricated Golden
+Ratio citation at `brandGrading.ts:74`. `confidenceScore: 0.98` deleted with nothing
+replacing it. The unreachable `/api/photogrammetry` route removed or wired.
+
+**Capture survives** for one reason: `frontPhoto` is posted to `/api/generate-tryon` so a
+look renders on the customer rather than a stranger. The camera is for seeing the look on
+you. It was never for measuring you.
+
+---
+
+## D2 — Catalogue: hand-curated, not an API (YGS-28)
+
+**Decided.** A small curated catalogue with real photography and every guardrail attribute
+filled in by hand. An affiliate application (Net-a-Porter / Farfetch via Rakuten, and Ounass
+if it offers a feed) starts in parallel for the path beyond the lab.
+
+**Declined:** Temu. There is no official public product API — the Partner Platform API is a
+seller/ISV integration, and everything else on offer is scraping, with no licence to display
+the imagery. Separately, an ultra-low-cost marketplace contradicts a product that prices a
+2,950 AED dress.
+
+**The deciding factor was not imagery.** Affiliate feeds carry title, description, category,
+colour, material, price and image. They do **not** carry hemline, sleeve length, neckline or
+opacity — the fields guardrail enforcement actually needs. A feed would solve the blank card
+and leave enforcement inferring from prose. The criterion is: *can the source answer "does
+this cover the knee" without parsing English?*
+
+---
+
+## D3 — Menswear is a first-class path (YGS-33)
+
+**Decided.** The catalogue covers both wardrobes with a decent cross-section.
+
+**Consequence, and it is structural.** The product assumes a woman in seven places, four
+non-cosmetic: every `GCC_LUXURY_BRANDS` size table is womenswear; the grading constants
+88/68/95 are female proportions; `noTrousers` reads "Skirts and dresses only"; and
+`server.ts:178` hardcodes the try-on prompt as "Full body studio portrait of an elegant
+woman".
+
+Menswear grades on chest, waist, neck, sleeve and inseam — hips barely feature — so
+`UserMeasurements`, the measurement form and the brand tables all fork. Modest wear for a
+GCC male customer is its own vocabulary (covered shoulders and knees, long sleeves, loose
+rather than fitted, thobe and kandura as formalwear), not womenswear with the skirts
+removed.
+
+**Sequencing:** this lands before the Phase 1 measurement form, because which fields are
+editable depends on which wardrobe.
+
+**Explicitly not acceptable:** a `gender` boolean gating a few strings while the grading
+stays female.
+
+**Cross-section means:** both wardrobes roughly even; every existing occasion in both; a
+real price range rather than everything at the luxury ceiling; looks that *violate* the
+guardrails as well as satisfy them, so fail-closed enforcement can be tested; and size
+coverage beyond the samples currently present.
+
+---
+
+## D4 — The ground follows the occasion, not the wardrobe (YGS-34)
+
+**Decided.** Gender does not change the shell. Menswear and womenswear share one brand, one
+palette, one shell, and the garments carry the difference.
+
+**Declined:** a warm/cool split by wardrobe. It is a cliche one level above pink and blue —
+more tasteful, same move. A luxury house does not tell you which department you are in by
+changing the lighting temperature. Net-a-Porter and Mr Porter are separate *properties*,
+not one property with a tinted shell.
+
+**In its place:** the ground responds to the **occasion**, which is true for every customer
+regardless of wardrobe, and uses the ground system for something the product actually knows
+because the customer said it. Right now choosing an occasion changes which looks appear and
+nothing else; the screen looks identical either way.
+
+**Scope is deliberately small.** The per-phase ground map in `App.tsx:22-28` stays. This is
+one additional mapping inside discovery. Hard constraints: no new colours beyond the seven
+in `index.css`; gold stays rationed; forest stays reserved for Style Intelligence; and not
+every occasion gets its own ground — five occasions mapping to five surfaces would be a
+colour-coding system, which is a different and worse idea. Expect two or three registers,
+daylight and evening, with occasions grouped into them.
+
+**The bar:** a customer switching from Weekend Brunch to Galas & Events feels the screen
+change temperature without being able to say what moved. If it reads as theming it has
+failed; if it reads as the product paying attention it has worked.
+
+---
+
+## D5 — This is a lab build. English only, and it says so (YGS-39)
+
+English-only is acceptable. Presenting it as UAE-ready is not.
+
+## What proceeds
+
+Kai's mechanical sweep, already dispatched and unaffected by this answer: `lang` and `dir`
+declared explicitly, physical properties made logical, the slider gradient made
+direction-aware. Zero visible change under LTR, and cheaper now than at sixteen screens.
+
+**The catalogue is unblocked.** Curate in English. The second data-entry pass was the reason
+this needed answering before YGS-28 started, and the answer removes it.
+
+## What is deferred, by name
+
+Arabic strings, an i18n layer, an Arabic display face beside Bodoni, RTL composition review,
+and the swipe-direction judgement. These become a named future phase in ROADMAP rather than
+an omission — the distinction being that a reader can see they were considered.
+
+## The obligation this creates
+
+A lab build may be English-only. It may not imply a readiness it does not have. So the
+product must not claim UAE or KSA service, compliance or residency anywhere a customer can
+read it.
+
+Checked. No PDPL, compliance or data-residency claims survive in the UI — the earlier sweep
+worked. Regional vocabulary that remains is either data (`GCC_LUXURY_BRANDS`, brand
+countries) or flavour (`Dubai Networking Soirée`), and neither asserts a capability.
+
+**One exception, and it is a real claim.** `CheckoutModal.tsx:18-20`:
+
+```ts
+{ city: 'Dubai',     when: 'Same day' },
+{ city: 'Abu Dhabi', when: 'Next morning' },
+{ city: 'Riyadh',    when: 'Within 24 hours' },
+```
+
+Three delivery promises with no logistics, no carrier, no inventory and no order behind
+them. Same class as "Your size is held while you finish here" — a specific, checkable
+service claim the code cannot back, sitting on the screen where a customer commits money.
+
+Raised against YGS-2.
+
+---
+
+## Standing rules established during the sprint
+
+- **Delivered means pushed.** Work not reachable on the remote is not delivered. Two agents
+  filed detailed reports for work that existed in no commit.
+- **Every report states the branch and commit it measured.** One reviewer measured the wrong
+  tree and reported findings from files that exist only on `main`.
+- **A grep for an explicit attribute cannot see a default.** Counting `variant="..."` missed
+  every primary button and produced a confident, wrong conclusion.
+- **A claim does not have to sound like a claim.** The compliance-vocabulary sweep missed
+  "Your size is held while you finish here", which is a factual assertion about system state
+  with no inventory behind it.
+- **Prefer absence to fabrication.** If a value cannot be computed, show nothing.
+- **A lab build may be incomplete; it may not imply readiness it does not have.** English-only
+  is fine. "Same day" delivery to Dubai, with no logistics behind it, is not.
