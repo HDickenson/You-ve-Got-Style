@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { HeaderNav } from './components/HeaderNav';
+import { ChooseWardrobe } from './components/ChooseWardrobe';
 import { HandsFreeCapture } from './components/HandsFreeCapture';
 import { SizingEngine } from './components/SizingEngine';
 import { StyleGuardrails } from './components/StyleGuardrails';
@@ -7,7 +8,7 @@ import { SwipeDiscovery } from './components/SwipeDiscovery';
 import { CapsuleWardrobe } from './components/CapsuleWardrobe';
 import { CheckoutModal } from './components/CheckoutModal';
 import { ResponsiveSheet } from './components/ui';
-import { AppPhase, CapturedProfile, UserMeasurements, BrandSizeMapping, StyleConstraints, FashionLook } from './types';
+import { AppPhase, CapturedProfile, UserMeasurements, BrandSizeMapping, StyleConstraints, FashionLook, Wardrobe } from './types';
 import {
   COMPOSED_LOOK_TEMPLATE,
   INITIAL_LOOKS,
@@ -20,6 +21,7 @@ import { calculatePhotogrammetryMeasurements, mapMeasurementsToBrandSizes } from
  * the fit reveal and discovery; the user works in guardrails and the capsule.
  */
 const GROUND: Record<AppPhase, 'onyx' | 'cream'> = {
+  wardrobe: 'onyx',
   onboarding: 'onyx',
   sizing: 'onyx',
   guardrails: 'cream',
@@ -27,7 +29,7 @@ const GROUND: Record<AppPhase, 'onyx' | 'cream'> = {
   capsule: 'cream',
 };
 
-const APP_PHASES: AppPhase[] = ['onboarding', 'sizing', 'guardrails', 'discovery', 'capsule'];
+const APP_PHASES: AppPhase[] = ['wardrobe', 'onboarding', 'sizing', 'guardrails', 'discovery', 'capsule'];
 
 // A customer never sees this — the entry point is always the studio, below.
 // It exists so the responsive-capture harness (scripts/capture.mjs) can load
@@ -44,9 +46,15 @@ export default function App() {
   // for and everything after it depends on the answer, so the entry point is
   // the studio — not a working screen reached with the middle skipped.
   const [currentPhase, setCurrentPhase] = useState<AppPhase>(
-    () => phaseFromQueryString() ?? 'onboarding'
+    () => phaseFromQueryString() ?? 'wardrobe'
   );
   const [heightCm, setHeightCm] = useState<number>(170);
+
+  // What the customer is shopping for — asked before capture because the
+  // measurement fields, brand tables and guardrail vocabulary all fork on
+  // it. Revisitable from the menu, so it is never a one-time gate.
+  const [wardrobe, setWardrobe] = useState<Wardrobe | null>(null);
+  const [showWardrobeModal, setShowWardrobeModal] = useState<boolean>(false);
 
   // User Photogrammetry & Sizing State
   // Nothing has been captured yet, and the app does not pretend otherwise —
@@ -71,6 +79,7 @@ export default function App() {
 
   // Style Guardrails State ("Style Like You")
   const [constraints, setConstraints] = useState<StyleConstraints>({
+    wardrobe: 'womenswear',
     modestWear: true,
     sleevesBelowElbow: true,
     noTrousers: false,
@@ -105,9 +114,22 @@ export default function App() {
   }, [ground]);
 
   // Handlers
+  const handleChooseWardrobe = (choice: Wardrobe) => {
+    setWardrobe(choice);
+    setShowWardrobeModal(false);
+    // Only the first, cold-start choice advances the phase — reopened from
+    // the menu mid-journey, switching updates the value in place and the
+    // customer stays exactly where they were.
+    if (currentPhase === 'wardrobe') setCurrentPhase('onboarding');
+  };
+
   const handleCaptureComplete = (profile: CapturedProfile) => {
     setCapturedProfile(profile);
-    const newMeas = calculatePhotogrammetryMeasurements(profile.heightCm);
+    // Wardrobe is chosen on the screen before this one, so it is always
+    // known by the time a capture completes — the fallback only covers the
+    // capture harness (scripts/capture.mjs), which can load this phase
+    // directly via ?phase=onboarding without walking through wardrobe first.
+    const newMeas = calculatePhotogrammetryMeasurements(profile.heightCm, wardrobe ?? 'womenswear');
     setMeasurements(newMeas);
     setBrandSizes(mapMeasurementsToBrandSizes(newMeas));
     setCurrentPhase('sizing');
@@ -151,6 +173,7 @@ export default function App() {
           occasion: occasion === 'All Occasions' ? 'Networking Dinner' : occasion,
           heightCm,
           constraints,
+          wardrobe,
         }),
       });
 
@@ -179,6 +202,7 @@ export default function App() {
           body: JSON.stringify({
             prompt: `${data.look_title}: ${data.top_garment} with ${data.bottom_garment}. Modest elegant GCC high fashion.`,
             userPhotoBase64: capturedProfile.frontPhoto,
+            wardrobe,
           }),
         });
         const tryonData = await tryonRes.json();
@@ -241,6 +265,8 @@ export default function App() {
         savedCount={savedLooks.length}
         constraints={constraints}
         onOpenGuardrails={() => setShowGuardrailsModal(true)}
+        wardrobe={wardrobe}
+        onOpenWardrobe={() => setShowWardrobeModal(true)}
         heightCm={heightCm}
         onFindLook={handleFindLook}
         isFinding={isFinding}
@@ -250,6 +276,10 @@ export default function App() {
           adds none — but it does cap and centre them, so extra tablet width
           becomes margin instead of a phone layout stretched to 1180px. */}
       <main className="safe-bottom mx-auto flex min-h-0 w-full max-w-app flex-1 flex-col">
+        {currentPhase === 'wardrobe' && (
+          <ChooseWardrobe selected={wardrobe} onSelect={handleChooseWardrobe} />
+        )}
+
         {currentPhase === 'onboarding' && (
           <HandsFreeCapture
             onCaptureComplete={handleCaptureComplete}
@@ -298,6 +328,22 @@ export default function App() {
           />
         )}
       </main>
+
+      {/* Wardrobe, reopened from the menu — the same choice, not a fresh one:
+          switching mid-journey updates the value in place and never resets
+          the phase back to the cold-start screen. */}
+      <ResponsiveSheet
+        open={showWardrobeModal}
+        onOpenChange={setShowWardrobeModal}
+        ground="onyx"
+        title="Shopping for"
+      >
+        <ChooseWardrobe
+          selected={wardrobe}
+          onSelect={handleChooseWardrobe}
+          intro={false}
+        />
+      </ResponsiveSheet>
 
       {/* Guardrails opened from the menu — a sheet on phone, a dialog on tablet. */}
       <ResponsiveSheet

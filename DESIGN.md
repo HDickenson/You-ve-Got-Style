@@ -50,8 +50,9 @@ disagree, **this file wins** — Stitch supplies structure and composition, not 
 | Canonical design source | YGS brand. Stitch = screen composition/flow only |
 | Gold hex | `#C8A86B` (brand board), **not** `#C8A66B` |
 | Component library | shadcn/ui (Radix + Tailwind v4), copied in and restyled |
-| Scope | Core 5 flows: Capture, Sizing, Guardrails, Discovery, Capsule |
+| Scope | Core flows: Wardrobe, Capture, Sizing, Guardrails, Discovery, Capsule |
 | Styling | Tailwind v4 `@theme` tokens in `src/index.css`. No hardcoded hex in components |
+| Wardrobe choice | Asked on its own screen, before Capture — not a `guardrails`-screen question, not a splash modal. Framed as shopping intent ("What are you shopping for?"), not identity. Revisitable anytime from the header menu; never a one-time gate. See `src/components/ChooseWardrobe.tsx` (YGS-33) |
 
 ## Typefaces — LOCKED, do not substitute
 

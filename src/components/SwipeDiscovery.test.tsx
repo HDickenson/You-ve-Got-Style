@@ -4,6 +4,7 @@ import { FashionLook, GarmentAttributes, StyleConstraints } from '../types';
 import { SwipeDiscovery } from './SwipeDiscovery';
 
 const ALL_GUARDRAILS_ON: StyleConstraints = {
+  wardrobe: 'womenswear',
   modestWear: true,
   sleevesBelowElbow: true,
   noTrousers: true,
