@@ -1,6 +1,11 @@
-import React from 'react';
-import { SlidersHorizontal, ShieldCheck, Check, Sparkles, ArrowRight, Ban, EyeOff, Layers } from 'lucide-react';
+import React, { useId } from 'react';
+import { Lock } from 'lucide-react';
 import { StyleConstraints } from '../types';
+import { ActionRow, AppContainer, Stack } from './layout';
+import { Button, Slider, Switch } from './ui';
+import { Price } from './brand';
+import { cn } from '../lib/cn';
+import type { ElementProps } from '../lib/props';
 
 interface StyleGuardrailsProps {
   constraints: StyleConstraints;
@@ -8,245 +13,304 @@ interface StyleGuardrailsProps {
   onSaveAndProceed: () => void;
 }
 
+type RuleKey =
+  | 'modestWear'
+  | 'sleevesBelowElbow'
+  | 'hemlineBelowKnee'
+  | 'noTrousers'
+  | 'noNeonColors'
+  | 'noLoudPrints';
+
+interface Rule {
+  key: RuleKey;
+  label: string;
+  /** Only where the label leaves something genuinely unsaid. */
+  detail?: string;
+}
+
+/**
+ * Absolute. The recommendation prompt is instructed never to violate these, so
+ * the screen must not present them as taste — they sit on their own sand plane,
+ * ruled like a document, above the preferences that only reorder things.
+ */
+const HARD: ReadonlyArray<Rule> = [
+  {
+    key: 'modestWear',
+    label: 'Modest coverage',
+    detail: 'High necklines, full coverage, opaque fabric.',
+  },
+  { key: 'sleevesBelowElbow', label: 'Sleeves past the elbow' },
+  {
+    key: 'hemlineBelowKnee',
+    label: 'Hemlines below the knee',
+    detail: 'Midi, maxi and floor lengths only.',
+  },
+  { key: 'noTrousers', label: 'Skirts and dresses only' },
+];
+
+/** Taste. These weight what surfaces first; they never remove a look. */
+const SOFT: ReadonlyArray<Rule> = [
+  {
+    key: 'noNeonColors',
+    label: 'Quiet colour',
+    detail: 'Leans to neutrals, earth and jewel tones.',
+  },
+  {
+    key: 'noLoudPrints',
+    label: 'Restrained print',
+    detail: 'Prefers solid and texture over bold pattern.',
+  },
+];
+
+const FABRICS: ReadonlyArray<string> = [
+  'Mulberry Silk',
+  'Baby Cashmere',
+  'Virgin Wool',
+  'Raw Linen',
+  'Heavy Satin',
+];
+
+/**
+ * The top stop of the range is not a number — it is the absence of a ceiling,
+ * and it sits one step *above* the maximum so AED 25,000 stays reachable.
+ */
+const PRICE_MIN = 1000;
+const PRICE_MAX = 25000;
+const PRICE_STEP = 500;
+const NO_CEILING = PRICE_MAX + PRICE_STEP;
+
+/** Hairlines separate the rows inside the ruled plane; the plane is the group. */
+const ROW = 'py-4 first:pt-0 last:pb-0';
+
+interface ToggleRowProps extends ElementProps {
+  label: string;
+  detail?: string;
+  /** The plane sets the tone: `fg-muted` fails AA on sand, so ink there. */
+  detailClassName?: string;
+  checked: boolean;
+  onCheckedChange: (next: boolean) => void;
+}
+
+function ToggleRow({
+  label,
+  detail,
+  detailClassName = 'text-fg-muted',
+  checked,
+  onCheckedChange,
+  className,
+}: ToggleRowProps) {
+  const id = useId();
+
+  return (
+    <div className={cn('flex items-start justify-between gap-4', className)}>
+      <div className="min-w-0 flex-1">
+        <p id={`${id}-label`} className="text-body font-medium text-fg">
+          {label}
+        </p>
+        {detail && (
+          <p id={`${id}-detail`} className={cn('text-body', detailClassName)}>
+            {detail}
+          </p>
+        )}
+      </div>
+      <Switch
+        checked={checked}
+        onCheckedChange={onCheckedChange}
+        aria-labelledby={`${id}-label`}
+        aria-describedby={detail ? `${id}-detail` : undefined}
+      />
+    </div>
+  );
+}
+
+/**
+ * Two planes, and only one of them is an object. The rules the algorithm obeys
+ * are carded on sand and ruled like a document; the ones it merely listens to
+ * sit flat on the page with nothing around them, separated by air. White on
+ * cream is 1.08:1 — a second card would have promised a distinction the eye
+ * cannot see.
+ *
+ * No gold on this screen. Nothing here is a selection, a completed
+ * intelligence or a signature moment — the user is working, and cream is
+ * conversation.
+ */
 export const StyleGuardrails: React.FC<StyleGuardrailsProps> = ({
   constraints,
   setConstraints,
   onSaveAndProceed,
 }) => {
-  const toggleConstraint = (key: keyof StyleConstraints) => {
+  const id = useId();
+  const hardId = `${id}-hard`;
+  const softId = `${id}-soft`;
+  const priceId = `${id}-price`;
+
+  const toggle = (key: RuleKey) => (next: boolean) => {
+    setConstraints((prev) => ({ ...prev, [key]: next }));
+  };
+
+  const toggleFabric = (fabric: string) => {
     setConstraints((prev) => ({
       ...prev,
-      [key]: !prev[key],
+      preferredFabrics: prev.preferredFabrics.includes(fabric)
+        ? prev.preferredFabrics.filter((item) => item !== fabric)
+        : [...prev.preferredFabrics, fabric],
     }));
   };
 
-  const applyPreset = (preset: 'modest_executive' | 'chic_casual' | 'gala_evening') => {
-    if (preset === 'modest_executive') {
-      setConstraints({
-        modestWear: true,
-        sleevesBelowElbow: true,
-        noTrousers: false,
-        hemlineBelowKnee: true,
-        noNeonColors: true,
-        noLoudPrints: true,
-        preferredFabrics: ['Silk', 'Cashmere', 'Virgin Wool'],
-      });
-    } else if (preset === 'chic_casual') {
-      setConstraints({
-        modestWear: true,
-        sleevesBelowElbow: false,
-        noTrousers: false,
-        hemlineBelowKnee: true,
-        noNeonColors: true,
-        noLoudPrints: false,
-        preferredFabrics: ['Linen', 'Cotton', 'Cashmere'],
-      });
-    } else if (preset === 'gala_evening') {
-      setConstraints({
-        modestWear: true,
-        sleevesBelowElbow: true,
-        noTrousers: true, // dresses only
-        hemlineBelowKnee: true,
-        noNeonColors: true,
-        noLoudPrints: true,
-        preferredFabrics: ['Silk Satin', 'Chiffon', 'Cashmere'],
-      });
-    }
+  const setCeiling = (value: number) => {
+    setConstraints((prev) => ({
+      ...prev,
+      maxPriceAED: value > PRICE_MAX ? undefined : value,
+    }));
   };
 
-  const toggleFabric = (fabricName: string) => {
-    setConstraints((prev) => {
-      const exists = prev.preferredFabrics.includes(fabricName);
-      return {
-        ...prev,
-        preferredFabrics: exists
-          ? prev.preferredFabrics.filter((f) => f !== fabricName)
-          : [...prev.preferredFabrics, fabricName],
-      };
-    });
-  };
+  const ceiling = constraints.maxPriceAED;
+  const ceilingLabel =
+    ceiling === undefined ? 'No ceiling' : `AED ${ceiling.toLocaleString('en-US')}`;
 
   return (
-    <div id="module-style-guardrails" className="min-h-[85vh] bg-stone-950 text-stone-100 p-4 max-w-md mx-auto flex flex-col justify-between">
-      {/* Title Header */}
-      <div className="text-center mb-3">
-        <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-500/10 border border-amber-500/30 text-amber-300 text-xs font-mono font-medium mb-1">
-          <ShieldCheck className="w-3.5 h-3.5" />
-          <span>Module 4: "Style Like You" Guardrails</span>
-        </div>
-        <h2 className="text-xl font-serif font-bold text-amber-100">Personal Style Filter</h2>
-        <p className="text-xs text-stone-400">Hard boundaries. The AI will NEVER show cards violating these rules.</p>
-      </div>
+    <AppContainer
+      as="section"
+      aria-label="Style guardrails"
+      className="@container animate-place py-8 md:py-12"
+    >
+      <Stack gap={32}>
+        <h2 className="text-screen font-medium text-fg">Set your guardrails</h2>
 
-      {/* Quick Presets Bar */}
-      <div className="mb-3">
-        <span className="text-[10px] uppercase font-mono text-stone-400 block mb-1">Quick Guardrail Presets:</span>
-        <div className="flex gap-1.5 overflow-x-auto pb-1 scrollbar-none">
-          <button
-            id="preset-modest-exec"
-            onClick={() => applyPreset('modest_executive')}
-            className="px-2.5 py-1 rounded-full bg-stone-800 hover:bg-stone-700 border border-stone-700 text-xs text-amber-300 whitespace-nowrap"
+        {/* Extra width becomes a second column, never a wider toggle row. The
+            query is on this container rather than the viewport so the same
+            component stays single-column inside a 560px sheet.
+
+            The ruled plane takes the larger share, and its padding does not
+            step up until the container is wide enough to afford it (@4xl,
+            landscape): a row's text runs ~252px at 768 and ~358px at 1024
+            against 230px on a phone, so the tablet spends its width on the
+            rule rather than on the gutter. */}
+        <div className="grid grid-cols-1 items-start gap-6 @2xl:grid-cols-[1.2fr_1fr] @2xl:gap-8">
+          {/* Ruled from ink at 20%, not from `--ygs-rule`: that token is
+              shared with cream and measures 1.03:1 on sand, so the document
+              ruling this plane's whole idea rests on would not draw. */}
+          <section
+            aria-labelledby={hardId}
+            className="ground-sand rounded-card border border-fg/20 p-6 @4xl:p-8"
           >
-            GCC Modest Executive
-          </button>
-          <button
-            id="preset-chic-casual"
-            onClick={() => applyPreset('chic_casual')}
-            className="px-2.5 py-1 rounded-full bg-stone-800 hover:bg-stone-700 border border-stone-700 text-xs text-amber-300 whitespace-nowrap"
-          >
-            Chic Resort Casual
-          </button>
-          <button
-            id="preset-gala-evening"
-            onClick={() => applyPreset('gala_evening')}
-            className="px-2.5 py-1 rounded-full bg-stone-800 hover:bg-stone-700 border border-stone-700 text-xs text-amber-300 whitespace-nowrap"
-          >
-            Royal Gala (Skirts Only)
-          </button>
-        </div>
-      </div>
-
-      {/* Main Constraint Switches */}
-      <div className="space-y-2 mb-3 bg-stone-900/90 border border-stone-800 rounded-2xl p-3.5 shadow-xl">
-        <span className="text-xs font-semibold text-amber-200 block mb-2 uppercase tracking-wider font-mono">
-          Absolute Style Boundaries:
-        </span>
-
-        {/* Constraint 1: Modest Wear */}
-        <div
-          onClick={() => toggleConstraint('modestWear')}
-          className={`p-3 rounded-xl border flex items-center justify-between cursor-pointer transition-all ${
-            constraints.modestWear
-              ? 'bg-amber-500/10 border-amber-500 text-stone-100 shadow'
-              : 'bg-stone-950 border-stone-800 text-stone-400'
-          }`}
-        >
-          <div>
-            <div className="font-serif font-bold text-sm text-stone-100">Modest Wear Only</div>
-            <div className="text-[11px] text-stone-400">Full body coverage, high necklines & opacity</div>
-          </div>
-          <div className={`w-5 h-5 rounded-full flex items-center justify-center border ${
-            constraints.modestWear ? 'bg-amber-500 border-amber-400 text-stone-950 font-bold' : 'border-stone-700'
-          }`}>
-            {constraints.modestWear && <Check className="w-3.5 h-3.5" />}
-          </div>
-        </div>
-
-        {/* Constraint 2: Sleeves Below Elbow */}
-        <div
-          onClick={() => toggleConstraint('sleevesBelowElbow')}
-          className={`p-3 rounded-xl border flex items-center justify-between cursor-pointer transition-all ${
-            constraints.sleevesBelowElbow
-              ? 'bg-amber-500/10 border-amber-500 text-stone-100 shadow'
-              : 'bg-stone-950 border-stone-800 text-stone-400'
-          }`}
-        >
-          <div>
-            <div className="font-serif font-bold text-sm text-stone-100">Sleeves Below Elbow</div>
-            <div className="text-[11px] text-stone-400">Rejects cap sleeves, tank tops & sleeveless cuts</div>
-          </div>
-          <div className={`w-5 h-5 rounded-full flex items-center justify-center border ${
-            constraints.sleevesBelowElbow ? 'bg-amber-500 border-amber-400 text-stone-950 font-bold' : 'border-stone-700'
-          }`}>
-            {constraints.sleevesBelowElbow && <Check className="w-3.5 h-3.5" />}
-          </div>
-        </div>
-
-        {/* Constraint 3: No Trousers */}
-        <div
-          onClick={() => toggleConstraint('noTrousers')}
-          className={`p-3 rounded-xl border flex items-center justify-between cursor-pointer transition-all ${
-            constraints.noTrousers
-              ? 'bg-amber-500/10 border-amber-500 text-stone-100 shadow'
-              : 'bg-stone-950 border-stone-800 text-stone-400'
-          }`}
-        >
-          <div>
-            <div className="font-serif font-bold text-sm text-stone-100">No Trousers (Skirts & Dresses Only)</div>
-            <div className="text-[11px] text-stone-400">Filters out pants, jeans, shorts & trousers</div>
-          </div>
-          <div className={`w-5 h-5 rounded-full flex items-center justify-center border ${
-            constraints.noTrousers ? 'bg-amber-500 border-amber-400 text-stone-950 font-bold' : 'border-stone-700'
-          }`}>
-            {constraints.noTrousers && <Check className="w-3.5 h-3.5" />}
-          </div>
-        </div>
-
-        {/* Constraint 4: Hemline Below Knee */}
-        <div
-          onClick={() => toggleConstraint('hemlineBelowKnee')}
-          className={`p-3 rounded-xl border flex items-center justify-between cursor-pointer transition-all ${
-            constraints.hemlineBelowKnee
-              ? 'bg-amber-500/10 border-amber-500 text-stone-100 shadow'
-              : 'bg-stone-950 border-stone-800 text-stone-400'
-          }`}
-        >
-          <div>
-            <div className="font-serif font-bold text-sm text-stone-100">Hemline Below Knee</div>
-            <div className="text-[11px] text-stone-400">Restricts hemlines to midi, maxi & floor length</div>
-          </div>
-          <div className={`w-5 h-5 rounded-full flex items-center justify-center border ${
-            constraints.hemlineBelowKnee ? 'bg-amber-500 border-amber-400 text-stone-950 font-bold' : 'border-stone-700'
-          }`}>
-            {constraints.hemlineBelowKnee && <Check className="w-3.5 h-3.5" />}
-          </div>
-        </div>
-
-        {/* Constraint 5: No Neon Colors */}
-        <div
-          onClick={() => toggleConstraint('noNeonColors')}
-          className={`p-3 rounded-xl border flex items-center justify-between cursor-pointer transition-all ${
-            constraints.noNeonColors
-              ? 'bg-amber-500/10 border-amber-500 text-stone-100 shadow'
-              : 'bg-stone-950 border-stone-800 text-stone-400'
-          }`}
-        >
-          <div>
-            <div className="font-serif font-bold text-sm text-stone-100">No Neon or Loud Colors</div>
-            <div className="text-[11px] text-stone-400">Restricts palette to neutrals, earth & jewel tones</div>
-          </div>
-          <div className={`w-5 h-5 rounded-full flex items-center justify-center border ${
-            constraints.noNeonColors ? 'bg-amber-500 border-amber-400 text-stone-950 font-bold' : 'border-stone-700'
-          }`}>
-            {constraints.noNeonColors && <Check className="w-3.5 h-3.5" />}
-          </div>
-        </div>
-      </div>
-
-      {/* Preferred Fabric Selector */}
-      <div className="mb-3 bg-stone-900/90 border border-stone-800 rounded-2xl p-3 shadow-md">
-        <span className="text-[11px] uppercase font-mono text-stone-400 block mb-1.5">
-          Luxury Preferred Fabrics:
-        </span>
-        <div className="flex flex-wrap gap-1.5">
-          {['Mulberry Silk', 'Baby Cashmere', 'Virgin Wool', 'Raw Linen', 'Heavy Satin'].map((fab) => {
-            const isSelected = constraints.preferredFabrics.includes(fab);
-            return (
-              <button
-                key={fab}
-                onClick={() => toggleFabric(fab)}
-                className={`px-3 py-1 rounded-lg text-xs font-medium transition-all ${
-                  isSelected
-                    ? 'bg-amber-500 text-stone-950 font-bold shadow-sm'
-                    : 'bg-stone-950 text-stone-300 border border-stone-800 hover:border-stone-700'
-                }`}
+            <div className="flex items-center gap-2">
+              <Lock className="size-4 shrink-0 text-fg" aria-hidden="true" />
+              <h3
+                id={hardId}
+                className="text-eyebrow font-medium uppercase text-fg"
               >
-                {fab}
-              </button>
-            );
-          })}
-        </div>
-      </div>
+                Absolute
+              </h3>
+            </div>
+            <p className="mt-3 max-w-measure text-body text-fg">
+              Obeyed without exception. A look that breaks one is never shown to
+              you.
+            </p>
 
-      {/* Save & Launch Discovery */}
-      <button
-        id="btn-save-guardrails"
-        onClick={onSaveAndProceed}
-        className="w-full py-3.5 px-4 rounded-xl bg-amber-500 hover:bg-amber-400 text-stone-950 font-bold text-sm tracking-wide transition-all shadow-lg flex items-center justify-center gap-2"
-      >
-        <span>Lock Guardrails & Enter Discovery</span>
-        <ArrowRight className="w-4 h-4" />
-      </button>
-    </div>
+            <div className="mt-6 divide-y divide-fg/20 border-t border-fg/20 pt-6">
+              {HARD.map((rule) => (
+                <ToggleRow
+                  key={rule.key}
+                  className={ROW}
+                  label={rule.label}
+                  detail={rule.detail}
+                  detailClassName="text-fg"
+                  checked={constraints[rule.key]}
+                  onCheckedChange={toggle(rule.key)}
+                />
+              ))}
+            </div>
+          </section>
+
+          <section aria-labelledby={softId}>
+            <h3
+              id={softId}
+              className="text-eyebrow font-medium uppercase text-fg-muted"
+            >
+              Preference
+            </h3>
+            <p className="mt-3 max-w-measure text-body text-fg-muted">
+              These shape the order you see things in. They never rule a look
+              out.
+            </p>
+
+            <Stack gap={24} className="mt-6">
+              {SOFT.map((rule) => (
+                <ToggleRow
+                  key={rule.key}
+                  label={rule.label}
+                  detail={rule.detail}
+                  checked={constraints[rule.key]}
+                  onCheckedChange={toggle(rule.key)}
+                />
+              ))}
+
+              <div>
+                <p className="text-control font-medium uppercase text-fg-muted">
+                  Fabrics you prefer
+                </p>
+                <div className="mt-3 flex flex-wrap gap-2">
+                  {FABRICS.map((fabric) => {
+                    const selected = constraints.preferredFabrics.includes(fabric);
+                    return (
+                      <Button
+                        key={fabric}
+                        size="sm"
+                        // Not `primary`: that fill belongs to the one action
+                        // this screen is asking for. Not `selected`: gold is
+                        // rationed and five chosen fabrics is wallpaper. An
+                        // ink outline says chosen and nothing else does.
+                        //
+                        // A ring rather than `border-fg`, because `cn` joins
+                        // and does not merge: `border-rule` from the variant
+                        // is emitted after `border-fg` and would win. The ring
+                        // collides with nothing the variant sets.
+                        variant="secondary"
+                        className={selected ? 'ring-1 ring-fg' : undefined}
+                        aria-pressed={selected}
+                        onClick={() => toggleFabric(fabric)}
+                      >
+                        {fabric}
+                      </Button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              <div>
+                <div className="flex items-baseline justify-between gap-4">
+                  <label
+                    htmlFor={priceId}
+                    className="text-control font-medium uppercase text-fg-muted"
+                  >
+                    Spend up to
+                  </label>
+                  {ceiling === undefined ? (
+                    <span className="text-price text-fg">No ceiling</span>
+                  ) : (
+                    <Price>{ceilingLabel}</Price>
+                  )}
+                </div>
+                <Slider
+                  id={priceId}
+                  className="mt-2"
+                  min={PRICE_MIN}
+                  max={NO_CEILING}
+                  step={PRICE_STEP}
+                  value={ceiling ?? NO_CEILING}
+                  aria-valuetext={ceilingLabel}
+                  onValueChange={setCeiling}
+                />
+              </div>
+            </Stack>
+          </section>
+        </div>
+
+        <ActionRow align="start">
+          <Button onClick={onSaveAndProceed}>Show me looks</Button>
+        </ActionRow>
+      </Stack>
+    </AppContainer>
   );
 };
