@@ -221,10 +221,17 @@ async function installFakeSpeechRecognition(context) {
   });
 }
 
-async function openStudio(page) {
+async function openStudio(page, { voice = false } = {}) {
   await page.goto(`${BASE_URL}/?phase=onboarding`, { waitUntil: 'networkidle' });
   await page.waitForSelector('#app-root-container', { state: 'visible' });
   await page.getByRole('switch', { name: 'Use my camera to take my two frames' }).click();
+  // Voice is a second capture path behind a second consent, so the harness has
+  // to grant it the way a customer would. Only the studio-states pass asks for
+  // it: the journey walk taps the shutter, which is what a customer who
+  // declined voice gets, and that path should stay covered.
+  if (voice) {
+    await page.getByRole('switch', { name: /say .Snap. instead of tapping/i }).click();
+  }
   await page.getByRole('button', { name: 'Open the studio' }).click();
 }
 
@@ -268,7 +275,7 @@ async function captureCameraStudioStates(cameraBrowser) {
       console.log(`capture studio: captured ${state} @ ${viewport.name}`);
     };
 
-    await openStudio(page);
+    await openStudio(page, { voice: true });
     await page.waitForTimeout(500); // fake camera stream attaching
     await shot('not-level');
 

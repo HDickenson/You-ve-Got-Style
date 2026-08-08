@@ -151,6 +151,9 @@ export const HandsFreeCapture: React.FC<HandsFreeCaptureProps> = ({
   // The gate. Nothing below it runs — no sensor reading is acted on, no camera
   // permission is requested — until the reader has actually said yes.
   const [agreed, setAgreed] = useState<boolean>(false);
+  // Separate from `agreed` on purpose. Speech recognition sends audio off the
+  // device; the camera toggle cannot stand in for permission to do that.
+  const [voiceAgreed, setVoiceAgreed] = useState<boolean>(false);
   const [consented, setConsented] = useState<boolean>(false);
 
   // Sensors. Pitch is front-to-back tilt, roll is side-to-side.
@@ -300,6 +303,13 @@ export const HandsFreeCapture: React.FC<HandsFreeCaptureProps> = ({
   };
 
   const listen = () => {
+    // No voice consent, no microphone. The button is still the shutter, so
+    // the customer loses nothing but the hands-free part they declined.
+    if (!voiceAgreed) {
+      takeFrame();
+      return;
+    }
+
     setListening(true);
 
     const Recognition =
@@ -429,14 +439,43 @@ export const HandsFreeCapture: React.FC<HandsFreeCaptureProps> = ({
                       Use my camera to take my two frames
                     </p>
                     <p className="max-w-measure text-body text-fg-muted">
-                      The camera cannot open until this is on, and this is the
-                      only thing we ask for.
+                      The camera cannot open until this is on. Nothing else on
+                      this screen turns it on for you.
                     </p>
                   </div>
                   <Switch
                     checked={agreed}
                     onCheckedChange={setAgreed}
                     aria-labelledby="capture-consent-label"
+                  />
+                </CardContent>
+              </Card>
+
+              {/* Voice is a second capture path and it gets a second ask. The
+                  screen used to say the camera was "the only thing we ask
+                  for" while tapping the shutter started SpeechRecognition —
+                  which opens the microphone and sends audio away for
+                  transcription. Saying so is the fix; the shutter works
+                  perfectly well as a tap. */}
+              <Card className="md:mx-auto md:w-full md:max-w-action lg:mx-0 lg:max-w-none">
+                <CardContent className="flex items-start justify-between gap-6 p-6 md:p-8">
+                  <div className="min-w-0">
+                    <p
+                      id="voice-consent-label"
+                      className="text-body font-medium text-fg"
+                    >
+                      Let me say &ldquo;Snap&rdquo; instead of tapping
+                    </p>
+                    <p className="max-w-measure text-body text-fg-muted">
+                      Your browser sends a moment of audio away to recognise the
+                      word. Leave this off and the shutter is a tap — nothing
+                      you say is listened to.
+                    </p>
+                  </div>
+                  <Switch
+                    checked={voiceAgreed}
+                    onCheckedChange={setVoiceAgreed}
+                    aria-labelledby="voice-consent-label"
                   />
                 </CardContent>
               </Card>
@@ -657,7 +696,7 @@ export const HandsFreeCapture: React.FC<HandsFreeCaptureProps> = ({
                 type="button"
                 onClick={listen}
                 disabled={!aligned || !cameraActive || Boolean(heldFrame)}
-                aria-label={`Capture your ${step} frame — say Snap or tap`}
+                aria-label={`Capture your ${step} frame${voiceAgreed ? ' — say Snap or tap' : ''}`}
                 className={cn(
                   'relative inline-flex size-20 items-center justify-center rounded-full',
                   'border border-rule bg-surface text-fg',
@@ -684,7 +723,9 @@ export const HandsFreeCapture: React.FC<HandsFreeCaptureProps> = ({
                       ? 'Upload your frames instead'
                       : !aligned
                         ? 'Level the phone first'
-                        : 'Say “Snap” or tap'}
+                        : voiceAgreed
+                          ? 'Say “Snap” or tap'
+                          : 'Tap to capture'}
               </span>
             </div>
           )}
