@@ -1,14 +1,15 @@
 import express from "express";
 import path from "path";
-import { fileURLToPath } from "url";
 import { createServer as createViteServer } from "vite";
 import { GoogleGenAI, Type } from "@google/genai";
 import dotenv from "dotenv";
 
 dotenv.config();
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+// No __dirname here on purpose. The build bundles this file to CJS, where
+// `import.meta` is empty, so `fileURLToPath(import.meta.url)` threw at module
+// load and the production server never served a byte. Nothing used the value:
+// the one path we construct is `path.join(process.cwd(), "dist")` below.
 
 async function startServer() {
   const app = express();
