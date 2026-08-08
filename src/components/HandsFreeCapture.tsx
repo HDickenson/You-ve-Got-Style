@@ -25,6 +25,12 @@ const ROLL_RANGE = 20;
  *  instruction every few hundred milliseconds. */
 const SETTLE_MS = DURATION.resolve * 1000;
 
+/** How long a live sensor gets to settle on its own before the reader is
+ *  offered a way out. A tablet propped in a stand can sit at a fixed recline
+ *  that never crosses the tolerance band — that reader needs a path forward,
+ *  not an indefinite wait on a reading that will never change. */
+const GRACE_MS = 6000;
+
 /** The grabbed still holds in the viewfinder — the Reveal, then the same again
  *  to look at what was taken — before the live preview comes back. */
 const HOLD_MS = DURATION.reveal * 2000;
@@ -152,6 +158,17 @@ export const HandsFreeCapture: React.FC<HandsFreeCaptureProps> = ({
   const [roll, setRoll] = useState<number>(0);
   const [sensorLive, setSensorLive] = useState<boolean>(false);
 
+  // The way out for a reader whose live sensor is never going to settle — a
+  // stand holds its recline, it does not drift toward level. Offered only
+  // after a grace period, and only while genuinely stuck, so it never
+  // preempts a sensor that is about to succeed on its own.
+  const [overrideAvailable, setOverrideAvailable] = useState<boolean>(false);
+  const [manualOverride, setManualOverride] = useState<boolean>(false);
+  const manualOverrideRef = useRef(false);
+  useEffect(() => {
+    manualOverrideRef.current = manualOverride;
+  }, [manualOverride]);
+
   // Capture. The frames start empty: a stock photograph of a stranger standing
   // in for the reader's own body is not a placeholder, it is a lie with a face.
   const [frontPhoto, setFrontPhoto] = useState<string | null>(null);
@@ -180,6 +197,18 @@ export const HandsFreeCapture: React.FC<HandsFreeCaptureProps> = ({
     return () => window.clearTimeout(settle);
   }, [withinTolerance]);
 
+  // A live sensor that hasn't aligned after a full grace period is treated as
+  // stuck, not slow — offer the manual override rather than leaving the
+  // reader waiting on a reading that a propped device will never produce.
+  useEffect(() => {
+    if (!sensorLive || aligned) {
+      setOverrideAvailable(false);
+      return;
+    }
+    const grace = window.setTimeout(() => setOverrideAvailable(true), GRACE_MS);
+    return () => window.clearTimeout(grace);
+  }, [sensorLive, aligned]);
+
   const step: 'front' | 'side' | 'ready' = !frontPhoto
     ? 'front'
     : !sidePhoto
@@ -195,7 +224,9 @@ export const HandsFreeCapture: React.FC<HandsFreeCaptureProps> = ({
     const handleOrientation = (event: DeviceOrientationEvent) => {
       if (event.beta === null && event.gamma === null) return;
       setSensorLive(true);
-      if (event.beta !== null) setPitch(Math.round(Math.abs(event.beta) * 10) / 10);
+      if (event.beta !== null && !manualOverrideRef.current) {
+        setPitch(Math.round(Math.abs(event.beta) * 10) / 10);
+      }
       if (event.gamma !== null) setRoll(Math.round(event.gamma * 10) / 10);
     };
 
@@ -327,7 +358,10 @@ export const HandsFreeCapture: React.FC<HandsFreeCaptureProps> = ({
       sidePhoto,
       heightCm,
       timestamp: Date.now(),
-      isSensorVerified: aligned,
+      // A reading set by hand — whether because there was never a sensor, or
+      // because a live one was overridden — is not a sensor verifying the
+      // frame. Only an unoverridden live sensor settling in tolerance is.
+      isSensorVerified: aligned && sensorLive && !manualOverride,
       isVoiceTriggered: voiceUsed,
     });
   };
@@ -552,13 +586,15 @@ export const HandsFreeCapture: React.FC<HandsFreeCaptureProps> = ({
                     min={-ROLL_RANGE}
                     max={ROLL_RANGE}
                   />
-                  {!sensorLive ? (
+                  {!sensorLive || manualOverride ? (
                     <Stack gap={8}>
                       <label
                         htmlFor="capture-tilt"
                         className="text-body text-fg-muted"
                       >
-                        This device cannot feel how it is standing. Set it by hand.
+                        {sensorLive
+                          ? 'Set it by hand — the live reading is being ignored.'
+                          : 'This device cannot feel how it is standing. Set it by hand.'}
                       </label>
                       <Slider
                         id="capture-tilt"
@@ -569,6 +605,14 @@ export const HandsFreeCapture: React.FC<HandsFreeCaptureProps> = ({
                         onValueChange={setPitch}
                       />
                     </Stack>
+                  ) : overrideAvailable ? (
+                    <button
+                      type="button"
+                      onClick={() => setManualOverride(true)}
+                      className="text-left text-body text-fg-muted underline decoration-rule underline-offset-4 hoverable:hover:text-fg"
+                    >
+                      Still not settling? Set the tilt by hand instead.
+                    </button>
                   ) : null}
                 </Stack>
               </CardContent>
