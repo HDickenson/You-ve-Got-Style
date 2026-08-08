@@ -140,12 +140,15 @@ export const SizingEngine: React.FC<SizingEngineProps> = ({
             </span>
 
             {/* One column under the thumb, two across a tablet — the table
-                composes into the extra width instead of stretching one row. */}
+                composes into the extra width instead of stretching one row.
+                There are five measurements, so at two columns the last one
+                would sit alone beside a dead cell; it spans the full width
+                when it is the odd one out. */}
             <dl className="grid gap-x-12 md:grid-cols-2">
               {rows.map((row) => (
                 <div
                   key={row.label}
-                  className="flex items-baseline justify-between gap-4 border-b border-rule py-3"
+                  className="flex items-baseline justify-between gap-4 border-b border-rule py-3 md:[&:last-child:nth-child(odd)]:col-span-2"
                 >
                   <dt className="text-body text-fg-muted">{row.label}</dt>
                   <dd className="text-price tabular text-fg">{row.value} cm</dd>
