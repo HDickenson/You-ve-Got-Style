@@ -4,6 +4,7 @@ import { FashionLook } from '../types';
 import { Button, Card, Separator } from './ui';
 import { Price } from './brand';
 import { ActionRow, AppContainer, ResponsiveGrid, Stack } from './layout';
+import { formatAED } from '../lib/currency';
 
 interface CapsuleWardrobeProps {
   savedLooks: FashionLook[];
@@ -11,8 +12,6 @@ interface CapsuleWardrobeProps {
   onBuyLook: (look: FashionLook) => void;
   onContinueShopping: () => void;
 }
-
-const aed = (value: number) => `AED ${value.toLocaleString('en-AE')}`;
 
 /**
  * The capsule is a working screen, not a reveal: cream ground, sans throughout,
@@ -64,7 +63,7 @@ export const CapsuleWardrobe: React.FC<CapsuleWardrobeProps> = ({
               the price across them. A price that wraps is not a price, and
               AED 13,200 is in the data. */}
           <div className="flex flex-wrap items-center justify-between gap-4">
-            <Price className="shrink-0">{aed(look.priceAED)}</Price>
+            <Price className="shrink-0">{formatAED(look.priceAED)}</Price>
             <div className="flex shrink-0 items-center gap-2">
               <Button
                 variant="ghost"
@@ -117,7 +116,7 @@ export const CapsuleWardrobe: React.FC<CapsuleWardrobeProps> = ({
             <span className="text-eyebrow font-medium uppercase text-fg-muted">
               {count === 1 ? '1 look saved' : `${count} looks saved`}
             </span>
-            <Price className="font-medium">{aed(totalAED)}</Price>
+            <Price className="font-medium">{formatAED(totalAED)}</Price>
           </Stack>
         ) : null}
       </header>

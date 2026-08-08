@@ -6,6 +6,7 @@ import { Button, Slider, Switch } from './ui';
 import { Price } from './brand';
 import { cn } from '../lib/cn';
 import type { ElementProps } from '../lib/props';
+import { formatAED } from '../lib/currency';
 
 interface StyleGuardrailsProps {
   constraints: StyleConstraints;
@@ -165,8 +166,7 @@ export const StyleGuardrails: React.FC<StyleGuardrailsProps> = ({
   };
 
   const ceiling = constraints.maxPriceAED;
-  const ceilingLabel =
-    ceiling === undefined ? 'No ceiling' : `AED ${ceiling.toLocaleString('en-US')}`;
+  const ceilingLabel = ceiling === undefined ? 'No ceiling' : formatAED(ceiling);
 
   return (
     <AppContainer

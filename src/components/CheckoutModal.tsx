@@ -6,6 +6,7 @@ import { OccasionTitle, Price } from './brand';
 import { Stack } from './layout';
 import { cn } from '../lib/cn';
 import type { ElementProps } from '../lib/props';
+import { formatAED } from '../lib/currency';
 
 interface CheckoutModalProps {
   look: FashionLook | null;
@@ -22,8 +23,6 @@ const DESTINATIONS: ReadonlyArray<{ city: string; when: string }> = [
   { city: 'Doha', when: 'Within 24 hours' },
   { city: 'Kuwait City', when: 'Within 24 hours' },
 ];
-
-const aed = (value: number) => `AED ${value.toLocaleString('en-AE')}`;
 
 /** Wide-tracked uppercase, the label voice for every section on this sheet. */
 function SectionLabel({ children }: ElementProps) {
@@ -167,7 +166,7 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
           <Stack gap={12} className="w-full border-y border-rule py-6 text-left">
             <DetailRow label="Order" value="YGS-88492" />
             <DetailRow label={shown.brand} value={sizeValue} />
-            <DetailRow label="Paid" value={aed(shown.priceAED)} />
+            <DetailRow label="Paid" value={formatAED(shown.priceAED)} />
           </Stack>
         </Stack>
       ) : (
@@ -269,11 +268,11 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
 
           <Stack gap={12}>
             <Separator />
-            <DetailRow label="Subtotal" value={aed(shown.priceAED)} />
+            <DetailRow label="Subtotal" value={formatAED(shown.priceAED)} />
             <DetailRow label="Delivery" value="Included" />
             <div className="flex items-baseline justify-between gap-4 border-t border-rule pt-3">
               <span className="text-body font-medium text-fg">Total</span>
-              <Price className="font-medium">{aed(shown.priceAED)}</Price>
+              <Price className="font-medium">{formatAED(shown.priceAED)}</Price>
             </div>
           </Stack>
         </Stack>
