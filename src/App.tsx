@@ -250,6 +250,7 @@ export default function App() {
             onBuyLook={(look) => setCheckoutLook(look)}
             onGenerateAiLook={handleGenerateAiLook}
             isGeneratingAi={isGeneratingAi}
+            onUploadLook={(look) => setLooksList((prev) => [look, ...prev])}
           />
         )}
 
@@ -271,7 +272,18 @@ export default function App() {
         )}
 
         {currentPhase === 'fit-analytics' && (
-          <FitAnalytics measurements={measurements} savedLooks={savedLooks} />
+          <FitAnalytics 
+            measurements={measurements} 
+            savedLooks={savedLooks} 
+            heightCm={heightCm}
+            onAdjustHeight={(newHeight) => {
+              setHeightCm(newHeight);
+              const newMeas = calculatePhotogrammetryMeasurements(newHeight);
+              setMeasurements(newMeas);
+              setBrandSizes(mapMeasurementsToBrandSizes(newMeas));
+              syncProfileToFirebase(newHeight, constraints);
+            }}
+          />
         )}
 
         {currentPhase === 'social-lookbook' && (

@@ -1,14 +1,18 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import { ResponsiveContainer, Radar, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Tooltip as RechartsTooltip, BarChart, Bar, XAxis, YAxis, CartesianGrid, Legend } from 'recharts';
 import { UserMeasurements, FashionLook } from '../types';
-import { Activity, Info } from 'lucide-react';
+import { Activity, Info, Settings2, Minus, Plus } from 'lucide-react';
 
 interface FitAnalyticsProps {
   measurements: UserMeasurements;
   savedLooks: FashionLook[];
+  heightCm: number;
+  onAdjustHeight: (height: number) => void;
 }
 
-export const FitAnalytics: React.FC<FitAnalyticsProps> = ({ measurements, savedLooks }) => {
+export const FitAnalytics: React.FC<FitAnalyticsProps> = ({ measurements, savedLooks, heightCm, onAdjustHeight }) => {
+  const [isAdjusting, setIsAdjusting] = useState(false);
+
   // Generate mock fit analytics data based on measurements
   const radarData = useMemo(() => {
     return [
@@ -48,7 +52,46 @@ export const FitAnalytics: React.FC<FitAnalyticsProps> = ({ measurements, savedL
             AI-driven alignment between your photogrammetry body measurements and saved looks.
           </p>
         </div>
+        
+        <button 
+          onClick={() => setIsAdjusting(!isAdjusting)}
+          className={`px-4 py-2 rounded-xl text-sm font-medium transition-colors border flex items-center gap-2 ${
+            isAdjusting 
+            ? 'bg-amber-500/20 text-amber-400 border-amber-500/50' 
+            : 'bg-stone-900 border-stone-800 text-stone-300 hover:text-white'
+          }`}
+        >
+          <Settings2 className="w-4 h-4" />
+          Quick Adjust
+        </button>
       </div>
+      
+      {isAdjusting && (
+        <div className="mb-6 bg-stone-900 border border-stone-800 rounded-2xl p-5 shadow-lg flex items-center justify-between">
+          <div>
+            <h3 className="font-serif text-amber-50 font-medium">Nudge Base Height</h3>
+            <p className="text-xs text-stone-400 mt-1">Adjust your baseline profile to recalculate photogrammetry measurements slightly.</p>
+          </div>
+          <div className="flex items-center gap-4 bg-stone-950 p-2 rounded-xl border border-stone-800">
+            <button 
+              onClick={() => onAdjustHeight(Math.max(120, heightCm - 1))}
+              className="p-2 rounded-lg bg-stone-900 text-stone-300 hover:text-amber-400 hover:bg-stone-800 transition-colors"
+            >
+              <Minus className="w-4 h-4" />
+            </button>
+            <div className="text-center w-16">
+              <span className="font-serif text-xl font-bold text-stone-100">{heightCm}</span>
+              <span className="text-xs text-stone-500 block">cm</span>
+            </div>
+            <button 
+              onClick={() => onAdjustHeight(Math.min(220, heightCm + 1))}
+              className="p-2 rounded-lg bg-stone-900 text-stone-300 hover:text-amber-400 hover:bg-stone-800 transition-colors"
+            >
+              <Plus className="w-4 h-4" />
+            </button>
+          </div>
+        </div>
+      )}
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 h-full">
         {/* Radar Chart for Measurement Alignment */}

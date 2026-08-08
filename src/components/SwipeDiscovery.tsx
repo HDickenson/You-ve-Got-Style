@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { Heart, X, ShoppingCart, ShieldCheck, Sparkles, Check, ChevronDown, Layers, Share } from 'lucide-react';
+import React, { useState, useRef } from 'react';
+import { Heart, X, ShoppingCart, ShieldCheck, Sparkles, Check, ChevronDown, Layers, Share, Upload } from 'lucide-react';
 import { FashionLook, StyleConstraints, BrandSizeMapping, CapturedProfile } from '../types';
 
 interface SwipeDiscoveryProps {
@@ -12,15 +12,19 @@ interface SwipeDiscoveryProps {
   onBuyLook: (look: FashionLook) => void;
   onGenerateAiLook: (occasion: string) => Promise<void>;
   isGeneratingAi: boolean;
+  onUploadLook?: (look: FashionLook) => void;
 }
 
 const OCCASIONS = [
   'All Occasions',
+  'Business Casual',
   'Board Meeting',
   'Networking Dinner',
   'Weekend Brunch',
   'Art Gallery Opening',
   'Galas & Events',
+  'Gala Night',
+  'Beach Wedding'
 ];
 
 export const SwipeDiscovery: React.FC<SwipeDiscoveryProps> = ({
@@ -33,25 +37,35 @@ export const SwipeDiscovery: React.FC<SwipeDiscoveryProps> = ({
   onBuyLook,
   onGenerateAiLook,
   isGeneratingAi,
+  onUploadLook
 }) => {
   const [selectedOccasion, setSelectedOccasion] = useState<string>('All Occasions');
   const [currentIndex, setCurrentIndex] = useState<number>(0);
   const [useFaceOverlay, setUseFaceOverlay] = useState<boolean>(true);
   const [feedbackToast, setFeedbackToast] = useState<string | null>(null);
+  const [isUploading, setIsUploading] = useState<boolean>(false);
+  
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Style Synergy System Filter
+  const [applySynergyFilter, setApplySynergyFilter] = useState<boolean>(true);
 
   // Filter looks based on selected occasion and strict constraints
   const filteredLooks = looks.filter((look) => {
     if (selectedOccasion !== 'All Occasions' && look.occasion !== selectedOccasion) {
       return false;
     }
-    // Hard guardrail filter check
-    if (constraints.noTrousers && look.bottom_garment.toLowerCase().includes('trouser')) {
-      return false;
+    
+    if (applySynergyFilter) {
+      // Style Synergy / Guardrail filter check
+      if (constraints.noTrousers && look.bottom_garment.toLowerCase().includes('trouser')) return false;
+      if (constraints.noNeonColors && look.colorPalette.some(c => ['#00FF00', '#FF00FF', '#FFFF00'].includes(c))) return false;
     }
+    
     return true;
   });
 
-  const activeLook = filteredLooks[currentIndex % Math.max(filteredLooks.length, 1)] || looks[0];
+  const activeLook = filteredLooks.length > 0 ? filteredLooks[currentIndex % filteredLooks.length] : looks[0];
 
   const handleNext = (action: 'like' | 'dislike') => {
     if (action === 'like') {
@@ -88,8 +102,102 @@ export const SwipeDiscovery: React.FC<SwipeDiscoveryProps> = ({
     }
   };
 
+  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setIsUploading(true);
+    const reader = new FileReader();
+    reader.onload = async (ev) => {
+      const base64 = ev.target?.result as string;
+      
+      try {
+        const res = await fetch('/api/auto-tag-look', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ imageBase64: base64 })
+        });
+        
+        const data = await res.json();
+        if (data.occasion && onUploadLook) {
+          const newLook: FashionLook = {
+            id: `custom-look-${Date.now()}`,
+            look_title: data.look_title || 'Custom Uploaded Look',
+            occasion: data.occasion,
+            top_garment: data.top_garment || 'Unknown Top',
+            bottom_garment: data.bottom_garment || 'Unknown Bottom',
+            compliance_check: true,
+            capsule_synergy: data.capsule_synergy || 'High synergy with your capsule.',
+            brand: 'Custom Upload',
+            priceUSD: 0,
+            priceAED: 0,
+            fabric: 'Mixed',
+            colorPalette: [],
+            imageUrl: base64, // using local base64 for preview
+            tags: ['Custom'],
+            brand_sizes: brandSizes
+          };
+          onUploadLook(newLook);
+          setSelectedOccasion(data.occasion); // switch to that occasion to see it!
+          showToast(`Tagged as ${data.occasion}`);
+        }
+      } catch (err) {
+        console.error('Failed to auto-tag look', err);
+        showToast('Failed to analyze image');
+      } finally {
+        setIsUploading(false);
+      }
+    };
+    reader.readAsDataURL(file);
+  };
+
   return (
     <div id="module-swipe-discovery" className="min-h-[85vh] bg-stone-950 text-stone-100 max-w-md mx-auto flex flex-col justify-between relative p-3">
+      
+      {/* Top Controls Area */}
+      <div className="flex flex-col gap-2 mb-3">
+        <div className="flex items-center justify-between gap-2">
+          <div className="relative flex-1">
+            <select
+              value={selectedOccasion}
+              onChange={(e) => setSelectedOccasion(e.target.value)}
+              className="w-full appearance-none bg-stone-900 border border-stone-800 text-stone-200 text-xs px-3 py-2 rounded-xl focus:outline-none focus:border-amber-500/50"
+            >
+              {OCCASIONS.map((occ) => (
+                <option key={occ} value={occ}>{occ}</option>
+              ))}
+            </select>
+            <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-stone-500 pointer-events-none" />
+          </div>
+          
+          <button
+            onClick={() => fileInputRef.current?.click()}
+            disabled={isUploading}
+            className="bg-stone-900 border border-stone-800 text-amber-400 p-2 rounded-xl hover:bg-stone-800 transition-colors flex items-center justify-center disabled:opacity-50"
+            title="Upload Custom Look for Auto-Tagging"
+          >
+            <Upload className="w-4 h-4" />
+          </button>
+          <input 
+            type="file" 
+            ref={fileInputRef} 
+            onChange={handleFileUpload} 
+            accept="image/*" 
+            className="hidden" 
+          />
+        </div>
+        
+        <label className="flex items-center gap-2 text-xs text-stone-400 cursor-pointer">
+          <input 
+            type="checkbox" 
+            checked={applySynergyFilter} 
+            onChange={(e) => setApplySynergyFilter(e.target.checked)} 
+            className="rounded bg-stone-900 border-stone-800 text-amber-500 focus:ring-amber-500 focus:ring-offset-stone-950"
+          />
+          Apply Style Synergy System (Match my tastes)
+        </label>
+      </div>
+
       {/* Sophisticated Hero Canvas - Occupies 85% Viewport */}
       <div className="relative flex-1 rounded-2xl overflow-hidden border border-stone-800/80 bg-stone-900 shadow-2xl flex flex-col justify-between mb-3 min-h-[500px]">
         {/* Main Outfit Image */}

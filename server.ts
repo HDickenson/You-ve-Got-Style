@@ -275,6 +275,49 @@ Please generate a curated luxury look that complies 100% with these guardrails.`
     }
   });
 
+  // 5a. Auto-tag Look (gemini-3.1-pro-preview)
+  app.post("/api/auto-tag-look", async (req, res) => {
+    try {
+      const { imageBase64 } = req.body;
+      const ai = getAiClient();
+      if (!ai) return res.status(500).json({ error: "API Key not configured." });
+
+      const cleanBase64 = imageBase64.replace(/^data:image\/\w+;base64,/, "");
+      
+      const systemInstruction = `You are a fashion AI. Analyze the provided outfit image and classify it into one of these specific occasions: 'Business Casual', 'Gala Night', 'Beach Wedding', 'Board Meeting', 'Networking Dinner', 'Weekend Brunch', 'Art Gallery Opening', 'Galas & Events'. Also provide a short title, top garment description, bottom garment description, and capsule synergy. Return ONLY JSON matching the schema.`;
+
+      const response = await ai.models.generateContent({
+        model: "gemini-3.1-pro-preview",
+        contents: {
+          parts: [
+            { inlineData: { mimeType: "image/jpeg", data: cleanBase64 } },
+            { text: "Analyze this outfit and return JSON." }
+          ]
+        },
+        config: {
+          systemInstruction,
+          responseMimeType: "application/json",
+          responseSchema: {
+            type: Type.OBJECT,
+            properties: {
+              occasion: { type: Type.STRING },
+              look_title: { type: Type.STRING },
+              top_garment: { type: Type.STRING },
+              bottom_garment: { type: Type.STRING },
+              capsule_synergy: { type: Type.STRING },
+            },
+            required: ["occasion", "look_title", "top_garment", "bottom_garment", "capsule_synergy"]
+          }
+        }
+      });
+      const parsedData = JSON.parse(response.text || "{}");
+      res.json(parsedData);
+    } catch (err: any) {
+      console.error(err);
+      res.status(500).json({ error: err.message });
+    }
+  });
+
   // 6. Chatbot endpoint (gemini-3.6-flash or gemini-3.1-pro-preview)
   app.post("/api/chat", async (req, res) => {
     try {
@@ -307,6 +350,51 @@ Please generate a curated luxury look that complies 100% with these guardrails.`
         contents: prompt || "Give me a quick 1-sentence luxury fashion tip for today."
       });
       res.json({ tip: response.text });
+    } catch (err: any) {
+      console.error(err);
+      res.status(500).json({ error: err.message });
+    }
+  });
+
+  // 8. Trend Radar with Search Grounding
+  app.post("/api/trend-radar", async (req, res) => {
+    try {
+      const { aesthetics } = req.body;
+      const ai = getAiClient();
+      if (!ai) return res.status(500).json({ error: "API Key not configured." });
+
+      const aestheticStr = aesthetics?.length ? aesthetics.join(", ") : "luxury fashion";
+      const prompt = `Use Google Search to find 3 emerging fashion trends for the current season that align with these aesthetics: ${aestheticStr}. For each trend, provide a title, a short description, and a source or reasoning.`;
+
+      const response = await ai.models.generateContent({
+        model: "gemini-3.1-pro-preview",
+        contents: prompt,
+        config: {
+          tools: [{ googleSearch: {} }],
+          responseMimeType: "application/json",
+          responseSchema: {
+            type: Type.OBJECT,
+            properties: {
+              trends: {
+                type: Type.ARRAY,
+                items: {
+                  type: Type.OBJECT,
+                  properties: {
+                    title: { type: Type.STRING },
+                    description: { type: Type.STRING },
+                    source: { type: Type.STRING }
+                  },
+                  required: ["title", "description", "source"]
+                }
+              }
+            },
+            required: ["trends"]
+          }
+        }
+      });
+      
+      const parsedData = JSON.parse(response.text || '{"trends": []}');
+      res.json(parsedData);
     } catch (err: any) {
       console.error(err);
       res.status(500).json({ error: err.message });
