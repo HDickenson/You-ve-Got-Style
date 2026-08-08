@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 // Builds capture-output/preview.html — a single self-contained page showing every
-// screen at every supported viewport, plus the journey walk.
+// screen at every supported viewport, the journey walk, and the capture studio
+// states behind the consent gate.
 //
 // It reads whatever `npm run capture` produced; it never launches a browser or
 // invents an image. If a capture is missing the page says so rather than
@@ -37,18 +38,19 @@ const SCREENS = [
 
 const JOURNEY = ['01-onboarding', '02-sizing', '03-guardrails', '04-discovery', '05-capsule'];
 
-// Screens the harness cannot currently reach, stated in the page rather than
-// left to be inferred from an absence. `?phase=onboarding` returns the consent
-// gate — HandsFreeCapture returns early while `consented` is false — so the
-// capture studio behind it, which is where the photography and the voice
-// trigger live, is never captured. Tracked as YGS-30.
-const UNCAPTURED = [
-  ['Capture studio — front frame', 'The pose outline and the live camera preview.'],
-  ['Capture studio — side frame', 'The quarter-turn prompt after the first frame lands.'],
-  ['Voice trigger, listening', '“Say &ldquo;Snap&rdquo; or tap” — the hands-free moment the product is named for.'],
-  ['Held frame — review and retake', 'The frame held before it is accepted.'],
-  ['Camera blocked', 'The upload fallback when the camera is refused at the OS prompt.'],
-  ['Not level yet', 'The alignment state that gates the shutter.'],
+// `?phase=onboarding` only ever reaches the consent gate — HandsFreeCapture
+// returns early while `consented` is false. Everything behind it (YGS-31) is
+// a state of that same component with no URL of its own, so capture.mjs
+// drives each one directly (leveling the phone, triggering the voice
+// recognition handler, refusing the camera permission) rather than seeding
+// it, and writes the result here rather than the phase matrix above.
+const CAPTURE_STUDIO = [
+  ['not-level', 'Not level yet', 'The alignment state that gates the shutter — outside tolerance by default.'],
+  ['front-frame', 'Front frame, level', 'The pose outline and the live camera preview once alignment settles.'],
+  ['listening', 'Listening', '“Say “Snap” or tap” — the hands-free moment the product is named for.'],
+  ['held-frame', 'Held frame', 'The frame held for review immediately after it is taken.'],
+  ['side-frame', 'Side frame', 'The quarter-turn prompt after the first frame lands.'],
+  ['camera-blocked', 'Camera blocked', 'The upload fallback when the camera is refused at the OS prompt.'],
 ];
 
 const FONTS = {
@@ -84,6 +86,7 @@ function main() {
     throw new Error(`No capture-output/ — run \`npm run capture\` first.`);
   }
 
+  const TOTAL = (SCREENS.length + CAPTURE_STUDIO.length) * VIEWPORTS.length + JOURNEY.length;
   const missing = [];
   const sections = SCREENS.map(([key, title, note]) => {
     const shots = VIEWPORTS.map((v) => {
@@ -102,14 +105,21 @@ function main() {
     return figure(f, j.slice(3).replace(/-/g, ' '), '', j);
   }).join('');
 
+  const captureStudio = CAPTURE_STUDIO.map(([key, title, note]) => {
+    const shots = VIEWPORTS.map((v) => {
+      const f = path.join(capDir, 'capture-studio', `${key}--${v.key}.png`);
+      if (!fs.existsSync(f)) missing.push(`capture-studio/${key}--${v.key}.png`);
+      return figure(f, v.label, v.dim, `${title} at ${v.dim}`);
+    }).join('');
+    return `<section class="screen">
+      <div class="head"><h2>${esc(title)}</h2><p>${esc(note)}</p></div>
+      <div class="shots">${shots}</div></section>`;
+  }).join('');
+
   const warning = missing.length
     ? `<p class="warn"><strong>${missing.length} capture(s) missing:</strong> ${esc(missing.join(', '))}.
        This page is incomplete — re-run <code>npm run capture</code>.</p>`
     : '';
-
-  const uncaptured = UNCAPTURED.map(
-    ([name, why]) => `<li><strong>${esc(name)}</strong> &mdash; ${why}</li>`
-  ).join('');
 
   const html = `<title>You&#39;ve Got Style — build preview</title>
 <style>
@@ -161,29 +171,24 @@ figcaption{display:flex;justify-content:space-between;gap:12px;font-size:10.5px;
 .journey{margin-top:clamp(56px,7vw,92px);padding-top:36px;border-top:1px solid var(--edge)}
 .jstrip{display:grid;gap:16px;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));margin-top:20px}
 .jstrip figcaption{justify-content:flex-start}
-.gap{margin-top:clamp(56px,7vw,92px);padding-top:36px;border-top:1px solid var(--edge)}
-.gaps{margin:22px 0 0;padding:0;list-style:none;display:grid;gap:2px;
-  grid-template-columns:1fr;max-width:74ch}
-@media (min-width:720px){.gaps{grid-template-columns:1fr 1fr;gap:2px 40px;max-width:none}}
-.gaps li{padding:11px 0;border-bottom:1px solid var(--edge);color:var(--fg-muted);font-size:.95rem}
-.gaps strong{color:var(--fg);font-weight:600;display:block}
-.foot{margin-top:22px;color:var(--fg-muted);font-size:.92rem;max-width:64ch}
+.studio{margin-top:clamp(56px,7vw,92px);padding-top:36px;border-top:1px solid var(--edge)}
 code{font-family:ui-monospace,Menlo,monospace;font-size:.86em;
   background:color-mix(in srgb,var(--fg) 8%,transparent);padding:.12em .4em;border-radius:4px}
 </style>
 <div class="wrap">
   <header class="masthead">
     <p class="eyebrow">You&#39;ve Got Style &middot; build preview</p>
-    <h1>Five phases, three viewports, and the walk between them.</h1>
+    <h1>Five phases, three viewports, the walk between them — and the studio itself.</h1>
     <p class="lede">Captured from the running application by <code>npm run capture</code> &mdash;
-      not mocked, not redrawn. This is the phase map, not the whole product: the capture
-      studio behind the consent gate is not reachable by the harness yet, and what is
-      missing is listed below rather than left to be noticed.</p>
+      not mocked, not redrawn. <code>?phase=onboarding</code> only ever reaches the consent
+      gate, so the states behind it &mdash; leveling the phone, the pose frame, the voice
+      trigger, the held review, the camera refused at the OS prompt &mdash; are driven
+      directly rather than seeded, and shown in their own section below.</p>
     <dl class="meta">
       <div><dt>Commit</dt><dd>${esc(git('rev-parse', '--short', 'HEAD'))}</dd></div>
       <div><dt>Branch</dt><dd>${esc(git('rev-parse', '--abbrev-ref', 'HEAD'))}</dd></div>
       <div><dt>Subject</dt><dd>${esc(git('log', '-1', '--format=%s'))}</dd></div>
-      <div><dt>Captures</dt><dd>${SCREENS.length * VIEWPORTS.length + JOURNEY.length - missing.length} of ${SCREENS.length * VIEWPORTS.length + JOURNEY.length}</dd></div>
+      <div><dt>Captures</dt><dd>${TOTAL - missing.length} of ${TOTAL}</dd></div>
     </dl>
     ${warning}
   </header>
@@ -194,17 +199,14 @@ code{font-family:ui-monospace,Menlo,monospace;font-size:.86em;
          that proves a customer can get there.</p></div>
     <div class="jstrip">${journey}</div>
   </section>
-  <section class="gap">
-    <div class="head"><h2>Not in this preview</h2>
-      <p>The harness seeds a phase with <code>?phase=</code>, and
-         <code>?phase=onboarding</code> lands on the consent gate &mdash; the capture
-         component returns early while consent is withheld. Everything behind it is a state
-         of that same phase, so none of it has a URL the harness can reach. That includes
-         the photography and the voice trigger, which is to say the part of this product
-         that is most its own.</p></div>
-    <ul class="gaps">${uncaptured}</ul>
-    <p class="foot">Six states below one seeded phase. Listing them here because a preview
-      that shows one of six and says nothing reads as coverage.</p>
+  <section class="studio">
+    <div class="head"><h2>The capture studio</h2>
+      <p>Six states of HandsFreeCapture behind the consent gate, each reached by driving the
+         real component &mdash; leveling the tilt slider, clicking the shutter, resolving the
+         same voice-recognition handler a customer's device would call, refusing the camera
+         permission &mdash; rather than seeding a state a customer could not otherwise arrive
+         at.</p></div>
+    ${captureStudio}
   </section>
 </div>
 `;
