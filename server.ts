@@ -3,10 +3,24 @@ import path from "path";
 import { createServer as createViteServer } from "vite";
 import { GoogleGenAI, Type } from "@google/genai";
 import dotenv from "dotenv";
-import { evaluateLook } from "./src/lib/guardrails";
+import { evaluateLook, isValidStyleConstraints } from "./src/lib/guardrails";
 import type { GarmentAttributes, StyleConstraints } from "./src/types";
 
 dotenv.config();
+
+/** Structurally valid and safe when the client sends no `constraints` at
+ *  all — an unrecognised or malformed `constraints` body is rejected at the
+ *  route boundary instead, never silently swapped for this. */
+const DEFAULT_CONSTRAINTS: StyleConstraints = {
+  wardrobe: "womenswear",
+  modestWear: true,
+  sleevesBelowElbow: true,
+  noTrousers: false,
+  hemlineBelowKnee: true,
+  noNeonColors: true,
+  noLoudPrints: true,
+  preferredFabrics: [],
+};
 
 // No __dirname here on purpose. The build bundles this file to CJS, where
 // `import.meta` is empty, so `fileURLToPath(import.meta.url)` threw at module
@@ -44,19 +58,23 @@ async function startServer() {
   // 2. "Style Like You" AI Styling Recommendation Engine (PRD System Instruction & Structured Output)
   app.post("/api/style-recommendations", async (req, res) => {
     try {
-      const {
-        occasion = "Board Meeting",
-        heightCm = 170,
-        constraints = {
-          modestWear: true,
-          sleevesBelowElbow: true,
-          noTrousers: false,
-          hemlineBelowKnee: true,
-          noNeonColors: true,
-          noLoudPrints: true,
-        } as StyleConstraints,
-        userPrompt = "",
-      } = req.body;
+      const { occasion = "Board Meeting", heightCm = 170, userPrompt = "" } = req.body;
+
+      // Fail closed at the boundary: `constraints` is compile-time typed as
+      // `StyleConstraints`, but this is an HTTP body, not a TypeScript
+      // value — an unrecognised shape (wrong wardrobe, missing keys, wrong
+      // types) previously fell through to zero active rules and passed
+      // every hard guardrail vacuously. It is rejected outright here
+      // instead.
+      let constraints: StyleConstraints = DEFAULT_CONSTRAINTS;
+      if (req.body.constraints !== undefined) {
+        if (!isValidStyleConstraints(req.body.constraints)) {
+          return res.status(422).json({
+            error: "constraints must be a valid womenswear guardrail set.",
+          });
+        }
+        constraints = req.body.constraints;
+      }
 
       const ATTRIBUTE_KEYS = [
         "hemline",
@@ -71,6 +89,10 @@ async function startServer() {
         if (!value || typeof value !== "object") return false;
         const record = value as Record<string, unknown>;
         return ATTRIBUTE_KEYS.every((key) => typeof record[key] === "string");
+      }
+
+      function hasValidColorPalette(value: unknown): value is string[] {
+        return Array.isArray(value) && value.every((entry) => typeof entry === "string");
       }
 
       // Worst-cased on purpose, not left unchecked. A candidate whose source
@@ -92,16 +114,28 @@ async function startServer() {
       // gate. Every candidate look, model-generated or fallback, is read
       // against the guardrails the same way discovery reads it: from typed
       // attributes, never from parsing the garment description.
-      const validate = (candidate: { attributes?: unknown }) =>
+      const validate = (candidate: { attributes?: unknown; colorPalette?: unknown }) =>
         evaluateLook(
           {
             attributes: hasCompleteAttributes(candidate.attributes)
               ? candidate.attributes
               : UNVERIFIABLE_ATTRIBUTES,
-            colorPalette: [],
+            // Read the candidate's own colours, never a stand-in — a hardcoded
+            // [] here made noNeonColors unable to fire on any composed look,
+            // whatever its real palette was.
+            colorPalette: hasValidColorPalette(candidate.colorPalette) ? candidate.colorPalette : [],
           },
           constraints,
         );
+
+      // Independent of which hard guardrails are active: a look missing its
+      // structural attributes must never be sent to the client, because the
+      // customer can switch a guardrail on after the look already rendered
+      // (SwipeDiscovery re-evaluates on every constraints change), and code
+      // reading `attributes` off a look that never had them is a crash, not
+      // a filtered look.
+      const attributesComplete = (candidate: { attributes?: unknown }) =>
+        hasCompleteAttributes(candidate.attributes);
 
       const ai = getAiClient();
 
@@ -123,6 +157,7 @@ async function startServer() {
             bottomCategory: constraints.noTrousers ? "skirt" : "trousers",
             pattern: "solid",
           } as GarmentAttributes,
+          colorPalette: ["#1A2B4C", "#F7F5F0"],
         };
         const fallbackCheck = validate(fallback);
         if (!fallbackCheck.passesHard) {
@@ -221,6 +256,12 @@ Please generate a curated luxury look that complies 100% with these guardrails.$
             },
             required: ["hemline", "sleeveLength", "neckline", "opacity", "bottomCategory", "pattern"],
           },
+          colorPalette: {
+            type: Type.ARRAY,
+            items: { type: Type.STRING },
+            description:
+              "2-4 hex colour codes (e.g. '#1A2B4C') for the actual garment colours named in top_garment/bottom_garment — read by code to verify the quiet-colour guardrail, so it must agree with the prose.",
+          },
         },
         required: [
           "look_title",
@@ -229,6 +270,7 @@ Please generate a curated luxury look that complies 100% with these guardrails.$
           "bottom_garment",
           "compliance_check",
           "attributes",
+          "colorPalette",
         ],
       };
 
@@ -246,16 +288,22 @@ Please generate a curated luxury look that complies 100% with these guardrails.$
 
       // One retry, with the violated rules spelled out, gives the model a
       // real chance before this fails closed — but the retry's output is
-      // held to exactly the same check, not waved through because it is a
-      // second attempt.
-      if (!check.passesHard) {
+      // held to exactly the same checks, not waved through because it is a
+      // second attempt. A look that passes every active hard guardrail on
+      // substituted worst-case attributes because it never stated its own
+      // is not a pass — attributesComplete is checked independently of
+      // which guardrails happen to be active, because a customer can switch
+      // one on after this look already reached the client.
+      if (!check.passesHard || !attributesComplete(parsedData)) {
         parsedData = await generate(
-          `The previous attempt broke these guardrails: ${check.hardMissed.join("; ")}. Regenerate a look that avoids all of them.`,
+          check.passesHard
+            ? "The previous attempt did not include a complete 'attributes' object — every field is required. Regenerate with all of them populated and matching the garments described."
+            : `The previous attempt broke these guardrails: ${check.hardMissed.join("; ")}. Regenerate a look that avoids all of them.`,
         );
         check = validate(parsedData);
       }
 
-      if (!check.passesHard) {
+      if (!check.passesHard || !attributesComplete(parsedData)) {
         return res.status(422).json({
           error: "Could not compose a look that honours your guardrails.",
           missed: check.hardMissed,
@@ -264,8 +312,11 @@ Please generate a curated luxury look that complies 100% with these guardrails.$
 
       res.json(parsedData);
     } catch (err: any) {
+      // err.message is not sent to the client — same reasoning as the
+      // try-on route below: it can carry vendor/model detail. Logged here
+      // for operators, never in the response.
       console.error("Style recommendation error:", err);
-      res.status(500).json({ error: err.message || "Failed to generate styling recommendation" });
+      res.status(500).json({ error: "Failed to generate styling recommendation." });
     }
   });
 

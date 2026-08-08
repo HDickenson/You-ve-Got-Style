@@ -267,9 +267,13 @@ export const SwipeDiscovery: React.FC<SwipeDiscoveryProps> = ({
           : []),
       ]
     : [];
-  const hasGuardrailSignal =
-    (report ? report.active.length > 0 : false) || constraints.maxPriceAED !== undefined;
-  const withinGuardrails = hasGuardrailSignal && softMissed.length === 0;
+  const hasActiveGuardrails = report ? report.active.length > 0 : false;
+  const hasGuardrailSignal = hasActiveGuardrails || constraints.maxPriceAED !== undefined;
+  // "Within your guardrails" is a claim about guardrails actually being
+  // switched on and held — a spend ceiling alone is a budget being met, not
+  // a guardrail being verified, and the two must stay visibly distinct
+  // rather than share this badge's copy.
+  const withinGuardrails = hasActiveGuardrails && softMissed.length === 0;
   const size = activeLook?.brand_sizes?.[0] ?? brandSizes[0];
 
   // The garments, as the card states them. A dress replaces the pair.
