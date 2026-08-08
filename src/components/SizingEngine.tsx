@@ -253,8 +253,13 @@ export const SizingEngine: React.FC<SizingEngineProps> = ({
                             into the slider's own value announcement below. A
                             screen reader that read both would say "Yours"
                             twice for one field. */}
+                        {/* Ink, not gold. Gold is rationed to selection,
+                            completed intelligence and signature — and every
+                            edited field taking a gold badge put four or five
+                            gold moments on one screen. Per-field ownership is
+                            a state, not a reveal. */}
                         <Badge
-                          variant={isYours ? 'gold' : 'outline'}
+                          variant={isYours ? 'solid' : 'outline'}
                           aria-hidden="true"
                         >
                           {isYours ? 'Yours' : 'Estimated'}

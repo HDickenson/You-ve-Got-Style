@@ -31,6 +31,31 @@ export interface GuardrailRule {
  * get filtered out) read the same two lists, so the promise made on one
  * screen cannot silently stop matching what the other screen enforces.
  */
+/**
+ * Which hard rules apply to which wardrobe. Two of the four are cuts that only
+ * exist in womenswear — a menswear customer offered "Skirts and dresses only"
+ * is being asked about a garment category they are not shopping, and a hemline
+ * rule has no menswear referent at all. The other two are wardrobe-neutral and
+ * mean the same thing in both.
+ *
+ * This is the narrow half of the fork. The full menswear set that
+ * `MenswearStyleConstraints` describes — covered shoulders, knees covered, no
+ * shorts, relaxed silhouette — needs garment attributes that do not exist yet,
+ * so it is not offered rather than offered and unenforced.
+ */
+const WOMENSWEAR_ONLY: ReadonlyArray<GuardrailKey> = [
+  'hemlineBelowKnee',
+  'noTrousers',
+];
+
+export function rulesForWardrobe(
+  rules: ReadonlyArray<GuardrailRule>,
+  wardrobe: 'womenswear' | 'menswear' | undefined,
+): ReadonlyArray<GuardrailRule> {
+  if (wardrobe !== 'menswear') return rules;
+  return rules.filter((rule) => !WOMENSWEAR_ONLY.includes(rule.key));
+}
+
 export const HARD_RULES: ReadonlyArray<GuardrailRule> = [
   {
     key: 'modestWear',

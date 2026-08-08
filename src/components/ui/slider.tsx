@@ -50,7 +50,13 @@ export function Slider({
         onChange={(event) => onValueChange(Number(event.target.value))}
         style={trackStyle}
         className={cn(
-          'h-6 w-full cursor-pointer appearance-none bg-transparent',
+          // h-11, not h-6. The wrapper was already 44px but the input inside
+          // it was 24, so the actual hit box a finger lands on failed the
+          // contract's 44x44 floor — measured at 24px on every viewport by
+          // two independent reviews. The track and thumb are drawn by the
+          // pseudo-elements below and do not grow with this; only the
+          // grabbable area does.
+          'h-11 w-full cursor-pointer appearance-none bg-transparent',
           'disabled:pointer-events-none disabled:opacity-40',
           // Track — filled to --slider-fill in the ground's ink, rule beyond it.
           '[&::-webkit-slider-runnable-track]:h-1 [&::-webkit-slider-runnable-track]:rounded-full',

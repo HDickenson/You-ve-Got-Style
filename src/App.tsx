@@ -116,6 +116,24 @@ export default function App() {
   // Handlers
   const handleChooseWardrobe = (choice: Wardrobe) => {
     setWardrobe(choice);
+    // Clear the two womenswear-only rules when the customer switches to
+    // menswear — leaving `noTrousers` on would filter their whole catalogue
+    // out against a rule the screen no longer shows them.
+    //
+    // `wardrobe` on the constraint set is deliberately NOT updated here.
+    // `StyleConstraints.wardrobe` is typed as the literal 'womenswear', and
+    // widening it would make the server's `isValidStyleConstraints` guard
+    // accept a shape nothing downstream enforces — the exact fail-open this
+    // codebase already closed once. The type is telling the truth: the
+    // constraint fork does not exist yet, and this narrowing is the honest
+    // half that does.
+    if (choice === 'menswear') {
+      setConstraints((prev) => ({
+        ...prev,
+        noTrousers: false,
+        hemlineBelowKnee: false,
+      }));
+    }
     setShowWardrobeModal(false);
     // Only the first, cold-start choice advances the phase — reopened from
     // the menu mid-journey, switching updates the value in place and the
@@ -304,6 +322,7 @@ export default function App() {
 
         {currentPhase === 'guardrails' && (
           <StyleGuardrails
+            wardrobe={wardrobe ?? 'womenswear'}
             constraints={constraints}
             setConstraints={setConstraints}
             onSaveAndProceed={() => setCurrentPhase('discovery')}
@@ -361,6 +380,7 @@ export default function App() {
         description="What you will and will not wear. Every look respects these."
       >
         <StyleGuardrails
+          wardrobe={wardrobe ?? 'womenswear'}
           constraints={constraints}
           setConstraints={setConstraints}
           onSaveAndProceed={() => setShowGuardrailsModal(false)}
