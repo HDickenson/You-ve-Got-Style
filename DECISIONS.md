@@ -76,26 +76,31 @@ coverage beyond the samples currently present.
 
 ---
 
-## D4 — Wrapper tone by wardrobe: raised, not yet decided (YGS-34)
+## D4 — The ground follows the occasion, not the wardrobe (YGS-34)
 
-**Requested:** a colour palette differentiated for male and female.
+**Decided.** Gender does not change the shell. Menswear and womenswear share one brand, one
+palette, one shell, and the garments carry the difference.
 
-**Mechanism is free.** `index.css` holds seven raw colours and a set of `.ground-*` classes
-that remap ground-relative aliases, with `@theme inline` resolving them at the element. A
-wardrobe wrapper is a ground variant, not a second palette — one class, no new hex, nothing
-downstream changes.
+**Declined:** a warm/cool split by wardrobe. It is a cliche one level above pink and blue —
+more tasteful, same move. A luxury house does not tell you which department you are in by
+changing the lighting temperature. Net-a-Porter and Mr Porter are separate *properties*,
+not one property with a tinted shell.
 
-**Recommendation if it proceeds:** distribution rather than new colour. Womenswear keeps
-cream working surfaces; menswear shifts to sand and leans harder on onyx. Gold stays
-rationed identically in both. Forest stays reserved for Style Intelligence in both.
+**In its place:** the ground responds to the **occasion**, which is true for every customer
+regardless of wardrobe, and uses the ground system for something the product actually knows
+because the customer said it. Right now choosing an occasion changes which looks appear and
+nothing else; the screen looks identical either way.
 
-**Objection recorded:** warm-for-women and cool-for-men is a cliché one level above pink and
-blue. Three alternatives were put forward — no wrapper differentiation at all (what
-Net-a-Porter and Mr Porter actually do: separate properties, not a tinted shell);
-differentiate by *occasion* instead, which is true for every customer; or differentiate by
-typographic rhythm and image crop rather than colour.
+**Scope is deliberately small.** The per-phase ground map in `App.tsx:22-28` stays. This is
+one additional mapping inside discovery. Hard constraints: no new colours beyond the seven
+in `index.css`; gold stays rationed; forest stays reserved for Style Intelligence; and not
+every occasion gets its own ground — five occasions mapping to five surfaces would be a
+colour-coding system, which is a different and worse idea. Expect two or three registers,
+daylight and evening, with occasions grouped into them.
 
-Awaiting the owner's answer to the objection, not to the mechanism.
+**The bar:** a customer switching from Weekend Brunch to Galas & Events feels the screen
+change temperature without being able to say what moved. If it reads as theming it has
+failed; if it reads as the product paying attention it has worked.
 
 ---
 
