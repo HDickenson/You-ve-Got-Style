@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+
+<html class="h-full" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0, viewport-fit=cover" name="viewport"/>
+<title>Generative Virtual Studio</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "on-tertiary": "#ffffff",
+                        "on-error": "#ffffff",
+                        "on-surface-muted": "#444748",
+                        "primary": "#000000",
+                        "surface-container-low": "#f5f3f3",
+                        "on-background": "#1b1c1c",
+                        "on-secondary-fixed-variant": "#474743",
+                        "surface": "#FAF6F1",
+                        "surface-container-highest": "#e3e2e2",
+                        "on-primary-container": "#848484",
+                        "on-secondary-fixed": "#1c1c19",
+                        "on-surface-variant": "#4c4546",
+                        "surface-container": "#efeded",
+                        "tertiary-fixed-dim": "#e9c176",
+                        "on-primary-fixed-variant": "#474747",
+                        "secondary-fixed-dim": "#c8c6c2",
+                        "secondary": "#5f5e5b",
+                        "primary-fixed": "#e2e2e2",
+                        "surface-tint": "#5F5E5E",
+                        "primary-container": "#1b1b1b",
+                        "surface-container-lowest": "#ffffff",
+                        "inverse-primary": "#c6c6c6",
+                        "on-tertiary-fixed": "#261900",
+                        "inverse-surface": "#303030",
+                        "on-tertiary-fixed-variant": "#5d4201",
+                        "background": "#FAF6F1",
+                        "outline-variant": "#cfc4c5",
+                        "secondary-container": "#e5e2dd",
+                        "primary-fixed-dim": "#c6c6c6",
+                        "surface-container-high": "#e9e8e7",
+                        "on-tertiary-container": "#a17f3b",
+                        "overlay-gradient": "rgba(0,0,0,0.6)",
+                        "secondary-fixed": "#e5e2dd",
+                        "surface-dim": "#dbdad9",
+                        "inverse-on-surface": "#f2f0f0",
+                        "surface-bright": "#fbf9f8",
+                        "on-primary": "#ffffff",
+                        "outline": "#7e7576",
+                        "on-secondary": "#ffffff",
+                        "tertiary": "#000000",
+                        "on-primary-fixed": "#1b1b1b",
+                        "error-container": "#ffdad6",
+                        "error": "#ba1a1a",
+                        "on-error-container": "#93000a",
+                        "tertiary-container": "#261900",
+                        "on-surface": "#1b1c1c",
+                        "on-secondary-container": "#656461",
+                        "tertiary-fixed": "#ffdea5",
+                        "surface-variant": "#e3e2e2"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.125rem",
+                        "lg": "0.25rem",
+                        "xl": "0.5rem",
+                        "full": "0.75rem"
+                    },
+                    "spacing": {
+                        "button-px": "48px",
+                        "section-gap": "48px",
+                        "gutter": "16px",
+                        "button-py": "16px",
+                        "container-margin": "24px",
+                        "unit": "4px"
+                    },
+                    "fontFamily": {
+                        "headline-lg": ["Playfair Display"],
+                        "body-sm": ["Satoshi"],
+                        "display-lg": ["Playfair Display"],
+                        "title-md": ["Satoshi"],
+                        "headline-lg-mobile": ["Playfair Display"],
+                        "label-caps": ["Satoshi"],
+                        "body-lg": ["Satoshi"]
+                    }
+                }
+            }
+        }
+    </script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,500;0,600;1,500&amp;display=swap" rel="stylesheet"/>
+<link href="https://api.fontshare.com/v2/css?f[]=satoshi@400,500,700&amp;display=swap" rel="stylesheet"/>
+<style>
+        .hide-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+
+        .hide-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+
+        @keyframes pulse-ring {
+            0% {
+                transform: scale(0.8);
+                opacity: 0.5;
+            }
+            80% {
+                transform: scale(1.5);
+                opacity: 0;
+            }
+            100% {
+                transform: scale(1.5);
+                opacity: 0;
+            }
+        }
+
+        .pulse-effect::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            border-radius: 50%;
+            border: 2px solid theme('colors.tertiary-fixed-dim');
+            animation: pulse-ring 2s cubic-bezier(0.215, 0.61, 0.355, 1) infinite;
+        }
+    </style>
+<style>
+        body {
+            min-height: max(884px, 100dvh);
+        }
+    </style>
+</head>
+<body class="bg-[#FAF6F1] text-on-surface font-body-lg h-full overflow-hidden flex flex-col relative selection:bg-surface-variant selection:text-on-surface">
+<!-- Quiet Brand Signature -->
+<div class="absolute top-6 left-6 z-50 pointer-events-none opacity-40">
+<span class="font-headline-lg italic text-3xl text-primary">Y</span>
+</div>
+<!-- 80% Virtual Studio Canvas (Simulated with image for now, ideally WebGL) -->
+<main class="relative flex-grow h-[80vh] w-full overflow-hidden bg-surface-container">
+<!-- 3D Digital Twin Placeholder -->
+<div class="absolute inset-0 w-full h-full bg-cover bg-center" data-alt="A highly realistic, high-fidelity 3D digital twin rendering of a sophisticated professional Middle Eastern woman standing confidently in a minimalist, luxury interior space. The lighting is soft, natural, and high-key, creating a pristine light-mode aesthetic. The color palette is composed of elegant creams, soft taupes, and subtle charcoal accents. The atmosphere is serene, high-end, and perfectly clear, reflecting a premium fashion editorial style." style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuCvFTEylMpB2dlIihVq8XwRfoKX4qjNObB5vHFxMgyPhc5CBU9RDMIlpqmVkoSeeVqTUzZqHyNJdF3OoGh6v1kgm8wbHNxuPOIXBi3sQCjkljfkHH4xgkxDlmXL_1hEB6696GkC4cXICvIbN4UQUTKweF2OOejr_ntNQGRJHI3HObSqbIs67Gcr5otbYFIlXuGCcvsaii4kYBAjuOXmzBV5X-RT2RVwQON1ntIOQ1NCiwNBDLytjDtvqA')"></div>
+<!-- Gradient overlay to blend into bottom section -->
+<div class="absolute inset-x-0 bottom-0 h-48 bg-gradient-to-t from-[#FAF6F1] to-transparent pointer-events-none"></div>
+</main>
+<!-- 20% Discovery UI (Bottom Swipable Area) -->
+<section class="h-[20vh] w-full bg-[#FAF6F1] relative z-30 pb-32 flex flex-col justify-end">
+<div class="w-full overflow-x-auto hide-scrollbar pl-container-margin pr-container-margin pb-container-margin flex gap-gutter snap-x snap-mandatory">
+<!-- Discovery Card 1 -->
+<article class="snap-center shrink-0 w-72 md:w-96 bg-white rounded-xl p-4 shadow-sm border border-outline/10 flex items-center gap-4 cursor-pointer hover:bg-surface-container-low transition-colors">
+<div class="w-16 h-16 rounded-lg overflow-hidden shrink-0 bg-surface-container">
+<img class="w-full h-full object-cover" data-alt="A close-up fashion photography shot of a tailored women's blazer in a sophisticated camel tone. The image is bright, high-key, and meticulously lit, fitting a premium light-mode digital atelier aesthetic." src="https://lh3.googleusercontent.com/aida-public/AB6AXuA0rVe6XXVIGsG0wxnRYOhNHj6ETLYWRENhHwh7eva02EechubFV-IRtVNRJjlsplsT1WGkLcZXBt6XlXG2wxgd2TeYWwxkyKLEKq0fcPj0oLh-dEuknZiF1HPtxX3AbIk7Fm6QdaoXXSccAhM8Q9-HU7uX-ZiCUp5Ku05Ae_uDi1XjmbIbHm7GLR8JUZnLccFzc9mpO7cX2qVDXjC1nYNGHD8K-wUERxMoe7CCAH9_uPArksPfQAQ_Gg"/>
+</div>
+<div class="flex-grow">
+<h3 class="font-headline-lg-mobile text-lg text-primary truncate">Board Meeting in Riyadh</h3>
+<p class="font-body-sm text-sm text-on-surface-variant line-clamp-1 mt-1">Curated styling for executive presence.</p>
+</div>
+<span class="material-symbols-outlined text-outline shrink-0">arrow_forward_ios</span>
+</article>
+<!-- Discovery Card 2 (Partial Preview to imply scroll) -->
+<article class="snap-center shrink-0 w-72 md:w-96 bg-white rounded-xl p-4 shadow-sm border border-outline/10 flex items-center gap-4 cursor-pointer hover:bg-surface-container-low transition-colors opacity-60">
+<div class="w-16 h-16 rounded-lg overflow-hidden shrink-0 bg-surface-container">
+<img class="w-full h-full object-cover" data-alt="A minimalist still life of luxury accessories, including a classic watch and a subtle silk scarf, arranged neatly on a pristine white marble surface. High-key lighting, cream and white palette." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBE2gtogFyESwf2r3MUjZhlTt5BVS6SJwoQv0ksIOI3L30b1x8fSTouQb8CyT8icYHizoQ1374J-7PtJEDFxgUvuqR5BHzQZUseYkY9rudkakiQQHS8og-AjGhxJ1dSdHwNLD7pdodKl8ciV4EhmK8f1pSBM8_4Z8o7x-IrPSLBGtNTQpMFjxWc-nouh4VDMp_ZqCIr1fFE1OWNKu_22fGIi4jG2DUr8TJr3BOd1yrxLGyhKy0tnxXUkw"/>
+</div>
+<div class="flex-grow">
+<h3 class="font-headline-lg-mobile text-lg text-primary truncate">Evening Gala</h3>
+<p class="font-body-sm text-sm text-on-surface-variant line-clamp-1 mt-1">Elegant eveningwear selection.</p>
+</div>
+<span class="material-symbols-outlined text-outline shrink-0">arrow_forward_ios</span>
+</article>
+</div>
+</section>
+<!-- Contextual Thumb Zone Navigation -->
+<nav class="absolute bottom-8 left-0 right-0 z-50 flex justify-between items-end px-8 md:px-12 pointer-events-none">
+<!-- Change Look -->
+<button class="pointer-events-auto flex flex-col items-center gap-2 text-primary/70 hover:text-primary transition-colors tap-highlight-none pb-2">
+<span class="material-symbols-outlined text-2xl font-light">swap_horiz</span>
+<span class="font-label-caps text-xs tracking-widest uppercase">Change Look</span>
+</button>
+<!-- 'Style Me' Action Orb -->
+<button class="pointer-events-auto relative w-20 h-20 bg-white backdrop-blur-xl rounded-full flex items-center justify-center shadow-lg border border-tertiary-fixed-dim pulse-effect tap-highlight-none hover:scale-105 transition-transform group flex-col gap-1 -mb-4">
+<span class="font-headline-lg italic text-3xl text-tertiary-container group-hover:text-primary transition-colors leading-none">Y</span>
+<span class="font-label-caps text-[10px] tracking-widest uppercase text-tertiary-container group-hover:text-primary leading-none">Style Me</span>
+</button>
+<!-- Menu -->
+<button class="pointer-events-auto flex flex-col items-center gap-2 text-primary/70 hover:text-primary transition-colors tap-highlight-none pb-2">
+<span class="material-symbols-outlined text-2xl font-light">menu</span>
+<span class="font-label-caps text-xs tracking-widest uppercase">Menu</span>
+</button>
+</nav>
+</body></html>

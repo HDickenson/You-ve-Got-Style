@@ -1,0 +1,134 @@
+[
+  {
+    "title": "Phase 5: Discovery Cards",
+    "slug": "phase-5-discovery-cards",
+    "screenId": "96a9f3cd4354405599e6a96d3bd2950a",
+    "htmlChars": 0
+  },
+  {
+    "title": "Phase 1: Privacy & Trust",
+    "slug": "phase-1-privacy-trust",
+    "screenId": "8f0ab562905a4ce6ad31f7f0ee5060b8",
+    "htmlChars": 0
+  },
+  {
+    "title": "Style Configuration",
+    "slug": "style-configuration",
+    "screenId": "6a8bf16087ff4a53a4e8ac7f0cf5a672",
+    "htmlChars": 0
+  },
+  {
+    "title": "Privacy & Trust Modal",
+    "slug": "privacy-trust-modal",
+    "screenId": "ab2b5a8c199148c2a87d4f3233b974f8",
+    "htmlChars": 0
+  },
+  {
+    "title": "Virtual Studio",
+    "slug": "virtual-studio",
+    "screenId": "3f8409baed864ff29c5846bde2cf87ce",
+    "htmlChars": 0
+  },
+  {
+    "title": "Checkout: Success",
+    "slug": "checkout-success",
+    "screenId": "8defcf582a0844d1aa10151846c3fd56",
+    "htmlChars": 0
+  },
+  {
+    "title": "Discovery Cards",
+    "slug": "discovery-cards",
+    "screenId": "fcc419bedeb94f56a319fe7c2cfcfa06",
+    "htmlChars": 0
+  },
+  {
+    "title": "Onboarding: Virtual Studio Intro",
+    "slug": "onboarding-virtual-studio-intro",
+    "screenId": "5489ef51ed134bd08ca4b911f1284f63",
+    "htmlChars": 0
+  },
+  {
+    "title": "Virtual Studio: Quiet Intelligence",
+    "slug": "virtual-studio-quiet-intelligence",
+    "screenId": "bdf2bff03cb145d6901a429ab325f831",
+    "htmlChars": 0
+  },
+  {
+    "title": "Home: Personal Studio",
+    "slug": "home-personal-studio",
+    "screenId": "cb172d85386646389adc350693da638d",
+    "htmlChars": 0
+  },
+  {
+    "title": "Phase 2: Camera Calibration",
+    "slug": "phase-2-camera-calibration",
+    "screenId": "600780b57cc240f697c9e990aa89e9a1",
+    "htmlChars": 0
+  },
+  {
+    "title": "Onboarding: Splash Screen",
+    "slug": "onboarding-splash-screen",
+    "screenId": "19adecd8a4424095807bdb789fb1f332",
+    "htmlChars": 0
+  },
+  {
+    "title": "Home: Impact Reveal",
+    "slug": "home-impact-reveal",
+    "screenId": "80de881d822a4476a1fb0ad395eaec5b",
+    "htmlChars": 0
+  },
+  {
+    "title": "Brand Component Library",
+    "slug": "brand-component-library",
+    "screenId": "1befa2d7d21c48049559e32aba59008d",
+    "htmlChars": 0
+  },
+  {
+    "title": "YGS Design Moat: Quiet Intelligence",
+    "slug": "ygs-design-moat-quiet-intelligence",
+    "screenId": "391d7ddcfd814a1fa99b2bf342a5e0af",
+    "htmlChars": 0
+  },
+  {
+    "title": "Onboarding: Privacy Trust",
+    "slug": "onboarding-privacy-trust",
+    "screenId": "2c38bd94fcd3454abecf9b7fb4eece0a",
+    "htmlChars": 0
+  },
+  {
+    "title": "Camera Calibration",
+    "slug": "camera-calibration",
+    "screenId": "7f7c6f3d0caa47deaec4afda53bba33e",
+    "htmlChars": 0
+  },
+  {
+    "title": "Virtual Studio: Immersive",
+    "slug": "virtual-studio-immersive",
+    "screenId": "eddb4b7aae39462bb0dc9151e4e1a97e",
+    "htmlChars": 0
+  },
+  {
+    "title": "Phase 3: Style Guardrails",
+    "slug": "phase-3-style-guardrails",
+    "screenId": "c2dd3f1801a24b8a9f1dc96e096d7d56",
+    "htmlChars": 0
+  },
+  {
+    "title": "Checkout: Order Summary",
+    "slug": "checkout-order-summary",
+    "screenId": "cf4cd6a705ed447bb56a94871178bf99",
+    "htmlChars": 0
+  },
+  {
+    "title": "Phase 4: Virtual Studio",
+    "slug": "phase-4-virtual-studio",
+    "screenId": "202a4e9092584a3888a01cb830706946",
+    "htmlChars": 0
+  },
+  {
+    "title": "Onboarding: Voice Interaction Intro",
+    "slug": "onboarding-voice-interaction-intro",
+    "screenId": "8adb634b2ade4532a8bb36b529c3ab5a",
+    "htmlChars": 0
+  }
+]

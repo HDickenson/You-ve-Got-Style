@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" name="viewport"/>
+<title>Discover Looks - Atelier AI</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;600;700&amp;family=Playfair+Display:wght@500;600&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "outline": "#747878",
+                        "surface-variant": "#e4e2e2",
+                        "surface-tint": "#5f5e5e",
+                        "on-primary-container": "#858383",
+                        "tertiary": "#000000",
+                        "primary-fixed": "#e5e2e1",
+                        "inverse-surface": "#303031",
+                        "on-secondary-fixed": "#1c1c19",
+                        "on-tertiary-container": "#a17f3b",
+                        "inverse-on-surface": "#f2f0f0",
+                        "on-primary-fixed": "#1c1b1b",
+                        "on-secondary-fixed-variant": "#474743",
+                        "secondary-container": "#e5e2dd",
+                        "on-error-container": "#93000a",
+                        "surface-bright": "#fbf9f8",
+                        "on-secondary": "#ffffff",
+                        "on-surface-variant": "#444748",
+                        "surface-container": "#efeded",
+                        "surface": "#fbf9f8",
+                        "outline-variant": "#c4c7c7",
+                        "tertiary-container": "#261900",
+                        "on-secondary-container": "#656461",
+                        "on-surface": "#1b1c1c",
+                        "surface-container-highest": "#e4e2e2",
+                        "on-primary": "#ffffff",
+                        "on-tertiary-fixed": "#261900",
+                        "on-background": "#1b1c1c",
+                        "surface-container-high": "#e9e8e7",
+                        "inverse-primary": "#c8c6c5",
+                        "on-tertiary": "#ffffff",
+                        "surface-container-low": "#f5f3f3",
+                        "background": "#fbf9f8",
+                        "surface-container-lowest": "#ffffff",
+                        "secondary": "#5f5e5b",
+                        "primary": "#000000",
+                        "on-primary-fixed-variant": "#474646",
+                        "error-container": "#ffdad6",
+                        "surface-dim": "#dbdad9",
+                        "primary-fixed-dim": "#c8c6c5",
+                        "tertiary-fixed": "#ffdea5",
+                        "secondary-fixed-dim": "#c8c6c2",
+                        "error": "#ba1a1a",
+                        "tertiary-fixed-dim": "#e9c176",
+                        "secondary-fixed": "#e5e2dd",
+                        "on-tertiary-fixed-variant": "#5d4201",
+                        "on-error": "#ffffff",
+                        "primary-container": "#1c1b1b"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.125rem",
+                        "lg": "0.25rem",
+                        "xl": "0.5rem",
+                        "full": "0.75rem"
+                    },
+                    "spacing": {
+                        "gutter": "16px",
+                        "container-margin": "24px",
+                        "unit": "4px",
+                        "section-gap": "48px"
+                    },
+                    "fontFamily": {
+                        "body-lg": ["Hanken Grotesk"],
+                        "body-sm": ["Hanken Grotesk"],
+                        "display-lg": ["Playfair Display"],
+                        "title-md": ["Hanken Grotesk"],
+                        "headline-lg": ["Playfair Display"],
+                        "label-caps": ["Hanken Grotesk"],
+                        "headline-lg-mobile": ["Playfair Display"]
+                    },
+                    "fontSize": {
+                        "body-lg": ["16px", { "lineHeight": "26px", "fontWeight": "400" }],
+                        "body-sm": ["14px", { "lineHeight": "20px", "fontWeight": "400" }],
+                        "display-lg": ["48px", { "lineHeight": "56px", "letterSpacing": "-0.02em", "fontWeight": "600" }],
+                        "title-md": ["18px", { "lineHeight": "24px", "letterSpacing": "0.05em", "fontWeight": "600" }],
+                        "headline-lg": ["32px", { "lineHeight": "40px", "fontWeight": "500" }],
+                        "label-caps": ["12px", { "lineHeight": "16px", "letterSpacing": "0.1em", "fontWeight": "700" }],
+                        "headline-lg-mobile": ["28px", { "lineHeight": "34px", "fontWeight": "500" }]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        .tinder-card {
+            transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            will-change: transform, opacity;
+        }
+        .pb-safe { padding-bottom: env(safe-area-inset-bottom, 20px); }
+        .glass-panel {
+            background: rgba(251, 249, 248, 0.8);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+</head>
+<body class="bg-background text-on-background min-h-screen flex flex-col overflow-hidden overscroll-none">
+<!-- TopAppBar -->
+<header class="fixed top-0 w-full z-50 bg-surface/80 dark:bg-surface-dim/80 backdrop-blur-xl border-b border-outline/10 h-16 flex items-center justify-between px-container-margin md:hidden">
+<button class="hover:opacity-70 transition-opacity scale-95 active:duration-150">
+<span class="material-symbols-outlined text-primary dark:text-on-primary" data-icon="menu">menu</span>
+</button>
+<h1 class="font-display-lg text-display-lg uppercase tracking-widest text-primary dark:text-on-primary text-center absolute left-1/2 -translate-x-1/2" style="font-size: 24px; line-height: 24px;">ATELIER AI</h1>
+<button class="hover:opacity-70 transition-opacity scale-95 active:duration-150">
+<span class="material-symbols-outlined text-primary dark:text-on-primary" data-icon="mic">mic</span>
+</button>
+</header>
+<!-- Main Content Area - Card Stack -->
+<main class="flex-grow relative w-full max-w-md mx-auto h-[calc(100vh-144px)] mt-16 md:mt-0 flex items-center justify-center p-gutter z-10 overflow-hidden touch-pan-y">
+<!-- Background Card (Next) -->
+<div class="absolute w-[calc(100%-32px)] h-[calc(100%-80px)] bg-surface-container-lowest rounded-xl shadow-[0px_4px_20px_rgba(0,0,0,0.1)] border-[0.5px] border-tertiary/10 scale-95 -translate-y-4 opacity-50 z-0">
+<div class="w-full h-full relative rounded-xl overflow-hidden">
+<img class="object-cover w-full h-full" data-alt="A luxurious, high-fashion editorial photo of an elegant evening gown worn by a model in a sophisticated, warmly lit Middle Eastern architectural setting with subtle gold accents and deep shadows. The styling is impeccable and premium." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCk9TPmXYQOjfZDygHwTGz0EOm8ul2paNR3KDFw4jIfU_GdB4QjGf40Lo2oAMoGVgtYJel0fWqswdq7UMS2wTMNpnl1VmWXJw_wq1tega2CLXHZ4xz8r13JmBj-SDwPOgUmbN4m5cfFw2yaY_PejDvzZtCl7IXWW-M3jn-R36A2KiH3WNWLWt2996LseTXjfakf29863Qwes9oxmEaHpVnSKFKkQfLnPMCFh0kSox75tmlHhOU80994JA"/>
+</div>
+</div>
+<!-- Foreground Card (Active) -->
+<div class="tinder-card absolute w-[calc(100%-32px)] h-[calc(100%-80px)] bg-surface-container-lowest rounded-xl shadow-[0px_4px_20px_rgba(0,0,0,0.1)] border-[0.5px] border-tertiary/10 z-10 cursor-grab active:cursor-grabbing flex flex-col overflow-hidden" id="active-card">
+<!-- Image Area -->
+<div class="relative flex-grow w-full overflow-hidden bg-surface-container">
+<img class="object-cover w-full h-full pointer-events-none select-none" data-alt="A high-contrast, premium fashion photography shot of a sleek tailored suit designed for a Riyadh Executive. The model is standing in a modern, minimalist glass and concrete environment with bright, natural daylight highlighting the fabric textures." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCBFyRoVsOO5kq7i-GwpVcS8ihsmG6FVlFEqXtQWJxwL9mRWZoCaAdi7DFGnTG1ZlqIGq_9TcyUM7XwhUp6syJx1887RGWCB9osg7JFPgEAKHZIob2DBVGXFlH_cukvPlXAF_d-XcBkDIdIO46Ys24P_zyDF1JZOw-ezy8y4Qxlx8ueacgiVEdEnnkPfiwo2YtZ6Xcb-9GIzFGmcPCZBi2WDYiCVcRK1mZ2eN6zwnubtnjZLXARgRGPvQ"/>
+<!-- Overlay Tags -->
+<div class="absolute top-4 left-4 right-4 flex justify-between items-start pointer-events-none">
+<span class="bg-surface/90 backdrop-blur-md px-3 py-1 rounded-full font-label-caps text-label-caps uppercase text-on-surface tracking-widest border-[0.5px] border-outline/20 shadow-sm">
+                        Trend Match: 94%
+                    </span>
+<button class="bg-surface/90 backdrop-blur-md p-2 rounded-full border-[0.5px] border-outline/20 shadow-sm pointer-events-auto">
+<span class="material-symbols-outlined text-on-surface block" data-icon="more_horiz" style="font-size: 18px;">more_horiz</span>
+</button>
+</div>
+<!-- Gradient Scrim for Text Readability -->
+<div class="absolute bottom-0 left-0 right-0 h-1/2 bg-gradient-to-t from-black/80 via-black/30 to-transparent pointer-events-none"></div>
+<!-- Card Content -->
+<div class="absolute bottom-0 left-0 w-full p-container-margin pointer-events-none">
+<p class="font-label-caps text-label-caps uppercase text-on-secondary/80 tracking-widest mb-2">Weekend Edit</p>
+<h2 class="font-headline-lg-mobile text-headline-lg-mobile text-on-secondary mb-2">Dubai Weekend Brunch</h2>
+<p class="font-body-sm text-body-sm text-on-secondary/90 line-clamp-2">Effortlessly chic linen coordinates and statement accessories, curated for a luxurious afternoon under the sun.</p>
+</div>
+</div>
+</div>
+<!-- Thumb-Zone Actions -->
+<div class="absolute bottom-6 left-0 w-full px-container-margin flex justify-between items-center z-20 gap-4">
+<!-- Reject -->
+<button class="w-16 h-16 rounded-full bg-surface-container-lowest border-[0.5px] border-outline/20 shadow-sm flex items-center justify-center text-on-surface-variant hover:bg-surface-container-low transition-colors active:scale-95">
+<span class="material-symbols-outlined" data-icon="close" style="font-size: 28px;">close</span>
+</button>
+<!-- Primary Action: Buy -->
+<button class="flex-grow h-16 rounded-full bg-primary text-on-primary font-label-caps text-label-caps uppercase tracking-widest flex items-center justify-center gap-2 shadow-sm hover:opacity-90 transition-opacity active:scale-95">
+<span class="material-symbols-outlined" data-icon="shopping_bag" style="font-size: 20px;">shopping_bag</span>
+                Buy The Look
+            </button>
+<!-- Save/Heart -->
+<button class="w-16 h-16 rounded-full bg-surface-container-lowest border-[0.5px] border-outline/20 shadow-sm flex items-center justify-center text-on-surface-variant hover:bg-surface-container-low transition-colors active:scale-95">
+<span class="material-symbols-outlined" data-icon="favorite" style="font-size: 28px;">favorite</span>
+</button>
+</div>
+</main>
+<!-- BottomNavBar (Mobile Only) -->
+<nav class="fixed bottom-0 w-full z-50 rounded-t-full bg-surface/80 dark:bg-surface-dim/80 backdrop-blur-xl border-t border-outline/10 shadow-sm flex justify-around items-center h-20 px-6 pb-safe md:hidden">
+<button class="flex flex-col items-center justify-center text-on-surface-variant/50 hover:text-primary transition-colors tap-highlight-none transition-transform duration-300 ease-in-out">
+<span class="material-symbols-outlined" data-icon="home_app_logo">home_app_logo</span>
+</button>
+<button class="flex flex-col items-center justify-center text-primary dark:text-on-primary scale-110 hover:text-primary transition-colors tap-highlight-none transition-transform duration-300 ease-in-out">
+<span class="material-symbols-outlined" data-icon="auto_awesome" data-weight="fill" style="font-variation-settings: 'FILL' 1;">auto_awesome</span>
+</button>
+<button class="flex flex-col items-center justify-center text-on-surface-variant/50 hover:text-primary transition-colors tap-highlight-none transition-transform duration-300 ease-in-out">
+<span class="material-symbols-outlined" data-icon="mic_external_on">mic_external_on</span>
+</button>
+<button class="flex flex-col items-center justify-center text-on-surface-variant/50 hover:text-primary transition-colors tap-highlight-none transition-transform duration-300 ease-in-out">
+<span class="material-symbols-outlined" data-icon="shopping_bag">shopping_bag</span>
+</button>
+<button class="flex flex-col items-center justify-center text-on-surface-variant/50 hover:text-primary transition-colors tap-highlight-none transition-transform duration-300 ease-in-out">
+<span class="material-symbols-outlined" data-icon="person">person</span>
+</button>
+</nav>
+<script>
+        // Basic swipe interaction stub for demonstration
+        const card = document.getElementById('active-card');
+        let startX = 0;
+        let currentX = 0;
+        let isDragging = false;
+
+        card.addEventListener('touchstart', (e) => {
+            startX = e.touches[0].clientX;
+            isDragging = true;
+            card.style.transition = 'none';
+        }, {passive: true});
+
+        card.addEventListener('touchmove', (e) => {
+            if (!isDragging) return;
+            currentX = e.touches[0].clientX - startX;
+            const rotation = currentX * 0.05;
+            card.style.transform = `translateX(${currentX}px) rotate(${rotation}deg)`;
+        }, {passive: true});
+
+        card.addEventListener('touchend', () => {
+            isDragging = false;
+            card.style.transition = 'transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275)';
+            if (Math.abs(currentX) > 100) {
+                // Swipe away
+                const direction = currentX > 0 ? 1 : -1;
+                card.style.transform = `translateX(${direction * 500}px) rotate(${direction * 30}deg)`;
+                card.style.opacity = '0';
+                // Reset after animation for demo loop
+                setTimeout(() => {
+                    card.style.transition = 'none';
+                    card.style.transform = 'translateX(0) rotate(0)';
+                    card.style.opacity = '1';
+                }, 300);
+            } else {
+                // Snap back
+                card.style.transform = 'translateX(0) rotate(0)';
+            }
+            currentX = 0;
+        });
+    </script>
+</body></html>

@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Atelier AI - Order Successful</title>
+<!-- Google Fonts -->
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;600;700&amp;family=Playfair+Display:wght@500;600&amp;display=swap" rel="stylesheet"/>
+<!-- Material Symbols -->
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<!-- Tailwind CSS -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<!-- Theme Configuration -->
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "on-secondary-fixed": "#1c1c19",
+                        "surface-container-highest": "#e3e2e2",
+                        "on-surface-variant": "#4c4546",
+                        "tertiary-fixed": "#ffdea5",
+                        "tertiary-fixed-dim": "#e9c176",
+                        "on-tertiary-container": "#a17f3b",
+                        "on-surface-muted": "#444748",
+                        "on-error": "#ffffff",
+                        "error": "#ba1a1a",
+                        "secondary-fixed-dim": "#c8c6c2",
+                        "outline": "#7e7576",
+                        "on-surface": "#1b1c1c",
+                        "on-tertiary": "#ffffff",
+                        "surface-bright": "#fbf9f8",
+                        "on-tertiary-fixed-variant": "#5d4201",
+                        "primary-fixed-dim": "#c6c6c6",
+                        "on-secondary-fixed-variant": "#474743",
+                        "inverse-primary": "#c6c6c6",
+                        "inverse-surface": "#303030",
+                        "surface-tint": "#5F5E5E",
+                        "on-primary": "#ffffff",
+                        "on-primary-container": "#848484",
+                        "primary-fixed": "#e2e2e2",
+                        "surface-container-lowest": "#ffffff",
+                        "outline-variant": "#cfc4c5",
+                        "primary": "#000000",
+                        "surface": "#FBF9F8",
+                        "secondary-container": "#e5e2dd",
+                        "inverse-on-surface": "#f2f0f0",
+                        "on-tertiary-fixed": "#261900",
+                        "surface-container-high": "#e9e8e7",
+                        "secondary-fixed": "#e5e2dd",
+                        "overlay-gradient": "rgba(0,0,0,0.6)",
+                        "secondary": "#5f5e5b",
+                        "primary-container": "#1b1b1b",
+                        "surface-container-low": "#f5f3f3",
+                        "background": "#fbf9f8",
+                        "error-container": "#ffdad6",
+                        "on-primary-fixed": "#1b1b1b",
+                        "on-background": "#1b1c1c",
+                        "tertiary-container": "#261900",
+                        "on-primary-fixed-variant": "#474747",
+                        "tertiary": "#000000",
+                        "surface-container": "#efeded",
+                        "surface-variant": "#e3e2e2",
+                        "on-secondary": "#ffffff",
+                        "surface-dim": "#dbdad9",
+                        "on-error-container": "#93000a",
+                        "on-secondary-container": "#656461"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.125rem",
+                        "lg": "0.25rem",
+                        "xl": "0.5rem",
+                        "full": "0.75rem"
+                    },
+                    "spacing": {
+                        "button-py": "16px",
+                        "unit": "4px",
+                        "container-margin": "24px",
+                        "gutter": "16px",
+                        "button-px": "48px",
+                        "section-gap": "48px"
+                    },
+                    "fontFamily": {
+                        "headline-lg": ["Playfair Display"],
+                        "body-lg": ["Hanken Grotesk"],
+                        "label-caps": ["Hanken Grotesk"],
+                        "headline-lg-mobile": ["Playfair Display"],
+                        "body-sm": ["Hanken Grotesk"],
+                        "display-lg": ["Playfair Display"],
+                        "title-md": ["Hanken Grotesk"]
+                    },
+                    "fontSize": {
+                        "headline-lg": ["32px", { "lineHeight": "40px", "fontWeight": "500" }],
+                        "body-lg": ["16px", { "lineHeight": "26px", "fontWeight": "400" }],
+                        "label-caps": ["12px", { "lineHeight": "16px", "letterSpacing": "0.1em", "fontWeight": "700" }],
+                        "headline-lg-mobile": ["28px", { "lineHeight": "34px", "fontWeight": "500" }],
+                        "body-sm": ["14px", { "lineHeight": "20px", "fontWeight": "400" }],
+                        "display-lg": ["72px", { "lineHeight": "80px", "letterSpacing": "-0.02em", "fontWeight": "600" }],
+                        "title-md": ["18px", { "lineHeight": "24px", "letterSpacing": "0.05em", "fontWeight": "600" }]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-surface text-on-surface antialiased min-h-screen flex flex-col md:flex-row overflow-x-hidden">
+<!-- Visual Anchor: Editorial Image Header / Left Pane -->
+<div class="relative w-full h-[397px] md:h-screen md:w-1/2 md:fixed md:left-0 md:top-0 z-0">
+<div class="absolute inset-0 bg-cover bg-center md:bg-right transition-transform duration-[2000ms] ease-out hover:scale-105" data-alt="A high-end, editorial fashion photograph of a sleek, matte black luxury delivery box resting on a pristine, textured sandstone surface. The lighting is cinematic, casting long, elegant shadows and highlighting the precise, tailored edges of the box. The color palette is strictly high-contrast minimalist, utilizing deep onyx blacks and warm desert sand tones, evoking a sense of calm authority and meticulous curation." style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuDw21E2QHQycT9rkVD7sjAl5Yg7I7rl6h7ji98SgXk_T4EAMAhm2Bs_gDtJjSBYMlcW9-pua_tykKytolqWWQZunVXWEilgjfNdOS8o-dvwOuv4FJZQTgiVFWsP5q-XCpcBOgRGY7Qy1FXPZyIdYRFAHfb0jPe4DYWnk2tBw_WhIwOEJwuQIZSSJcamS-qpD5FD7p65o0X9wDChzkBpY7Ddmuj3uhbC1TErJqoBDlSkAKkOt2xg9Qspjg')">
+</div>
+<!-- Gradient Overlay for Mobile Seamless Blending -->
+<div class="absolute inset-0 bg-gradient-to-t from-surface via-transparent to-transparent md:hidden"></div>
+</div>
+<!-- Interactive Canvas: Success Details & Actions -->
+<main class="relative z-10 flex-1 flex flex-col md:w-1/2 md:ml-auto bg-surface md:bg-transparent -mt-8 md:mt-0 pt-8 pb-12 px-6 md:px-16 lg:px-24">
+<div class="flex-1 flex flex-col justify-center max-w-md mx-auto w-full mt-8 md:mt-0">
+<!-- Centerpiece Header -->
+<div class="flex flex-col items-center md:items-start text-center md:text-left animate-[fadeInUp_0.8s_ease-out]">
+<span class="material-symbols-outlined text-primary mb-6 md:mb-8" style="font-size: 56px; font-variation-settings: 'wght' 200, 'FILL' 0;">
+                    check
+                </span>
+<h1 class="font-headline-lg-mobile text-headline-lg-mobile md:font-headline-lg md:text-headline-lg text-primary mb-6">
+                    Thank You
+                </h1>
+<p class="font-body-lg text-body-lg text-on-surface-variant max-w-[320px] md:max-w-none">
+                    Your look is on its way. Expect delivery in Riyadh by 6:00 PM tomorrow.
+                </p>
+</div>
+<!-- Transaction Details Box -->
+<div class="w-full mt-12 mb-12 border-t border-b border-surface-dim py-8 flex flex-col items-center md:items-start justify-center gap-3 animate-[fadeInUp_1s_ease-out]">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-on-surface-variant" style="font-size: 18px; font-variation-settings: 'wght' 300;">receipt_long</span>
+<span class="font-label-caps text-label-caps text-on-surface-variant">ORDER #AT-84920</span>
+</div>
+<a class="group inline-flex items-center gap-1 mt-2" href="#">
+<span class="font-body-sm text-body-sm text-primary group-hover:text-surface-tint transition-colors duration-300">Track Delivery</span>
+<span class="material-symbols-outlined text-primary group-hover:text-surface-tint group-hover:translate-x-1 transition-all duration-300" style="font-size: 16px; font-variation-settings: 'wght' 300;">arrow_forward</span>
+</a>
+</div>
+<!-- Thumb Zone Actions -->
+<div class="flex flex-col gap-4 mt-auto animate-[fadeInUp_1.2s_ease-out]">
+<button class="w-full bg-primary text-on-primary font-label-caps text-label-caps py-button-py px-button-px rounded-DEFAULT hover:bg-surface-tint transition-colors duration-300 flex justify-center items-center">
+                    Return to Studio
+                </button>
+<button class="w-full bg-transparent border border-primary text-primary font-label-caps text-label-caps py-button-py px-button-px rounded-DEFAULT hover:bg-surface-container-low transition-colors duration-300 flex justify-center items-center">
+                    View Wardrobe
+                </button>
+</div>
+</div>
+</main>
+<style>
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+    </style>
+</body></html>
