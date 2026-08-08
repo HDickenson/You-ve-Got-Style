@@ -14,12 +14,19 @@
    contrast the occasion titles and reveals want, on an optical-size axis so it
    stays sturdy at 20px and gets sharper as it grows.
 
-   Instrument Sans is the functional voice and the stand-in for Satoshi.
+   Schibsted Grotesk is the functional voice and the stand-in for Satoshi.
    Satoshi is free and downloadable, but the Fontshare EULA forbids copying or
    "uploading them in a public server" and points web delivery at their CDN, so
-   self-hosting it is not licensed. Instrument Sans is OFL — self-hostable,
-   subsettable, shippable — with the same tall x-height and open apertures,
-   even caps for wide-tracked labels, and it holds at 13px. */
+   self-hosting it is not licensed.
+
+   It is Schibsted and not Inter or Instrument Sans because both of those are on
+   the detector's OVERUSED_FONTS list — Inter as the older monoculture,
+   Instrument Sans named explicitly as "the Anthropic-skill / Vercel / GitHub
+   default wave". Reaching for either is the tell we are trying not to have.
+   Schibsted Grotesk was commissioned for a newspaper, so editorial hierarchy and
+   small-size legibility are its actual design brief: it holds at 13px, takes the
+   wide-tracked uppercase the wordmark uses, and sits under a didone the way a
+   fashion masthead expects. OFL, variable, self-hosted. */
 
 @font-face {
   font-family: "Bodoni Moda YGS";
@@ -44,22 +51,22 @@
 }
 
 @font-face {
-  font-family: "Instrument Sans YGS";
+  font-family: "Schibsted Grotesk YGS";
   font-style: normal;
   font-weight: 400 700;
   font-display: swap;
-  src: url("./assets/fonts/instrument-sans-latin-var.woff2") format("woff2");
+  src: url("./assets/fonts/schibsted-grotesk-latin-var.woff2") format("woff2");
   unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA,
     U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193,
     U+2212, U+2215, U+FEFF, U+FFFD;
 }
 
 @font-face {
-  font-family: "Instrument Sans YGS";
+  font-family: "Schibsted Grotesk YGS";
   font-style: italic;
   font-weight: 400 700;
   font-display: swap;
-  src: url("./assets/fonts/instrument-sans-latin-var-italic.woff2") format("woff2");
+  src: url("./assets/fonts/schibsted-grotesk-latin-var-italic.woff2") format("woff2");
   unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA,
     U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193,
     U+2212, U+2215, U+FEFF, U+FFFD;
@@ -143,7 +150,7 @@
      Two voices. Editorial serif for occasion titles and reveal moments only.
      Functional sans for every control, label, price, setting and paragraph. */
   --font-*: initial;
-  --font-sans: "Instrument Sans YGS", ui-sans-serif, system-ui, sans-serif;
+  --font-sans: "Schibsted Grotesk YGS", ui-sans-serif, system-ui, sans-serif;
   --font-serif: "Bodoni Moda YGS", "Didot", "Bodoni MT", "Iowan Old Style",
     Georgia, serif;
 

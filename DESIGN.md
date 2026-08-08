@@ -58,11 +58,27 @@ disagree, **this file wins** — Stitch supplies structure and composition, not 
 | Role | Face | Licence | File |
 |---|---|---|---|
 | Editorial serif | **Bodoni Moda** | OFL | `src/assets/fonts/bodoni-moda-latin-var*.woff2` |
-| Functional sans | **Instrument Sans** | OFL | `src/assets/fonts/instrument-sans-latin-var*.woff2` |
+| Functional sans | **Schibsted Grotesk** | OFL | `src/assets/fonts/schibsted-grotesk-latin-var*.woff2` |
 
-Both are self-hosted variable woff2. **Never link a font CDN and never reach for Inter,
-Roboto or a system stack** — the detector flags the first two as overused and the brand
-cannot afford a default.
+Both are self-hosted variable woff2. **Never link a font CDN.**
+
+**Never reach for any of these.** They are the detector's `OVERUSED_FONTS` list, and it
+is the authority — not taste:
+
+> Older monoculture: `inter` `roboto` `open sans` `lato` `montserrat` `arial` `helvetica`
+> Newer monoculture (the Anthropic-skill / Vercel / GitHub default wave): `fraunces`
+> `instrument sans` `instrument serif` `geist` `mona sans` `plus jakarta sans`
+> `space grotesk` `recoleta`
+
+This project reached for **Inter** first, then **Instrument Sans** — both blocked, the
+second one named explicitly as the AI-default wave. Check the list before proposing a
+face; it lives at
+`.claude/skills/impeccable/scripts/detector/shared/constants.mjs`.
+
+Schibsted Grotesk was commissioned for a newspaper, so editorial hierarchy and
+small-size legibility are its design brief. Bodoni Moda is a true didone; didone display
+over a neutral grotesque is the fashion-masthead pairing, which is why these two sit
+together rather than compete.
 
 **Why not Satoshi**, which is the brand sans: it is free and downloadable from Fontshare,
 but the Fontshare EULA forbids modifying or *"otherwise copying"* the font software (so no
