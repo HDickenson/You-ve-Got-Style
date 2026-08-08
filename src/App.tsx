@@ -79,6 +79,7 @@ export default function App() {
 
   // Style Guardrails State ("Style Like You")
   const [constraints, setConstraints] = useState<StyleConstraints>({
+    wardrobe: 'womenswear',
     modestWear: true,
     sleevesBelowElbow: true,
     noTrousers: false,
@@ -117,7 +118,11 @@ export default function App() {
 
   const handleCaptureComplete = (profile: CapturedProfile) => {
     setCapturedProfile(profile);
-    const newMeas = calculatePhotogrammetryMeasurements(profile.heightCm);
+    // Wardrobe is chosen on the screen before this one, so it is always
+    // known by the time a capture completes — the fallback only covers the
+    // capture harness (scripts/capture.mjs), which can load this phase
+    // directly via ?phase=onboarding without walking through wardrobe first.
+    const newMeas = calculatePhotogrammetryMeasurements(profile.heightCm, wardrobe ?? 'womenswear');
     setMeasurements(newMeas);
     setBrandSizes(mapMeasurementsToBrandSizes(newMeas));
     setCurrentPhase('sizing');

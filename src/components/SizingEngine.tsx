@@ -1,6 +1,6 @@
 import React from 'react';
 import { ArrowRight } from 'lucide-react';
-import { UserMeasurements, BrandSizeMapping, CapturedProfile } from '../types';
+import { UserMeasurements, WomenswearMeasurements, BrandSizeMapping, CapturedProfile } from '../types';
 import {
   calculatePhotogrammetryMeasurements,
   mapMeasurementsToBrandSizes,
@@ -80,7 +80,10 @@ export const SizingEngine: React.FC<SizingEngineProps> = ({
   capturedProfile,
   onProceedToGuardrails,
 }) => {
-  const measurements: UserMeasurements = calculatePhotogrammetryMeasurements(
+  // Still womenswear-only: this screen does not yet take a wardrobe prop
+  // (that wiring is the Phase 1 form rebuild, tracked separately), so it
+  // keeps calling the no-wardrobe overload and the concrete type it returns.
+  const measurements: WomenswearMeasurements = calculatePhotogrammetryMeasurements(
     capturedProfile.heightCm,
   );
   const brandSizes: BrandSizeMapping[] = mapMeasurementsToBrandSizes(measurements);
