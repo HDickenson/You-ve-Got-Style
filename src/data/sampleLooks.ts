@@ -46,7 +46,7 @@ export const INITIAL_LOOKS: FashionLook[] = [
     priceAED: 6790,
     fabric: '100% Mulberry Silk Crepe & Italian Virgin Wool',
     colorPalette: ['#F7F5F0', '#1A2B4C', '#D4AF37'],
-    imageUrl: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&w=1000&q=80',
+    imageUrl: LOOK_PLACEHOLDER,
     tags: ['Modest Wear', 'Structured', 'Business Professional', 'Sleeves Below Elbow'],
     brand_sizes: [
       { brandName: 'Chanel', recommendedSize: 'FR 38 (US 6)', fitsToType: 'Slightly tailored', fitDescription: 'Precision shoulder alignment' },
@@ -68,7 +68,7 @@ export const INITIAL_LOOKS: FashionLook[] = [
     priceAED: 7710,
     fabric: 'Heavyweight Charmeuse Silk',
     colorPalette: ['#0A4D3C', '#062B21', '#E2C044'],
-    imageUrl: 'https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?auto=format&fit=crop&w=1000&q=80',
+    imageUrl: LOOK_PLACEHOLDER,
     tags: ['Modest Wear', 'Silk', 'Evening', 'No Trousers Friendly'],
     brand_sizes: [
       { brandName: 'Zimmermann', recommendedSize: 'Size 1 (US 6)', fitsToType: 'True to size', fitDescription: 'Flowing silhouette with cinched cuffs' },
@@ -89,7 +89,7 @@ export const INITIAL_LOOKS: FashionLook[] = [
     priceAED: 8990,
     fabric: 'Baby Cashmere & Pure Raw Linen',
     colorPalette: ['#E6D7C3', '#F9F8F6', '#8C7A6B'],
-    imageUrl: 'https://images.unsplash.com/photo-1539109136881-3be0616acf4b?auto=format&fit=crop&w=1000&q=80',
+    imageUrl: LOOK_PLACEHOLDER,
     tags: ['Cashmere', 'Modest Wear', 'Smart Casual', 'Neutral Tones'],
     brand_sizes: [
       { brandName: 'Loro Piana', recommendedSize: 'IT 40 (US 4)', fitsToType: 'Relaxed fit', fitDescription: 'Ultra-soft relaxed fit' },
@@ -110,7 +110,7 @@ export const INITIAL_LOOKS: FashionLook[] = [
     priceAED: 7270,
     fabric: 'Structured Double-Faced Virgin Wool',
     colorPalette: ['#2F3136', '#121212', '#999999'],
-    imageUrl: 'https://images.unsplash.com/photo-1490481651871-ab68de25d43d?auto=format&fit=crop&w=1000&q=80',
+    imageUrl: LOOK_PLACEHOLDER,
     tags: ['Architectural', 'Minimalist', 'Modest', 'Monochrome'],
     brand_sizes: [
       { brandName: 'Khaite', recommendedSize: 'US 6 / M', fitsToType: 'Structured', fitDescription: 'Precision shoulder sculpting' },
@@ -130,7 +130,7 @@ export const INITIAL_LOOKS: FashionLook[] = [
     priceAED: 13200,
     fabric: 'Heavy Satin Silk & Metallic Thread Detailing',
     colorPalette: ['#E6D0AC', '#FAF8F5', '#C5A059'],
-    imageUrl: 'https://images.unsplash.com/photo-1566174053879-31528523f8ae?auto=format&fit=crop&w=1000&q=80',
+    imageUrl: LOOK_PLACEHOLDER,
     tags: ['Royal Gala', 'Modest Wear', 'Satin', 'Gold Accents'],
     brand_sizes: [
       { brandName: 'Brunello Cucinelli', recommendedSize: 'IT 40 (M)', fitsToType: 'Structured', fitDescription: 'Majestic floor-length drape' },

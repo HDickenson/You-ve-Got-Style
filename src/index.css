@@ -90,14 +90,9 @@
   --color-muted-on-dark: #9c948a;
   --color-rule-on-dark: #2c2825;
 
-  /* Ground-relative aliases. A `.ground-*` class rebinds these, so
-     `bg-surface text-fg border-rule` inverts correctly on any ground and no
-     component has to know whether it is on cream or onyx. */
-  --color-surface: var(--ygs-surface);
-  --color-surface-raised: var(--ygs-surface-raised);
-  --color-fg: var(--ygs-fg);
-  --color-fg-muted: var(--ygs-fg-muted);
-  --color-rule: var(--ygs-rule);
+  /* Ground-relative aliases live in the `@theme inline` block below, NOT here.
+     See the comment there — declaring them in a plain `@theme` silently breaks
+     the entire ground system. */
   --color-on-gold: var(--color-onyx);
 
   /* --- Spacing -------------------------------------------------------------
@@ -264,6 +259,28 @@
       opacity: 0.55;
     }
   }
+}
+
+/* --- Ground-relative aliases — MUST be `@theme inline`, and MUST be here ----
+   `inline` is load-bearing, not a style choice. A plain `@theme` declares
+   --color-surface on :root, and CSS substitutes a var() at the element where it
+   is DECLARED — so --color-surface would freeze to cream on :root and inherit
+   that literal into every ground. `bg-surface` inside a .ground-onyx section
+   then renders cream on black, and `bg-fg text-surface` (the primary button)
+   renders ink #171717 on onyx #111111 — 1.05:1, an invisible button.
+
+   `inline` makes the utility emit `background-color: var(--ygs-surface)`
+   directly, so resolution happens at the element and the ground wins.
+
+   Placement is also load-bearing: this must come AFTER the `--color-*: initial`
+   reset in the main @theme block, or the reset wipes it. */
+
+@theme inline {
+  --color-surface: var(--ygs-surface);
+  --color-surface-raised: var(--ygs-surface-raised);
+  --color-fg: var(--ygs-fg);
+  --color-fg-muted: var(--ygs-fg-muted);
+  --color-rule: var(--ygs-rule);
 }
 
 /* --- Grounds --------------------------------------------------------------

@@ -201,7 +201,10 @@ that is a product conversation — not a component request.
 
 ## Brand assets
 
-Live SVG, already extracted and on-palette, in `../assets/`:
+Import from `src/components/brand/` (`YMark`, `Wordmark`) — the SVG sources are vendored
+into `src/assets/brand/` so the app is self-contained. **Do not reference `../assets/`**:
+that path only resolves from the primary checkout, not from the flow worktrees, and it is
+outside the repo. The original extraction set, for reference only, is:
 `symbol/` (y-onyx, y-white, y-gold, y-large) · `logo/` (primary-horizontal, stacked,
 footer-white) · `app-icon/` (onyx, cream, forest, sand) · `icons/ui/` (10) ·
 `icons/pillars/` (5). Import these — never redraw the mark, never use an emoji or a

@@ -156,7 +156,12 @@ export default function App() {
           occasion: data.occasion || occasion,
           top_garment: data.top_garment,
           bottom_garment: data.bottom_garment,
-          compliance_check: data.compliance_check ?? true,
+          // Fail CLOSED. Modest wear and the other Style Like You rules are hard
+          // guardrails, not preferences — a look whose compliance the model did
+          // not assert is unverified, and unverified must never render as
+          // "Guardrail Verified". Defaulting to true asserts a cultural
+          // constraint was honoured on no evidence at all.
+          compliance_check: data.compliance_check === true,
           capsule_synergy: data.capsule_synergy || 'Pairs seamlessly with your existing luxury capsule wardrobe.',
           imageUrl: generatedImageUrl,
           brand_sizes: brandSizes,
