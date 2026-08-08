@@ -1,3 +1,12 @@
+/**
+ * What the customer is shopping for, not who they are — a gift buyer and a
+ * customer shopping their own wardrobe ask the same question. Everything
+ * that grades, filters or writes guardrail copy forks on this, so it is
+ * asked before capture and stays changeable from the menu, never a one-time
+ * gate baked into onboarding.
+ */
+export type Wardrobe = 'womenswear' | 'menswear';
+
 export interface UserMeasurements {
   heightCm: number;
   chestCm: number;
@@ -89,7 +98,7 @@ export interface CapturedProfile {
   isVoiceTriggered: boolean;
 }
 
-export type AppPhase = 'onboarding' | 'sizing' | 'guardrails' | 'discovery' | 'capsule';
+export type AppPhase = 'wardrobe' | 'onboarding' | 'sizing' | 'guardrails' | 'discovery' | 'capsule';
 
 export interface CheckoutItem {
   look: FashionLook;

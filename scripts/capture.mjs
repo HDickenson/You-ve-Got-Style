@@ -44,7 +44,7 @@ const VIEWPORTS = [
   { name: '1180x820', width: 1180, height: 820 },
 ];
 
-const PHASES = ['onboarding', 'sizing', 'guardrails', 'discovery', 'capsule'];
+const PHASES = ['wardrobe', 'onboarding', 'sizing', 'guardrails', 'discovery', 'capsule'];
 
 function waitForServer(url, timeoutMs = 30_000) {
   const start = Date.now();
@@ -135,6 +135,12 @@ async function captureJourney(browser) {
 
   await page.goto(`${BASE_URL}/`, { waitUntil: 'networkidle' });
   await page.waitForSelector('#app-root-container', { state: 'visible' });
+  await shot('00-wardrobe');
+
+  // Wardrobe -> Onboarding: the choice is a tap, not a form submit — selecting
+  // an option advances the phase immediately (App.tsx's onSelect handler).
+  await page.getByRole('radio', { name: 'Womenswear' }).click();
+  await page.waitForSelector('#module-handsfree-capture', { state: 'visible' });
   await shot('01-onboarding');
 
   // Onboarding -> Sizing: locators are by accessible role/name, not id — the
