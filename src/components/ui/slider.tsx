@@ -55,6 +55,7 @@ export function Slider({
           // Track — filled to --slider-fill in the ground's ink, rule beyond it.
           '[&::-webkit-slider-runnable-track]:h-1 [&::-webkit-slider-runnable-track]:rounded-full',
           '[&::-webkit-slider-runnable-track]:bg-[linear-gradient(to_right,var(--color-fg)_0_var(--slider-fill),var(--color-rule)_var(--slider-fill)_100%)]',
+          'rtl:[&::-webkit-slider-runnable-track]:bg-[linear-gradient(to_left,var(--color-fg)_0_var(--slider-fill),var(--color-rule)_var(--slider-fill)_100%)]',
           '[&::-moz-range-track]:h-1 [&::-moz-range-track]:rounded-full [&::-moz-range-track]:bg-rule',
           '[&::-moz-range-progress]:h-1 [&::-moz-range-progress]:rounded-full [&::-moz-range-progress]:bg-fg',
           // Thumb — 24px, optically centred on the 4px track.

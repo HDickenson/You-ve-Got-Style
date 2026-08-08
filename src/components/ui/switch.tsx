@@ -48,9 +48,9 @@ export function Switch({
         <span
           data-slot="switch-thumb"
           className={cn(
-            'absolute top-0.5 left-0.5 block size-5 rounded-full',
+            'absolute top-0.5 start-0.5 block size-5 rounded-full',
             'transition-transform duration-shift ease-shift',
-            checked ? 'translate-x-5 bg-surface' : 'translate-x-0 bg-fg',
+            checked ? 'translate-x-5 rtl:-translate-x-5 bg-surface' : 'translate-x-0 bg-fg',
           )}
         />
       </span>
