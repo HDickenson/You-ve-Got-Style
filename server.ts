@@ -238,10 +238,13 @@ Please generate a curated luxury look that complies 100% with these guardrails.`
         });
       }
     } catch (err: any) {
+      // err.message is not sent to the client — it can carry vendor/model
+      // detail (YGS-6: no stack traces, no model names in user-facing
+      // copy). It is still logged here for operators.
       console.error("Try-on generation error:", err);
       res.json({
         success: false,
-        error: err.message || "Try-on generation failed.",
+        error: "Try-on generation failed.",
       });
     }
   });
