@@ -5,10 +5,11 @@
 //   1. Matrix — every screen (?phase=<x>) at every required viewport,
 //      independent of each other. Fast and deterministic; proves each screen
 //      renders, not that a customer can reach it.
-//   2. Journey — one real walk through the primary buttons (capture ->
-//      sizing -> guardrails -> discovery -> capsule) at a single viewport,
-//      captured at each stop. Slower, but the only pass that proves the
-//      guided path actually works end to end.
+//   2. Journey — one real walk through the primary buttons (splash ->
+//      introduction -> wardrobe -> capture -> sizing -> guardrails ->
+//      discovery -> capsule) at a single viewport, captured at each stop.
+//      Slower, but the only pass that proves the guided path actually works
+//      end to end.
 //   3. Capture studio (YGS-31) — ?phase=onboarding only ever reaches the
 //      consent gate; everything behind it (the pose frame, the level check,
 //      the voice trigger, the held review, the camera-refused fallback) is a
@@ -44,7 +45,16 @@ const VIEWPORTS = [
   { name: '1180x820', width: 1180, height: 820 },
 ];
 
-const PHASES = ['wardrobe', 'onboarding', 'sizing', 'guardrails', 'discovery', 'capsule'];
+const PHASES = [
+  'splash',
+  'introduction',
+  'wardrobe',
+  'onboarding',
+  'sizing',
+  'guardrails',
+  'discovery',
+  'capsule',
+];
 
 function waitForServer(url, timeoutMs = 30_000) {
   const start = Date.now();
@@ -135,13 +145,24 @@ async function captureJourney(browser) {
 
   await page.goto(`${BASE_URL}/`, { waitUntil: 'networkidle' });
   await page.waitForSelector('#app-root-container', { state: 'visible' });
-  await shot('00-wardrobe');
+  await shot('00-splash');
+
+  // Splash -> Introduction: a tap, not a form submit.
+  await page.getByRole('button', { name: 'Begin' }).click();
+  await page.waitForSelector('#module-introduction', { state: 'visible' });
+  await shot('01-introduction');
+
+  // Introduction's welcome beat -> its embedded wardrobe beat (D8: the
+  // question moved inside the introduction, it no longer has its own route).
+  await page.getByRole('button', { name: 'Continue' }).click();
+  await page.getByRole('radiogroup', { name: 'Wardrobe' }).waitFor({ state: 'visible' });
+  await shot('02-wardrobe');
 
   // Wardrobe -> Onboarding: the choice is a tap, not a form submit — selecting
   // an option advances the phase immediately (App.tsx's onSelect handler).
   await page.getByRole('radio', { name: 'Womenswear' }).click();
   await page.waitForSelector('#module-handsfree-capture', { state: 'visible' });
-  await shot('01-onboarding');
+  await shot('03-onboarding');
 
   // Onboarding -> Sizing: locators are by accessible role/name, not id — the
   // ids this journey used to hardcode never existed on any component (only
@@ -154,7 +175,7 @@ async function captureJourney(browser) {
   await uploadFrame(page); // side
   await page.getByRole('button', { name: 'Read my fit' }).click();
   await page.waitForSelector('#module-sizing-engine', { state: 'visible' });
-  await shot('02-sizing');
+  await shot('04-sizing');
 
   // Sizing -> Guardrails. StyleGuardrails has no #module-* id (unlike its
   // sibling screens) — its root carries aria-label="Style guardrails"
@@ -162,7 +183,7 @@ async function captureJourney(browser) {
   // script would own on a flow-owned component.
   await page.getByRole('button', { name: 'Set your guardrails' }).click();
   await page.getByRole('region', { name: 'Style guardrails' }).waitFor({ state: 'visible' });
-  await shot('03-guardrails');
+  await shot('05-guardrails');
 
   // Guardrails -> Discovery. This is the main-flow mount of StyleGuardrails
   // (App.tsx wires its onSaveAndProceed to advance the phase); a second
@@ -171,7 +192,7 @@ async function captureJourney(browser) {
   // through the header menu here.
   await page.getByRole('button', { name: 'Show me looks' }).click();
   await page.waitForSelector('#module-swipe-discovery', { state: 'visible' });
-  await shot('04-discovery');
+  await shot('06-discovery');
 
   // Discovery -> Capsule, via the real nav menu (the only route to Capsule
   // that does not require buying or saving a specific look first). The sheet
@@ -189,7 +210,7 @@ async function captureJourney(browser) {
   await nav.getByRole('button', { name: /^Capsule/ }).click();
   await page.waitForSelector('[data-slot="overlay"]', { state: 'detached' });
   await page.waitForSelector('#module-capsule-wardrobe', { state: 'visible' });
-  await shot('05-capsule');
+  await shot('07-capsule');
 
   await page.close();
 

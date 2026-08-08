@@ -154,7 +154,19 @@ export interface CapturedProfile {
   isVoiceTriggered: boolean;
 }
 
-export type AppPhase = 'wardrobe' | 'onboarding' | 'sizing' | 'guardrails' | 'discovery' | 'capsule';
+// 'wardrobe' is no longer a customer-reachable front door (D8: the question
+// moved inside 'introduction') but stays a valid phase — the responsive
+// capture harness still loads it directly via ?phase=wardrobe to screenshot
+// ChooseWardrobe in isolation, the way it does every other screen.
+export type AppPhase =
+  | 'splash'
+  | 'introduction'
+  | 'wardrobe'
+  | 'onboarding'
+  | 'sizing'
+  | 'guardrails'
+  | 'discovery'
+  | 'capsule';
 
 export interface CheckoutItem {
   look: FashionLook;

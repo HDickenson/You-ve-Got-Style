@@ -29,6 +29,11 @@ interface HeaderNavProps {
 
 /** The context word beside the Y. One word — the screen says the rest. */
 const CONTEXT: Record<AppPhase, string> = {
+  // Neither is reached with the header mounted — App.tsx hides it for
+  // 'splash' and 'introduction' — but the type is a Record<AppPhase, ...>,
+  // so every phase needs an entry regardless.
+  splash: 'Welcome',
+  introduction: 'Welcome',
   wardrobe: 'Welcome',
   onboarding: 'Studio',
   sizing: 'Fit',
