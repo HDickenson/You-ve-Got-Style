@@ -1,43 +1,76 @@
-import React, { useState, useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { HeaderNav } from './components/HeaderNav';
+import { ChooseWardrobe } from './components/ChooseWardrobe';
 import { HandsFreeCapture } from './components/HandsFreeCapture';
 import { SizingEngine } from './components/SizingEngine';
 import { StyleGuardrails } from './components/StyleGuardrails';
 import { SwipeDiscovery } from './components/SwipeDiscovery';
 import { CapsuleWardrobe } from './components/CapsuleWardrobe';
 import { CheckoutModal } from './components/CheckoutModal';
-import { Moodboard } from './components/Moodboard';
-import { AIFeatures } from './components/AIFeatures';
-import { StyleInsightsModal } from './components/StyleInsightsModal';
-import { FitAnalytics } from './components/FitAnalytics';
-import { SocialLookbook } from './components/SocialLookbook';
-import { DigitalCloset } from './components/DigitalCloset';
-import { AppPhase, CapturedProfile, UserMeasurements, BrandSizeMapping, StyleConstraints, FashionLook, ClosetItem } from './types';
-import { INITIAL_LOOKS } from './data/sampleLooks';
-import { calculatePhotogrammetryMeasurements, mapMeasurementsToBrandSizes } from './data/brandGrading';
-import { auth } from './firebase';
-import { onAuthStateChanged, User as FirebaseUser } from 'firebase/auth';
-import { getUserProfile, createUserProfile, updateUserProfile, getSavedLooks, saveLookToFirebase, removeSavedLookFromFirebase } from './db/firebase-api';
+import { ResponsiveSheet } from './components/ui';
+import { AppPhase, CapturedProfile, UserMeasurements, BrandSizeMapping, StyleConstraints, FashionLook, Wardrobe } from './types';
+import {
+  COMPOSED_LOOK_TEMPLATE,
+  INITIAL_LOOKS,
+  LOOK_PLACEHOLDER,
+} from './data/sampleLooks';
+import { estimateMeasurementsFromHeight, mapMeasurementsToBrandSizes } from './data/brandGrading';
+
+/**
+ * Dark is theatre; cream is conversation. The app presents during capture,
+ * the fit reveal and discovery; the user works in guardrails and the capsule.
+ */
+const GROUND: Record<AppPhase, 'onyx' | 'cream'> = {
+  wardrobe: 'onyx',
+  onboarding: 'onyx',
+  sizing: 'onyx',
+  guardrails: 'cream',
+  discovery: 'onyx',
+  capsule: 'cream',
+};
+
+const APP_PHASES: AppPhase[] = ['wardrobe', 'onboarding', 'sizing', 'guardrails', 'discovery', 'capsule'];
+
+// A customer never sees this — the entry point is always the studio, below.
+// It exists so the responsive-capture harness (scripts/capture.mjs) can load
+// any screen directly instead of clicking through the whole journey for each
+// one: ?phase=discovery.
+function phaseFromQueryString(): AppPhase | null {
+  const requested = new URLSearchParams(window.location.search).get('phase');
+  return APP_PHASES.includes(requested as AppPhase) ? (requested as AppPhase) : null;
+}
 
 export default function App() {
-  const [user, setUser] = useState<FirebaseUser | null>(null);
-
   // App Phase State
-  const [currentPhase, setCurrentPhase] = useState<AppPhase>('discovery'); // Default to instant working discovery UI!
+  // The product opens where it begins. Capture is the first thing YGS asks
+  // for and everything after it depends on the answer, so the entry point is
+  // the studio — not a working screen reached with the middle skipped.
+  const [currentPhase, setCurrentPhase] = useState<AppPhase>(
+    () => phaseFromQueryString() ?? 'wardrobe'
+  );
   const [heightCm, setHeightCm] = useState<number>(170);
 
-  // User Photogrammetry & Sizing State
+  // What the customer is shopping for — asked before capture because the
+  // measurement fields, brand tables and guardrail vocabulary all fork on
+  // it. Revisitable from the menu, so it is never a one-time gate.
+  const [wardrobe, setWardrobe] = useState<Wardrobe | null>(null);
+  const [showWardrobeModal, setShowWardrobeModal] = useState<boolean>(false);
+
+  // Sizing state — measurements are estimated from height, not scanned.
+  // Nothing has been captured yet, and the app does not pretend otherwise —
+  // a stock photograph of a stranger standing in for the user's own body scan
+  // is not a placeholder, it is a lie with a face on it.
   const [capturedProfile, setCapturedProfile] = useState<CapturedProfile>({
-    frontPhoto: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=800&q=80',
-    sidePhoto: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&w=800&q=80',
+    frontPhoto: null,
+    sidePhoto: null,
     heightCm: 170,
     timestamp: Date.now(),
-    isSensorVerified: true,
-    isVoiceTriggered: true,
+    isSensorVerified: false,
+    isVoiceTriggered: false,
   });
 
   const [measurements, setMeasurements] = useState<UserMeasurements>(
-    calculatePhotogrammetryMeasurements(170)
+    estimateMeasurementsFromHeight(170)
   );
 
   const [brandSizes, setBrandSizes] = useState<BrandSizeMapping[]>(
@@ -46,6 +79,7 @@ export default function App() {
 
   // Style Guardrails State ("Style Like You")
   const [constraints, setConstraints] = useState<StyleConstraints>({
+    wardrobe: 'womenswear',
     modestWear: true,
     sleevesBelowElbow: true,
     noTrousers: false,
@@ -53,61 +87,52 @@ export default function App() {
     noNeonColors: true,
     noLoudPrints: true,
     preferredFabrics: ['Mulberry Silk', 'Baby Cashmere', 'Virgin Wool', 'Raw Linen'],
-    preferredAesthetics: ['Minimalist'],
   });
 
   // Looks & Capsule State
   const [looksList, setLooksList] = useState<FashionLook[]>(INITIAL_LOOKS);
   const [savedLooks, setSavedLooks] = useState<FashionLook[]>([INITIAL_LOOKS[0]]);
-  const [closetItems, setClosetItems] = useState<ClosetItem[]>([]);
   const [checkoutLook, setCheckoutLook] = useState<FashionLook | null>(null);
 
-  // AI Loading State
-  const [isGeneratingAi, setIsGeneratingAi] = useState<boolean>(false);
+  // Style Intelligence State
+  const [isFinding, setIsFinding] = useState<boolean>(false);
+  // Nothing on screen spins to fake motion — but three seconds of silence
+  // reads as broken, so the copy itself changes instead.
+  const [isFindingSlow, setIsFindingSlow] = useState<boolean>(false);
+  // A failed search is not a look — it never enters looksList — so it is
+  // held as its own state and shown honestly instead of being logged and
+  // dropped.
+  const [findError, setFindError] = useState<string | null>(null);
   const [showGuardrailsModal, setShowGuardrailsModal] = useState<boolean>(false);
-  const [showInsightsModal, setShowInsightsModal] = useState<boolean>(false);
 
+  const ground = GROUND[currentPhase];
+
+  // The ground belongs to the document, not just to a div — otherwise an
+  // overscroll bounce or a notch shows the wrong colour behind the app.
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
-      setUser(currentUser);
-      if (currentUser) {
-        // Load User Profile
-        const profile = await getUserProfile(currentUser.uid);
-        if (profile) {
-          setHeightCm(profile.heightCm);
-          setConstraints(profile.constraints as StyleConstraints);
-          const newMeas = calculatePhotogrammetryMeasurements(profile.heightCm);
-          setMeasurements(newMeas);
-          setBrandSizes(mapMeasurementsToBrandSizes(newMeas));
-        } else {
-          // Create default profile for new user
-          await createUserProfile(currentUser.uid, heightCm, constraints);
-        }
-
-        // Load Saved Looks
-        const looks = await getSavedLooks(currentUser.uid);
-        if (looks && looks.length > 0) {
-          setSavedLooks(looks);
-        }
-      }
-    });
-    return () => unsubscribe();
-  }, []); // Only run once on mount
-
-  const syncProfileToFirebase = async (newHeightCm: number, newConstraints: StyleConstraints) => {
-    if (user) {
-      await updateUserProfile(user.uid, newHeightCm, newConstraints);
-    }
-  };
+    document.body.dataset.ground = ground;
+  }, [ground]);
 
   // Handlers
+  const handleChooseWardrobe = (choice: Wardrobe) => {
+    setWardrobe(choice);
+    setShowWardrobeModal(false);
+    // Only the first, cold-start choice advances the phase — reopened from
+    // the menu mid-journey, switching updates the value in place and the
+    // customer stays exactly where they were.
+    if (currentPhase === 'wardrobe') setCurrentPhase('onboarding');
+  };
+
   const handleCaptureComplete = (profile: CapturedProfile) => {
     setCapturedProfile(profile);
-    const newMeas = calculatePhotogrammetryMeasurements(profile.heightCm);
+    // Wardrobe is chosen on the screen before this one, so it is always
+    // known by the time a capture completes — the fallback only covers the
+    // capture harness (scripts/capture.mjs), which can load this phase
+    // directly via ?phase=onboarding without walking through wardrobe first.
+    const newMeas = estimateMeasurementsFromHeight(profile.heightCm, wardrobe ?? 'womenswear');
     setMeasurements(newMeas);
     setBrandSizes(mapMeasurementsToBrandSizes(newMeas));
     setCurrentPhase('sizing');
-    syncProfileToFirebase(profile.heightCm, constraints);
   };
 
   const handleProceedToGuardrails = (meas: UserMeasurements, bSizes: BrandSizeMapping[]) => {
@@ -116,12 +141,9 @@ export default function App() {
     setCurrentPhase('guardrails');
   };
 
-  const handleSwipeRight = async (look: FashionLook) => {
+  const handleSwipeRight = (look: FashionLook) => {
     if (!savedLooks.some((item) => item.id === look.id)) {
       setSavedLooks((prev) => [look, ...prev]);
-      if (user) {
-        await saveLookToFirebase(user.uid, look);
-      }
     }
   };
 
@@ -129,15 +151,20 @@ export default function App() {
     // Rejection recorded for preference weight tuning
   };
 
-  const handleRemoveSavedLook = async (lookId: string) => {
+  const handleRemoveSavedLook = (lookId: string) => {
     setSavedLooks((prev) => prev.filter((item) => item.id !== lookId));
-    if (user) {
-      await removeSavedLookFromFirebase(user.uid, lookId);
-    }
   };
 
-  const handleGenerateAiLook = async (occasion: string) => {
-    setIsGeneratingAi(true);
+  // The machinery has no name in the UI and no name here either.
+  const handleFindLook = async (occasion: string) => {
+    setIsFinding(true);
+    setIsFindingSlow(false);
+    setFindError(null);
+
+    // The slow path is not a spinner, it is different words — so it needs
+    // its own clock, started here and always cleared below.
+    const slowTimer = setTimeout(() => setIsFindingSlow(true), 3000);
+
     try {
       const res = await fetch('/api/style-recommendations', {
         method: 'POST',
@@ -146,75 +173,113 @@ export default function App() {
           occasion: occasion === 'All Occasions' ? 'Networking Dinner' : occasion,
           heightCm,
           constraints,
+          wardrobe,
         }),
       });
 
+      if (!res.ok) {
+        throw new Error(`style-recommendations responded ${res.status}`);
+      }
+
       const data = await res.json();
 
-      if (data.look_title) {
-        // Now attempt try-on image generation
-        let generatedImageUrl = 'https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?auto=format&fit=crop&w=1000&q=80';
-        try {
-          const tryonRes = await fetch('/api/generate-tryon', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              prompt: `${data.look_title}: ${data.top_garment} with ${data.bottom_garment}. Modest elegant GCC high fashion.`,
-              userPhotoBase64: capturedProfile.frontPhoto,
-            }),
-          });
-          const tryonData = await tryonRes.json();
-          if (tryonData.imageUrl) {
-            generatedImageUrl = tryonData.imageUrl;
-          }
-        } catch (e) {
-          console.warn('Tryon image API fallback used:', e);
-        }
-
-        const newAiLook: FashionLook = {
-          id: `ai-look-${Date.now()}`,
-          look_title: data.look_title,
-          occasion: data.occasion || occasion,
-          top_garment: data.top_garment,
-          bottom_garment: data.bottom_garment,
-          compliance_check: data.compliance_check ?? true,
-          capsule_synergy: data.capsule_synergy || 'Pairs seamlessly with your existing luxury capsule wardrobe.',
-          brand: 'Gemini Haute Couture',
-          priceUSD: 2300,
-          priceAED: 8440,
-          fabric: 'Mulberry Silk & Italian Cashmere',
-          colorPalette: ['#E2C044', '#1A2B4C', '#F7F5F0'],
-          imageUrl: generatedImageUrl,
-          tags: ['AI Generated', 'Modest Wear', 'Custom Fitting'],
-          brand_sizes: brandSizes,
-        };
-
-        setLooksList((prev) => [newAiLook, ...prev]);
+      if (!data.look_title) {
+        throw new Error('style-recommendations returned no look');
       }
+
+      // Now attempt try-on image generation. Its own failure never fails the
+      // whole search — a look with an honest placeholder plate is still a
+      // look — but it must not be allowed to pass a stock photo off as a
+      // render of it, so only a call that reports success is trusted, and a
+      // failure here is stated on the card itself rather than hidden behind
+      // the placeholder (YGS-27).
+      let generatedImageUrl = LOOK_PLACEHOLDER;
+      let imageGenerationFailed = false;
+      try {
+        const tryonRes = await fetch('/api/generate-tryon', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            prompt: `${data.look_title}: ${data.top_garment} with ${data.bottom_garment}. Modest elegant GCC high fashion.`,
+            userPhotoBase64: capturedProfile.frontPhoto,
+            wardrobe,
+          }),
+        });
+        const tryonData = await tryonRes.json();
+        if (tryonRes.ok && tryonData.success && tryonData.imageUrl) {
+          generatedImageUrl = tryonData.imageUrl;
+        } else {
+          imageGenerationFailed = true;
+        }
+      } catch (e) {
+        imageGenerationFailed = true;
+        console.warn('Tryon image generation failed:', e);
+      }
+
+      const foundLook: FashionLook = {
+        ...COMPOSED_LOOK_TEMPLATE,
+        id: `look-${Date.now()}`,
+        look_title: data.look_title,
+        occasion: data.occasion || occasion,
+        top_garment: data.top_garment,
+        bottom_garment: data.bottom_garment,
+        // The server already fails closed on this: a response only ever
+        // reaches here once it has passed the same guardrail check
+        // discovery runs, read from these typed attributes — never from
+        // compliance_check below, which is kept only as the model's own
+        // (untrusted) annotation.
+        attributes: data.attributes,
+        // Fail CLOSED. Modest wear and the other Style Like You rules are hard
+        // guardrails, not preferences — a look whose compliance the model did
+        // not assert is unverified, and unverified must never render as
+        // "Guardrail Verified". Defaulting to true asserts a cultural
+        // constraint was honoured on no evidence at all.
+        compliance_check: data.compliance_check === true,
+        capsule_synergy: data.capsule_synergy || 'Pairs seamlessly with your existing luxury capsule wardrobe.',
+        imageUrl: generatedImageUrl,
+        imageGenerationFailed,
+        brand_sizes: brandSizes,
+      };
+
+      setLooksList((prev) => [foundLook, ...prev]);
     } catch (err) {
-      console.error('Failed to generate AI look:', err);
+      console.error('Failed to find a look:', err);
+      // What happened, what to do — nothing the model or the network said.
+      setFindError("Nothing came back — the connection may have dropped.");
     } finally {
-      setIsGeneratingAi(false);
+      clearTimeout(slowTimer);
+      setIsFinding(false);
+      setIsFindingSlow(false);
     }
   };
 
   return (
-    <div id="app-root-container" className="min-h-screen bg-stone-950 text-stone-100 font-sans antialiased selection:bg-amber-500 selection:text-stone-950 flex flex-col justify-between">
-      {/* Top Header Navigation */}
+    <div
+      id="app-root-container"
+      data-ground={ground}
+      className="flex min-h-dvh flex-col"
+    >
       <HeaderNav
         currentPhase={currentPhase}
         setPhase={setCurrentPhase}
         savedCount={savedLooks.length}
         constraints={constraints}
         onOpenGuardrails={() => setShowGuardrailsModal(true)}
+        wardrobe={wardrobe}
+        onOpenWardrobe={() => setShowWardrobeModal(true)}
         heightCm={heightCm}
-        onGenerateAiLook={handleGenerateAiLook}
-        isGeneratingAi={isGeneratingAi}
-        onOpenInsights={() => setShowInsightsModal(true)}
+        onFindLook={handleFindLook}
+        isFinding={isFinding}
       />
 
-      {/* Main Phase View Controller */}
-      <main className="flex-1 pb-4">
+      {/* Screens own their own gutters (each mounts an AppContainer), so main
+          adds none — but it does cap and centre them, so extra tablet width
+          becomes margin instead of a phone layout stretched to 1180px. */}
+      <main className="safe-bottom mx-auto flex min-h-0 w-full max-w-app flex-1 flex-col">
+        {currentPhase === 'wardrobe' && (
+          <ChooseWardrobe selected={wardrobe} onSelect={handleChooseWardrobe} />
+        )}
+
         {currentPhase === 'onboarding' && (
           <HandsFreeCapture
             onCaptureComplete={handleCaptureComplete}
@@ -226,6 +291,7 @@ export default function App() {
         {currentPhase === 'sizing' && (
           <SizingEngine
             capturedProfile={capturedProfile}
+            wardrobe={wardrobe ?? 'womenswear'}
             onProceedToGuardrails={handleProceedToGuardrails}
           />
         )}
@@ -233,10 +299,7 @@ export default function App() {
         {currentPhase === 'guardrails' && (
           <StyleGuardrails
             constraints={constraints}
-            setConstraints={(newConstraints) => {
-              setConstraints(newConstraints);
-              if (user) syncProfileToFirebase(heightCm, newConstraints as StyleConstraints);
-            }}
+            setConstraints={setConstraints}
             onSaveAndProceed={() => setCurrentPhase('discovery')}
           />
         )}
@@ -250,9 +313,10 @@ export default function App() {
             onSwipeRight={handleSwipeRight}
             onSwipeLeft={handleSwipeLeft}
             onBuyLook={(look) => setCheckoutLook(look)}
-            onGenerateAiLook={handleGenerateAiLook}
-            isGeneratingAi={isGeneratingAi}
-            onUploadLook={(look) => setLooksList((prev) => [look, ...prev])}
+            onFindLook={handleFindLook}
+            isFinding={isFinding}
+            isFindingSlow={isFindingSlow}
+            findError={findError}
           />
         )}
 
@@ -264,65 +328,38 @@ export default function App() {
             onContinueShopping={() => setCurrentPhase('discovery')}
           />
         )}
-
-        {currentPhase === 'ai-features' && (
-          <AIFeatures />
-        )}
-
-        {currentPhase === 'moodboard' && (
-          <Moodboard savedLooks={savedLooks} />
-        )}
-
-        {currentPhase === 'fit-analytics' && (
-          <FitAnalytics 
-            measurements={measurements} 
-            savedLooks={savedLooks} 
-            heightCm={heightCm}
-            onAdjustHeight={(newHeight) => {
-              setHeightCm(newHeight);
-              const newMeas = calculatePhotogrammetryMeasurements(newHeight);
-              setMeasurements(newMeas);
-              setBrandSizes(mapMeasurementsToBrandSizes(newMeas));
-              syncProfileToFirebase(newHeight, constraints);
-            }}
-          />
-        )}
-
-        {currentPhase === 'social-lookbook' && (
-          <SocialLookbook savedLooks={savedLooks} />
-        )}
-
-        {currentPhase === 'digital-closet' && (
-          <DigitalCloset 
-            closetItems={closetItems} 
-            onAddItems={(items) => setClosetItems(prev => [...items, ...prev])} 
-          />
-        )}
       </main>
 
-      {/* Guardrails Settings Modal overlay if requested from header */}
-      {showGuardrailsModal && (
-        <div className="fixed inset-0 z-50 bg-stone-950/90 backdrop-blur-md flex items-center justify-center p-3">
-          <div className="bg-stone-900 border border-stone-800 text-stone-100 w-full max-w-md rounded-2xl p-4 max-h-[85vh] overflow-y-auto shadow-2xl">
-            <StyleGuardrails
-              constraints={constraints}
-              setConstraints={(newConstraints) => {
-                setConstraints(newConstraints);
-                if (user) syncProfileToFirebase(heightCm, newConstraints as StyleConstraints);
-              }}
-              onSaveAndProceed={() => setShowGuardrailsModal(false)}
-            />
-          </div>
-        </div>
-      )}
-
-      {/* Style Insights Modal overlay */}
-      {showInsightsModal && (
-        <StyleInsightsModal
-          constraints={constraints}
-          onClose={() => setShowInsightsModal(false)}
+      {/* Wardrobe, reopened from the menu — the same choice, not a fresh one:
+          switching mid-journey updates the value in place and never resets
+          the phase back to the cold-start screen. */}
+      <ResponsiveSheet
+        open={showWardrobeModal}
+        onOpenChange={setShowWardrobeModal}
+        ground="onyx"
+        title="Shopping for"
+      >
+        <ChooseWardrobe
+          selected={wardrobe}
+          onSelect={handleChooseWardrobe}
+          intro={false}
         />
-      )}
+      </ResponsiveSheet>
+
+      {/* Guardrails opened from the menu — a sheet on phone, a dialog on tablet. */}
+      <ResponsiveSheet
+        open={showGuardrailsModal}
+        onOpenChange={setShowGuardrailsModal}
+        ground="cream"
+        title="Style guardrails"
+        description="What you will and will not wear. Every look respects these."
+      >
+        <StyleGuardrails
+          constraints={constraints}
+          setConstraints={setConstraints}
+          onSaveAndProceed={() => setShowGuardrailsModal(false)}
+        />
+      </ResponsiveSheet>
 
       {/* Atomic Checkout Modal */}
       <CheckoutModal

@@ -1,8 +1,18 @@
-import React, { useState, useEffect } from 'react';
-import { ShoppingBag, Menu, X, User, SlidersHorizontal, Camera, Activity, ShieldCheck, Sparkles, Check, LogIn, LogOut, LayoutDashboard, Package } from 'lucide-react';
-import { AppPhase, StyleConstraints } from '../types';
-import { auth, signIn, signOut } from '../firebase';
-import { onAuthStateChanged, User as FirebaseUser } from 'firebase/auth';
+import React, { useState } from 'react';
+import {
+  Bookmark,
+  Camera,
+  Compass,
+  Menu,
+  Ruler,
+  Shirt,
+  SlidersHorizontal,
+} from 'lucide-react';
+import { AppPhase, StyleConstraints, Wardrobe } from '../types';
+import { YMark, Wordmark } from './brand';
+import { Badge, Button, Separator, Sheet } from './ui';
+import { AppContainer } from './layout';
+import { cn } from '../lib/cn';
 
 interface HeaderNavProps {
   currentPhase: AppPhase;
@@ -10,32 +20,63 @@ interface HeaderNavProps {
   savedCount: number;
   constraints: StyleConstraints;
   onOpenGuardrails: () => void;
+  wardrobe: Wardrobe | null;
+  onOpenWardrobe: () => void;
   heightCm: number;
-  onGenerateAiLook?: (occasion: string) => Promise<void>;
-  isGeneratingAi?: boolean;
-  onOpenInsights?: () => void;
+  onFindLook?: (occasion: string) => Promise<void>;
+  isFinding?: boolean;
 }
 
+/** The context word beside the Y. One word — the screen says the rest. */
+const CONTEXT: Record<AppPhase, string> = {
+  wardrobe: 'Welcome',
+  onboarding: 'Studio',
+  sizing: 'Fit',
+  guardrails: 'Guardrails',
+  discovery: 'Discover',
+  capsule: 'Capsule',
+};
+
+const WARDROBE_LABEL: Record<Wardrobe, string> = {
+  womenswear: 'Womenswear',
+  menswear: 'Menswear',
+};
+
+const DESTINATIONS: ReadonlyArray<{
+  phase: AppPhase;
+  label: string;
+  Icon: typeof Camera;
+}> = [
+  { phase: 'discovery', label: 'Discover', Icon: Compass },
+  { phase: 'onboarding', label: 'Studio', Icon: Camera },
+  { phase: 'sizing', label: 'Fit', Icon: Ruler },
+  { phase: 'capsule', label: 'Capsule', Icon: Bookmark },
+];
+
+const ROW = [
+  'flex min-h-14 w-full items-center gap-4 rounded-control px-4 py-3 text-start',
+  'transition-colors duration-shift ease-shift',
+].join(' ');
+
+/**
+ * Y / Context · Primary Action · Menu.
+ *
+ * Two actions live up here — the screen's one contextual action and the menu
+ * that opens the wider product. There is no tab bar, no search, no bell.
+ */
 export const HeaderNav: React.FC<HeaderNavProps> = ({
   currentPhase,
   setPhase,
   savedCount,
   constraints,
   onOpenGuardrails,
+  wardrobe,
+  onOpenWardrobe,
   heightCm,
-  onGenerateAiLook,
-  isGeneratingAi,
-  onOpenInsights,
+  onFindLook,
+  isFinding,
 }) => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const [user, setUser] = useState<FirebaseUser | null>(null);
-
-  useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
-      setUser(currentUser);
-    });
-    return () => unsubscribe();
-  }, []);
 
   const activeConstraintCount = [
     constraints.modestWear,
@@ -46,336 +87,161 @@ export const HeaderNav: React.FC<HeaderNavProps> = ({
     constraints.noLoudPrints,
   ].filter(Boolean).length;
 
+  const goTo = (phase: AppPhase) => {
+    setPhase(phase);
+    setIsMenuOpen(false);
+  };
+
+  const findLook = async () => {
+    setIsMenuOpen(false);
+    setPhase('discovery');
+    await onFindLook?.('All Occasions');
+  };
+
+  const showFindLook = Boolean(onFindLook) && currentPhase === 'discovery';
+
   return (
     <>
-      {/* Sophisticated Minimalist Top Bar: STRICTLY 1 ACTION BUTTON (Menu/Profile) */}
-      <header id="app-header-nav" className="sticky top-0 z-40 bg-stone-950/95 backdrop-blur-md border-b border-stone-800/80 text-stone-100 px-4 py-3 transition-all">
-        <div className="max-w-md mx-auto flex items-center justify-between">
-          {/* Action 1 (Left): Profile / Menu Trigger */}
-          <button
-            id="nav-btn-profile-menu"
-            onClick={() => setIsMenuOpen(true)}
-            className="p-2.5 rounded-full bg-stone-900 border border-stone-800 text-amber-100 hover:text-amber-300 hover:bg-stone-800 transition-all shadow-sm flex items-center gap-1.5"
-            aria-label="Open Profile and Menu"
-          >
-            <Menu className="w-4 h-4" />
-            <span className="text-[10px] font-mono tracking-wider uppercase text-amber-300 font-bold">Profile</span>
-          </button>
+      <header
+        id="app-header-nav"
+        className="safe-top sticky top-0 z-40 border-b border-rule bg-surface/85 backdrop-blur-md"
+      >
+        <AppContainer>
+          <div className="flex h-16 items-center justify-between gap-4 md:h-20">
+            <div className="flex min-w-0 items-center gap-3">
+              <YMark
+                className="h-6 w-auto shrink-0 md:h-7"
+                title="You've Got Style"
+              />
+              <span className="truncate text-eyebrow font-medium uppercase text-fg-muted">
+                {CONTEXT[currentPhase]}
+              </span>
+            </div>
 
-          {/* Center: Wordmark Brand (Static, non-button) */}
-          <div className="text-center">
-            <h1 className="font-serif text-lg tracking-wider font-semibold text-amber-100">
-              You've Got Style
-            </h1>
-            <p className="text-[9px] text-stone-500 font-mono uppercase tracking-widest -mt-0.5">
-              GCC AI Stylist
-            </p>
-          </div>
+            <div className="flex items-center gap-2">
+              {showFindLook ? (
+                <>
+                  {/* The button's own label stays put. A disabled control is
+                      dropped from the accessibility tree in several browsers,
+                      so a label that flips to "Finding your look" while the
+                      button disables can announce nothing at all. The status
+                      lives in its own region and is announced either way. */}
+                  <span role="status" className="sr-only">
+                    {isFinding ? 'Finding your look' : ''}
+                  </span>
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    onClick={findLook}
+                    disabled={isFinding}
+                  >
+                    Find a look
+                  </Button>
+                </>
+              ) : null}
 
-          {/* Right: Minimalist Badge (Static, non-button) */}
-          <div className="text-right">
-            <span className="text-[10px] font-mono text-stone-400 bg-stone-900 border border-stone-800 px-2 py-1 rounded-full">
-              {heightCm}cm
-            </span>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => setIsMenuOpen(true)}
+                aria-label="Open menu"
+                aria-expanded={isMenuOpen}
+              >
+                <Menu className="size-5" aria-hidden="true" />
+              </Button>
+            </div>
           </div>
-        </div>
+        </AppContainer>
       </header>
 
-      {/* Mature Slide-Over Menu & Profile Drawer */}
-      {isMenuOpen && (
-        <div className="fixed inset-0 z-50 bg-stone-950/85 backdrop-blur-md flex justify-start transition-all animate-fadeIn">
-          <div className="bg-stone-900 border-r border-stone-800 text-stone-100 w-full max-w-xs h-full p-5 flex flex-col justify-between shadow-2xl overflow-y-auto">
-            <div>
-              {/* Drawer Header */}
-              <div className="flex items-center justify-between pb-4 border-b border-stone-800 mb-6">
-                <div className="flex items-center gap-2">
-                  {user && user.photoURL ? (
-                    <img src={user.photoURL} alt="Profile" className="w-9 h-9 rounded-full shadow border border-amber-500/30" />
-                  ) : (
-                    <div className="w-9 h-9 rounded-full bg-gradient-to-tr from-amber-600 to-amber-200 flex items-center justify-center text-stone-950 font-serif font-bold text-sm shadow">
-                      {user ? (user.displayName?.[0] || 'U') : 'YS'}
-                    </div>
-                  )}
-                  <div>
-                    <h2 className="font-serif font-bold text-base text-amber-100">{user ? user.displayName || 'Stylist Profile' : 'Stylist Profile'}</h2>
-                    <p className="text-[10px] font-mono text-stone-400">{user ? user.email : 'GCC Luxury Suite'} • {heightCm}cm</p>
-                  </div>
-                </div>
-                <button
-                  onClick={() => setIsMenuOpen(false)}
-                  className="p-2 rounded-full bg-stone-800 text-stone-400 hover:text-white"
-                >
-                  <X className="w-4 h-4" />
-                </button>
-              </div>
-
-              {/* Menu Navigation Modules */}
-              <div className="space-y-3 font-sans">
-                <span className="text-[10px] font-mono uppercase tracking-wider text-stone-500 block mb-1">
-                  Styling Engine Modules
+      {/* Full-screen on phone, a 420px side drawer from md:. */}
+      <Sheet
+        side="left"
+        ground="cream"
+        open={isMenuOpen}
+        onOpenChange={setIsMenuOpen}
+        title={<Wordmark className="h-7 w-auto" title="You've Got Style" />}
+      >
+        {/* The drawer has room on a tablet and should use it: 4px gaps between
+            56px rows read as phone-app density, not as space. */}
+        <nav aria-label="Sections" className="flex flex-col gap-2 md:gap-3">
+          {DESTINATIONS.map(({ phase, label, Icon }) => {
+            const active = currentPhase === phase;
+            return (
+              <button
+                key={phase}
+                type="button"
+                onClick={() => goTo(phase)}
+                aria-current={active ? 'page' : undefined}
+                className={cn(
+                  ROW,
+                  active ? 'bg-fg/5' : 'hoverable:hover:bg-fg/5',
+                )}
+              >
+                <Icon
+                  className="size-5 shrink-0 text-fg-muted"
+                  aria-hidden="true"
+                />
+                <span className="min-w-0 flex-1 truncate text-body text-fg">
+                  {label}
                 </span>
+                {phase === 'sizing' ? (
+                  <Badge className="tabular">{heightCm} cm</Badge>
+                ) : null}
+                {phase === 'capsule' && savedCount > 0 ? (
+                  <Badge className="tabular">{savedCount} saved</Badge>
+                ) : null}
+                {active ? (
+                  // Marking the selection is exactly what gold is for, but on
+                  // cream gold is 2.01:1 — the ink ring is what actually makes
+                  // the dot visible, and the gold says which kind of mark it is.
+                  <span
+                    className="size-2 shrink-0 rounded-full bg-gold ring-1 ring-fg"
+                    aria-hidden="true"
+                  />
+                ) : null}
+              </button>
+            );
+          })}
+        </nav>
 
-                {/* Module 1: Swipe Discovery */}
-                <button
-                  onClick={() => {
-                    setPhase('discovery');
-                    setIsMenuOpen(false);
-                  }}
-                  className={`w-full p-3 rounded-xl border flex items-center justify-between transition-all ${
-                    currentPhase === 'discovery'
-                      ? 'bg-amber-500/10 border-amber-500 text-amber-200 font-bold'
-                      : 'bg-stone-950 border-stone-800 hover:border-stone-700 text-stone-300'
-                  }`}
-                >
-                  <div className="flex items-center gap-2.5">
-                    <Sparkles className="w-4 h-4 text-amber-400" />
-                    <span className="text-xs font-serif font-semibold">Swipe Discovery</span>
-                  </div>
-                  {currentPhase === 'discovery' && <Check className="w-3.5 h-3.5 text-amber-400" />}
-                </button>
+        <Separator className="my-6" />
 
-                {/* Module 2: Hands-Free Voice Capture */}
-                <button
-                  onClick={() => {
-                    setPhase('onboarding');
-                    setIsMenuOpen(false);
-                  }}
-                  className={`w-full p-3 rounded-xl border flex items-center justify-between transition-all ${
-                    currentPhase === 'onboarding'
-                      ? 'bg-amber-500/10 border-amber-500 text-amber-200 font-bold'
-                      : 'bg-stone-950 border-stone-800 hover:border-stone-700 text-stone-300'
-                  }`}
-                >
-                  <div className="flex items-center gap-2.5">
-                    <Camera className="w-4 h-4 text-amber-400" />
-                    <span className="text-xs font-serif font-semibold">Hands-Free 3D Mirror</span>
-                  </div>
-                  {currentPhase === 'onboarding' && <Check className="w-3.5 h-3.5 text-amber-400" />}
-                </button>
+        <button
+          type="button"
+          onClick={() => {
+            onOpenWardrobe();
+            setIsMenuOpen(false);
+          }}
+          className={cn(ROW, 'hoverable:hover:bg-fg/5')}
+        >
+          <Shirt className="size-5 shrink-0 text-fg-muted" aria-hidden="true" />
+          <span className="min-w-0 flex-1 truncate text-body text-fg">
+            Shopping for
+          </span>
+          {wardrobe ? (
+            <Badge className="tabular">{WARDROBE_LABEL[wardrobe]}</Badge>
+          ) : null}
+        </button>
 
-                {/* Module 3: 3D Photogrammetry & Sizing */}
-                <button
-                  onClick={() => {
-                    setPhase('sizing');
-                    setIsMenuOpen(false);
-                  }}
-                  className={`w-full p-3 rounded-xl border flex items-center justify-between transition-all ${
-                    currentPhase === 'sizing'
-                      ? 'bg-amber-500/10 border-amber-500 text-amber-200 font-bold'
-                      : 'bg-stone-950 border-stone-800 hover:border-stone-700 text-stone-300'
-                  }`}
-                >
-                  <div className="flex items-center gap-2.5">
-                    <Activity className="w-4 h-4 text-amber-400" />
-                    <span className="text-xs font-serif font-semibold">Volumetric Sizing</span>
-                  </div>
-                  {currentPhase === 'sizing' && <Check className="w-3.5 h-3.5 text-amber-400" />}
-                </button>
-
-                {/* Capsule Wardrobe */}
-                <button
-                  onClick={() => {
-                    setPhase('capsule');
-                    setIsMenuOpen(false);
-                  }}
-                  className={`w-full p-3 rounded-xl border flex items-center justify-between transition-all ${
-                    currentPhase === 'capsule'
-                      ? 'bg-amber-500/10 border-amber-500 text-amber-200 font-bold'
-                      : 'bg-stone-950 border-stone-800 hover:border-stone-700 text-stone-300'
-                  }`}
-                >
-                  <div className="flex items-center gap-2.5">
-                    <ShoppingBag className="w-4 h-4 text-amber-400" />
-                    <span className="text-xs font-serif font-semibold">Capsule Wardrobe</span>
-                  </div>
-                  {savedCount > 0 ? (
-                    <span className="bg-emerald-500 text-stone-950 font-bold text-[10px] font-mono px-2 py-0.5 rounded-full">
-                      {savedCount} Saved
-                    </span>
-                  ) : (
-                    currentPhase === 'capsule' && <Check className="w-3.5 h-3.5 text-amber-400" />
-                  )}
-                </button>
-
-                {/* Moodboard */}
-                <button
-                  onClick={() => {
-                    setPhase('moodboard');
-                    setIsMenuOpen(false);
-                  }}
-                  className={`w-full p-3 rounded-xl border flex items-center justify-between transition-all ${
-                    currentPhase === 'moodboard'
-                      ? 'bg-amber-500/10 border-amber-500 text-amber-200 font-bold'
-                      : 'bg-stone-950 border-stone-800 hover:border-stone-700 text-stone-300'
-                  }`}
-                >
-                  <div className="flex items-center gap-2.5">
-                    <LayoutDashboard className="w-4 h-4 text-amber-400" />
-                    <span className="text-xs font-serif font-semibold">Moodboard</span>
-                  </div>
-                  {currentPhase === 'moodboard' && <Check className="w-3.5 h-3.5 text-amber-400" />}
-                </button>
-
-                {/* Fit Analytics */}
-                <button
-                  onClick={() => {
-                    setPhase('fit-analytics');
-                    setIsMenuOpen(false);
-                  }}
-                  className={`w-full p-3 rounded-xl border flex items-center justify-between transition-all ${
-                    currentPhase === 'fit-analytics'
-                      ? 'bg-amber-500/10 border-amber-500 text-amber-200 font-bold'
-                      : 'bg-stone-950 border-stone-800 hover:border-stone-700 text-stone-300'
-                  }`}
-                >
-                  <div className="flex items-center gap-2.5">
-                    <Activity className="w-4 h-4 text-amber-400" />
-                    <span className="text-xs font-serif font-semibold">Fit Analytics</span>
-                  </div>
-                  {currentPhase === 'fit-analytics' && <Check className="w-3.5 h-3.5 text-amber-400" />}
-                </button>
-
-                {/* Social Lookbook */}
-                <button
-                  onClick={() => {
-                    setPhase('social-lookbook');
-                    setIsMenuOpen(false);
-                  }}
-                  className={`w-full p-3 rounded-xl border flex items-center justify-between transition-all ${
-                    currentPhase === 'social-lookbook'
-                      ? 'bg-amber-500/10 border-amber-500 text-amber-200 font-bold'
-                      : 'bg-stone-950 border-stone-800 hover:border-stone-700 text-stone-300'
-                  }`}
-                >
-                  <div className="flex items-center gap-2.5">
-                    <Camera className="w-4 h-4 text-amber-400" />
-                    <span className="text-xs font-serif font-semibold">Social Lookbook</span>
-                  </div>
-                  {currentPhase === 'social-lookbook' && <Check className="w-3.5 h-3.5 text-amber-400" />}
-                </button>
-
-                {/* Digital Closet */}
-                <button
-                  onClick={() => {
-                    setPhase('digital-closet');
-                    setIsMenuOpen(false);
-                  }}
-                  className={`w-full p-3 rounded-xl border flex items-center justify-between transition-all ${
-                    currentPhase === 'digital-closet'
-                      ? 'bg-amber-500/10 border-amber-500 text-amber-200 font-bold'
-                      : 'bg-stone-950 border-stone-800 hover:border-stone-700 text-stone-300'
-                  }`}
-                >
-                  <div className="flex items-center gap-2.5">
-                    <Package className="w-4 h-4 text-amber-400" />
-                    <span className="text-xs font-serif font-semibold">Digital Closet</span>
-                  </div>
-                  {currentPhase === 'digital-closet' && <Check className="w-3.5 h-3.5 text-amber-400" />}
-                </button>
-
-                {/* AI Features */}
-                <button
-                  onClick={() => {
-                    setPhase('ai-features');
-                    setIsMenuOpen(false);
-                  }}
-                  className={`w-full p-3 rounded-xl border flex items-center justify-between transition-all ${
-                    currentPhase === 'ai-features'
-                      ? 'bg-amber-500/10 border-amber-500 text-amber-200 font-bold'
-                      : 'bg-stone-950 border-stone-800 hover:border-stone-700 text-stone-300'
-                  }`}
-                >
-                  <div className="flex items-center gap-2.5">
-                    <Sparkles className="w-4 h-4 text-amber-400" />
-                    <span className="text-xs font-serif font-semibold">Gemini Intelligence</span>
-                  </div>
-                  {currentPhase === 'ai-features' && <Check className="w-3.5 h-3.5 text-amber-400" />}
-                </button>
-
-                {/* Gemini AI Look Synthesis Button */}
-                {onGenerateAiLook && (
-                  <button
-                    onClick={async () => {
-                      setIsMenuOpen(false);
-                      setPhase('discovery');
-                      await onGenerateAiLook('All Occasions');
-                    }}
-                    disabled={isGeneratingAi}
-                    className="w-full p-3 rounded-xl border bg-gradient-to-r from-amber-500/20 to-amber-400/10 border-amber-500/40 text-amber-200 hover:border-amber-400 flex items-center justify-between transition-all"
-                  >
-                    <div className="flex items-center gap-2.5">
-                      <Sparkles className={`w-4 h-4 text-amber-400 ${isGeneratingAi ? 'animate-spin' : ''}`} />
-                      <span className="text-xs font-serif font-bold text-amber-100">
-                        {isGeneratingAi ? 'Synthesizing Look...' : 'Generate AI Custom Look'}
-                      </span>
-                    </div>
-                    <span className="text-[10px] font-mono text-amber-300">Gemini 2.5</span>
-                  </button>
-                )}
-
-                {/* Module 4: Style Like You Guardrails */}
-                <button
-                  onClick={() => {
-                    onOpenGuardrails();
-                    setIsMenuOpen(false);
-                  }}
-                  className="w-full p-3 rounded-xl border bg-stone-950 border-stone-800 hover:border-stone-700 text-stone-300 flex items-center justify-between transition-all"
-                >
-                  <div className="flex items-center gap-2.5">
-                    <SlidersHorizontal className="w-4 h-4 text-amber-400" />
-                    <span className="text-xs font-serif font-semibold">"Style Like You" Filter</span>
-                  </div>
-                  <span className="bg-amber-500/20 text-amber-300 text-[10px] font-mono px-2 py-0.5 rounded border border-amber-500/30">
-                    {activeConstraintCount} Active
-                  </span>
-                </button>
-
-                {/* Style Insights Modal */}
-                {onOpenInsights && (
-                  <button
-                    onClick={() => {
-                      onOpenInsights();
-                      setIsMenuOpen(false);
-                    }}
-                    className="w-full p-3 rounded-xl border bg-stone-950 border-stone-800 hover:border-stone-700 text-stone-300 flex items-center justify-between transition-all mt-2"
-                  >
-                    <div className="flex items-center gap-2.5">
-                      <Sparkles className="w-4 h-4 text-amber-400" />
-                      <span className="text-xs font-serif font-semibold">Daily Style Insight</span>
-                    </div>
-                  </button>
-                )}
-              </div>
-            </div>
-
-            {/* Footer Information */}
-            <div className="pt-4 border-t border-stone-800 text-[10px] font-mono text-stone-500 space-y-3">
-              {user ? (
-                <button
-                  onClick={() => signOut()}
-                  className="w-full flex items-center justify-center gap-2 py-2 rounded border border-stone-800 hover:bg-stone-800 text-stone-400 transition-colors"
-                >
-                  <LogOut className="w-3.5 h-3.5" />
-                  <span>Sign Out</span>
-                </button>
-              ) : (
-                <button
-                  onClick={() => signIn()}
-                  className="w-full flex items-center justify-center gap-2 py-2 rounded bg-amber-500 hover:bg-amber-400 text-stone-950 font-bold transition-colors"
-                >
-                  <LogIn className="w-3.5 h-3.5" />
-                  <span>Sign In with Google</span>
-                </button>
-              )}
-              <div className="space-y-1">
-                <p>Engine: Gemini 2.5 Flash + Photogrammetry</p>
-                <p>Security: UAE PDPL On-Device Compliance</p>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
+        <button
+          type="button"
+          onClick={() => {
+            onOpenGuardrails();
+            setIsMenuOpen(false);
+          }}
+          className={cn(ROW, 'hoverable:hover:bg-fg/5')}
+        >
+          <SlidersHorizontal
+            className="size-5 shrink-0 text-fg-muted"
+            aria-hidden="true"
+          />
+          <span className="min-w-0 flex-1 truncate text-body text-fg">
+            Style guardrails
+          </span>
+          <Badge className="tabular">{activeConstraintCount} active</Badge>
+        </button>
+      </Sheet>
     </>
   );
 };
-

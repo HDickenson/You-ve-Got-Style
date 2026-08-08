@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+
+<html lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Home: Personal Studio</title>
+<!-- Font Setup: Playfair Display for headings, Satoshi (using Inter as fallback if not available on standard CDN, but will assume generic sans-serif setup for 'functional' as requested, opting for standard clean sans) -->
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600&amp;family=Inter:wght@300;400;500&amp;display=swap" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            'cream': '#FAF6F1',
+            'ink': '#1A1A1A',
+            'muted-text': '#5C5C5C',
+            'card-bg': '#E6DFD4', // Approximated card background
+          },
+          fontFamily: {
+            'playfair': ['"Playfair Display"', 'serif'],
+            'satoshi': ['Inter', 'sans-serif'], // Using Inter as a close, widely available substitute for Satoshi
+          }
+        }
+      }
+    }
+  </script>
+<style data-purpose="custom-utilities">
+    /* Hide scrollbar for horizontal scroll area */
+    .hide-scrollbar::-webkit-scrollbar {
+      display: none;
+    }
+    .hide-scrollbar {
+      -ms-overflow-style: none;
+      scrollbar-width: none;
+    }
+    
+    .text-balance {
+      text-wrap: balance;
+    }
+  </style>
+</head>
+<body class="bg-cream font-satoshi text-ink min-h-screen flex items-center justify-center">
+<!-- Mobile Device Container -->
+<div class="relative w-[393px] h-[852px] bg-cream overflow-hidden border border-gray-200 shadow-2xl">
+<!-- BEGIN: Status Bar Placeholder -->
+<div class="flex justify-between items-center px-6 pt-4 pb-2 text-[15px] font-medium tracking-tight">
+<span>9:41</span>
+<div class="flex items-center space-x-2">
+<!-- Signal Icons (Simplified) -->
+<svg fill="none" height="12" viewbox="0 0 18 12" width="18" xmlns="http://www.w3.org/2000/svg">
+<path d="M1.5 9V11.5" stroke="currentColor" stroke-linecap="round" stroke-width="1.5"></path>
+<path d="M5.5 6V11.5" stroke="currentColor" stroke-linecap="round" stroke-width="1.5"></path>
+<path d="M9.5 3V11.5" stroke="currentColor" stroke-linecap="round" stroke-width="1.5"></path>
+<path d="M13.5 0.5V11.5" stroke="currentColor" stroke-linecap="round" stroke-width="1.5"></path>
+</svg>
+<svg fill="none" height="12" viewbox="0 0 16 12" width="16" xmlns="http://www.w3.org/2000/svg">
+<path d="M8 11.5C9.5 11.5 10.75 10.5 10.75 9C10.75 7.5 9.5 6.5 8 6.5C6.5 6.5 5.25 7.5 5.25 9C5.25 10.5 6.5 11.5 8 11.5Z" stroke="currentColor" stroke-width="1.5"></path>
+<path d="M12.5 4.5C13.5 5.5 14 6.75 14 8" stroke="currentColor" stroke-linecap="round" stroke-width="1.5"></path>
+<path d="M3.5 4.5C2.5 5.5 2 6.75 2 8" stroke="currentColor" stroke-linecap="round" stroke-width="1.5"></path>
+<path d="M15.5 1.5C16.5 2.5 17.5 4.5 17.5 6.5" stroke="currentColor" stroke-linecap="round" stroke-width="1.5"></path>
+<path d="M0.5 1.5C-0.5 2.5 -1.5 4.5 -1.5 6.5" stroke="currentColor" stroke-linecap="round" stroke-width="1.5"></path>
+</svg>
+<svg fill="none" height="12" viewbox="0 0 25 12" width="25" xmlns="http://www.w3.org/2000/svg">
+<rect height="11" rx="3.5" stroke="currentColor" width="21" x="0.5" y="0.5"></rect>
+<path d="M23 4V8" stroke="currentColor" stroke-linecap="round" stroke-width="1.5"></path>
+<rect fill="currentColor" height="8" rx="2" width="15" x="2" y="2"></rect>
+</svg>
+</div>
+</div>
+<!-- END: Status Bar Placeholder -->
+<!-- BEGIN: Top Navigation -->
+<header class="flex justify-between items-center px-6 pt-2 pb-6">
+<!-- 'Y' Logo Mark -->
+<svg fill="none" height="32" viewbox="0 0 32 32" width="32" xmlns="http://www.w3.org/2000/svg">
+<path d="M16 26V16M16 16L7 4M16 16L25 4" stroke="#1A1A1A" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path>
+</svg>
+<!-- Hamburger Menu -->
+<button class="w-10 h-10 rounded-full border border-ink/20 flex items-center justify-center">
+<svg fill="none" height="14" viewbox="0 0 20 14" width="20" xmlns="http://www.w3.org/2000/svg">
+<path d="M2 2H18M2 7H18M2 12H18" stroke="#1A1A1A" stroke-linecap="round" stroke-width="1.5"></path>
+</svg>
+</button>
+</header>
+<!-- END: Top Navigation -->
+<!-- BEGIN: Main Content Area -->
+<main class="px-6 pb-32 h-full overflow-y-auto hide-scrollbar">
+<!-- Greeting Section -->
+<section class="mb-10">
+<h1 class="font-playfair text-[32px] leading-tight text-ink mb-2">Good evening, Sara</h1>
+<p class="text-[15px] text-muted-text font-light tracking-wide">Let's find your perfect look.</p>
+</section>
+<!-- Horizontal Scrollable Cards Area -->
+<section class="flex space-x-4 overflow-x-auto hide-scrollbar -mx-6 px-6">
+<!-- Editorial Card 1: Dubai Dinner -->
+<article class="min-w-[310px] w-[310px] bg-card-bg rounded-[32px] overflow-hidden flex flex-col relative">
+<!-- Text Content Overlay -->
+<div class="p-6 pb-0 z-10">
+<span class="text-[10px] uppercase tracking-widest text-ink/70 font-semibold mb-2 block">For Tonight</span>
+<h2 class="font-playfair text-2xl text-ink mb-1">Dubai Dinner</h2>
+<p class="text-sm text-ink/80 font-light">Elegant. Timeless. Effortless.</p>
+</div>
+<!-- Image Area -->
+<div class="relative h-[340px] mt-4 overflow-hidden rounded-t-[32px] mx-4 mb-4">
+<img alt="Woman wearing a cream silk dress in an archway" class="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuACbeNVdFLFu3j8D8kZ5jOZ6uzH9U1trM6zuyzCjzSei6__nUjd1sHgtkJBUWkMApRK6G2RQCODzkkLb5khanSYcJs64_-VvDaCoGtDEfgsiCa4CZ9vB_zvM_GP9NHoThaftL0_pWYLiw6YFFjfN04tTmct5kbVd3_lq4nTg7gq1rTnE1-Pn3YLLTf0mFZgndEQssZfE-gQqPgnAigylX7stciqnf0zVhq8yi6P2NTZs2_LxlINMztzQw"/>
+</div>
+<!-- Next Button overlaid on card -->
+<button class="absolute bottom-8 right-8 w-12 h-12 bg-cream rounded-full flex items-center justify-center shadow-lg z-20 hover:scale-105 transition-transform">
+<svg fill="none" height="20" viewbox="0 0 24 24" width="20" xmlns="http://www.w3.org/2000/svg">
+<path d="M5 12H19M19 12L12 5M19 12L12 19" stroke="#1A1A1A" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path>
+</svg>
+</button>
+</article>
+<!-- Partial Next Card Peek -->
+<article class="min-w-[40px] w-[40px] bg-[#D5CDC1] rounded-l-[32px] opacity-70">
+<!-- Just a visual hint of next content -->
+</article>
+</section>
+<!-- Pagination Dots -->
+<div class="flex justify-center items-center space-x-2 mt-8">
+<div class="w-2 h-2 rounded-full bg-ink"></div>
+<div class="w-2 h-2 rounded-full bg-ink/20"></div>
+<div class="w-2 h-2 rounded-full bg-ink/20"></div>
+</div>
+</main>
+<!-- END: Main Content Area -->
+<!-- BEGIN: Floating Bottom Navigation -->
+<nav class="absolute bottom-0 left-0 right-0 h-[120px] bg-gradient-to-t from-cream via-cream to-transparent flex items-end justify-center pb-8 px-8 z-50">
+<div class="flex justify-between items-center w-full max-w-[320px]">
+<!-- My Looks -->
+<button class="flex flex-col items-center space-y-2 w-16 group">
+<div class="w-12 h-12 rounded-full border border-ink/20 flex items-center justify-center group-hover:bg-ink/5 transition-colors">
+<svg fill="none" height="24" viewbox="0 0 24 24" width="24" xmlns="http://www.w3.org/2000/svg">
+<path d="M16 11V10C16 7.79086 14.2091 6 12 6C9.79086 6 8 7.79086 8 10V11M5 11H19L20 21H4L5 11Z" stroke="#1A1A1A" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"></path>
+</svg>
+</div>
+<span class="text-[10px] uppercase tracking-wider font-semibold text-ink">My Looks</span>
+</button>
+<!-- STYLE ME (Dark Orb) -->
+<button class="flex flex-col items-center space-y-3 -translate-y-4 group">
+<div class="w-20 h-20 rounded-full bg-ink text-cream flex items-center justify-center shadow-xl group-hover:scale-105 transition-transform">
+<svg fill="none" height="32" viewbox="0 0 24 24" width="32" xmlns="http://www.w3.org/2000/svg">
+<path d="M12 3V21M3 12H21" stroke="#FAF6F1" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"></path>
+<path d="M7 7L17 17M17 7L7 17" stroke="#FAF6F1" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"></path>
+</svg>
+</div>
+<span class="text-[11px] uppercase tracking-widest font-bold text-ink">Style Me</span>
+</button>
+<!-- MENU -->
+<button class="flex flex-col items-center space-y-2 w-16 group">
+<div class="w-12 h-12 rounded-full border border-ink/20 flex items-center justify-center group-hover:bg-ink/5 transition-colors">
+<svg fill="none" height="24" viewbox="0 0 24 24" width="24" xmlns="http://www.w3.org/2000/svg">
+<path d="M8 11V7C8 4.79086 9.79086 3 12 3C14.2091 3 16 4.79086 16 7V11M5 11H19V21H5V11Z" stroke="#1A1A1A" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"></path>
+<circle cx="12" cy="16" fill="#1A1A1A" r="1.5"></circle>
+</svg>
+</div>
+<span class="text-[10px] uppercase tracking-wider font-semibold text-ink">Menu</span>
+</button>
+</div>
+</nav>
+<!-- END: Floating Bottom Navigation -->
+<!-- Home Indicator -->
+<div class="absolute bottom-2 left-1/2 -translate-x-1/2 w-32 h-[5px] bg-ink rounded-full z-50"></div>
+</div>
+</body></html>

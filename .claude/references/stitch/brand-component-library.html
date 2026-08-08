@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>You've Got Style - Brand Component Library</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600;700&amp;family=Hanken+Grotesk:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@300,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "tertiary-container": "#261900",
+                        "surface-variant": "#e3e2e2",
+                        "surface-container-lowest": "#ffffff",
+                        "overlay-gradient": "rgba(0,0,0,0.6)",
+                        "on-primary": "#ffffff",
+                        "on-tertiary-container": "#a17f3b",
+                        "surface-container-highest": "#e3e2e2",
+                        "on-primary-container": "#848484",
+                        "primary": "#000000",
+                        "surface-tint": "#5F5E5E",
+                        "tertiary-fixed-dim": "#e9c176",
+                        "secondary-container": "#e5e2dd",
+                        "on-primary-fixed": "#1b1b1b",
+                        "error-container": "#ffdad6",
+                        "inverse-surface": "#303030",
+                        "background": "#fbf9f8",
+                        "error": "#ba1a1a",
+                        "primary-fixed": "#e2e2e2",
+                        "on-surface-muted": "#444748",
+                        "on-tertiary-fixed-variant": "#5d4201",
+                        "on-tertiary": "#ffffff",
+                        "surface-container-low": "#f5f3f3",
+                        "surface-container-high": "#e9e8e7",
+                        "on-secondary-fixed": "#1c1c19",
+                        "inverse-primary": "#c6c6c6",
+                        "surface-bright": "#fbf9f8",
+                        "secondary": "#5f5e5b",
+                        "on-surface": "#1b1c1c",
+                        "surface-container": "#efeded",
+                        "secondary-fixed-dim": "#c8c6c2",
+                        "on-tertiary-fixed": "#261900",
+                        "secondary-fixed": "#e5e2dd",
+                        "tertiary": "#000000",
+                        "surface": "#FBF9F8",
+                        "primary-fixed-dim": "#c6c6c6",
+                        "on-error-container": "#93000a",
+                        "primary-container": "#1b1b1b",
+                        "on-error": "#ffffff",
+                        "on-background": "#1b1c1c",
+                        "inverse-on-surface": "#f2f0f0",
+                        "tertiary-fixed": "#ffdea5",
+                        "on-secondary-container": "#656461",
+                        "on-surface-variant": "#4c4546",
+                        "on-secondary-fixed-variant": "#474743",
+                        "surface-dim": "#dbdad9",
+                        "outline": "#7e7576",
+                        "on-secondary": "#ffffff",
+                        "outline-variant": "#cfc4c5",
+                        "on-primary-fixed-variant": "#474747"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.125rem",
+                        "lg": "0.25rem",
+                        "xl": "0.5rem",
+                        "full": "0.75rem"
+                    },
+                    "spacing": {
+                        "container-margin": "24px",
+                        "button-px": "48px",
+                        "gutter": "16px",
+                        "button-py": "16px",
+                        "unit": "4px",
+                        "section-gap": "48px"
+                    },
+                    "fontFamily": {
+                        "title-md": ["Hanken Grotesk"],
+                        "display-lg": ["Playfair Display"],
+                        "body-sm": ["Hanken Grotesk"],
+                        "headline-lg": ["Playfair Display"],
+                        "headline-lg-mobile": ["Playfair Display"],
+                        "label-caps": ["Hanken Grotesk"],
+                        "body-lg": ["Hanken Grotesk"]
+                    },
+                    "fontSize": {
+                        "title-md": ["18px", { "lineHeight": "24px", "letterSpacing": "0.05em", "fontWeight": "600" }],
+                        "display-lg": ["72px", { "lineHeight": "80px", "letterSpacing": "-0.02em", "fontWeight": "600" }],
+                        "body-sm": ["14px", { "lineHeight": "20px", "fontWeight": "400" }],
+                        "headline-lg": ["32px", { "lineHeight": "40px", "fontWeight": "500" }],
+                        "headline-lg-mobile": ["28px", { "lineHeight": "34px", "fontWeight": "500" }],
+                        "label-caps": ["12px", { "lineHeight": "16px", "letterSpacing": "0.1em", "fontWeight": "700" }],
+                        "body-lg": ["16px", { "lineHeight": "26px", "fontWeight": "400" }]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 300, 'GRAD' 0, 'opsz' 24;
+        }
+        .material-symbols-outlined.fill {
+            font-variation-settings: 'FILL' 1, 'wght' 300, 'GRAD' 0, 'opsz' 24;
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-background text-on-background antialiased selection:bg-tertiary-fixed-dim selection:text-tertiary-container">
+<!-- Top Navigation Shell (Hidden Navigation due to specific page context) -->
+<header class="bg-background dark:bg-primary docked full-width top-0 sticky z-50 transition-colors duration-300">
+<div class="flex justify-between items-center w-full px-container-margin py-4">
+<div class="flex items-center gap-4">
+<span class="material-symbols-outlined text-primary dark:text-on-primary cursor-pointer hover:opacity-70 transition-opacity duration-300">menu</span>
+</div>
+<div class="flex flex-col items-center">
+<h1 class="font-headline-lg-mobile text-headline-lg-mobile md:font-headline-lg md:text-headline-lg font-bold tracking-tight text-primary dark:text-on-primary">
+                    YOU'VE GOT STYLE
+                </h1>
+<span class="font-label-caps text-label-caps tracking-[0.2em] text-on-surface-variant dark:text-outline mt-1 uppercase">Brand Component Library</span>
+</div>
+<div class="flex items-center gap-4">
+<span class="material-symbols-outlined text-primary dark:text-on-primary cursor-pointer hover:opacity-70 transition-opacity duration-300">shopping_bag</span>
+</div>
+</div>
+</header>
+<main class="max-w-[1200px] mx-auto px-container-margin py-section-gap grid grid-cols-1 gap-16 md:gap-32">
+<!-- Introduction -->
+<section class="max-w-2xl text-center mx-auto space-y-6">
+<h2 class="font-display-lg text-display-lg text-primary tracking-tight">The Digital Atelier</h2>
+<p class="font-body-lg text-body-lg text-on-surface-muted">
+                A definitive guide to the modular components that power the You've Got Style experience. 
+                These components are designed to feel tactile, precise, and effortlessly elegant.
+            </p>
+</section>
+<!-- The 'Style Me' Orb Component -->
+<section class="space-y-12">
+<div class="border-b border-outline-variant/20 pb-4">
+<h3 class="font-headline-lg text-headline-lg text-primary">The 'Style Me' Orb</h3>
+<p class="font-body-sm text-body-sm text-on-surface-variant mt-2 uppercase tracking-wider">Interactive Action Token</p>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+<!-- Idle State -->
+<div class="bg-surface-container rounded-xl p-8 flex flex-col items-center justify-center min-h-[300px] relative overflow-hidden group">
+<div class="absolute inset-0 bg-gradient-to-b from-transparent to-surface-variant/30 opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+<div class="w-24 h-24 rounded-full border border-outline flex items-center justify-center text-on-surface-variant transition-all duration-300 group-hover:scale-105 group-hover:border-primary group-hover:text-primary">
+<span class="material-symbols-outlined text-3xl">magic_button</span>
+</div>
+<span class="font-label-caps text-label-caps text-on-surface-variant mt-6 tracking-widest uppercase">Idle</span>
+</div>
+<!-- Available State -->
+<div class="bg-primary rounded-xl p-8 flex flex-col items-center justify-center min-h-[300px] relative overflow-hidden group shadow-sm">
+<div class="w-24 h-24 rounded-full bg-surface-container-lowest flex items-center justify-center text-primary transition-all duration-300 group-hover:scale-95">
+<span class="material-symbols-outlined fill text-3xl">magic_button</span>
+</div>
+<span class="font-label-caps text-label-caps text-on-primary mt-6 tracking-widest uppercase">Available</span>
+</div>
+<!-- Complete State -->
+<div class="bg-tertiary-container rounded-xl p-8 flex flex-col items-center justify-center min-h-[300px] relative overflow-hidden group">
+<div class="w-24 h-24 rounded-full bg-tertiary-fixed-dim flex items-center justify-center text-tertiary-container transition-all duration-500 hover:rotate-90">
+<span class="material-symbols-outlined text-3xl">check</span>
+</div>
+<span class="font-label-caps text-label-caps text-tertiary-fixed-dim mt-6 tracking-widest uppercase">Complete</span>
+</div>
+</div>
+</section>
+<!-- Style Intelligence Card -->
+<section class="space-y-12">
+<div class="border-b border-outline-variant/20 pb-4">
+<h3 class="font-headline-lg text-headline-lg text-primary">Style Intelligence Card</h3>
+<p class="font-body-sm text-body-sm text-on-surface-variant mt-2 uppercase tracking-wider">AI Reasoning Display</p>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-2 gap-12 items-center">
+<div class="space-y-6">
+<p class="font-body-lg text-body-lg text-on-surface-muted">
+                        Used to explain the 'why' behind a recommendation. Combines a high-impact visual with 
+                        clear, logical reasoning points and a definitive match score.
+                    </p>
+<div class="flex flex-wrap gap-3 pt-4">
+<span class="px-4 py-2 rounded-full border border-outline-variant font-label-caps text-label-caps text-on-surface uppercase tracking-wider hover:bg-surface-variant transition-colors cursor-pointer">Modest</span>
+<span class="px-4 py-2 rounded-full border border-outline-variant font-label-caps text-label-caps text-on-surface uppercase tracking-wider hover:bg-surface-variant transition-colors cursor-pointer">Structured</span>
+<span class="px-4 py-2 rounded-full border border-outline-variant font-label-caps text-label-caps text-on-surface uppercase tracking-wider hover:bg-surface-variant transition-colors cursor-pointer">Evening</span>
+</div>
+</div>
+<!-- Card Component -->
+<div class="bg-surface-container rounded-xl overflow-hidden relative group">
+<div class="aspect-[3/4] w-full relative overflow-hidden">
+<img class="w-full h-full object-cover transition-transform duration-1000 group-hover:scale-105" data-alt="A sophisticated editorial photograph of a model wearing a structured, modest evening gown in neutral tones, standing in a minimalist gallery space with soft, directional lighting creating subtle shadows. The aesthetic is high-end, clean, and elegant." src="https://lh3.googleusercontent.com/aida-public/AB6AXuC2BEhQFekz0NuII9aOS8Yfr7QeWkXT359qUwGPLdn30TqWCkqc6Pe2-hk7m2Wnp8iT2zzKzmqwVkQGNs7KKIOY9l09T09lSVESE1fZpP4eSrS0El69nvY-2QD4F9Safr-PXtL8HUo31zwzcxf0s1R8aM4ATbIKkdivKLaZHgomwIiNKod2k-Ku6Q--O4y_4lXLcU9eQ1o4nQWACJPZMYQEDEZsM_w8GOIYPr3bNbDG3W1saTha0reVIA"/>
+<div class="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent"></div>
+<!-- Match Badge -->
+<div class="absolute top-4 right-4 bg-tertiary-fixed-dim text-tertiary-container px-3 py-1 rounded-full font-label-caps text-label-caps flex items-center gap-1 shadow-sm backdrop-blur-md">
+<span class="material-symbols-outlined text-[14px]">auto_awesome</span>
+                             92% MATCH
+                         </div>
+<!-- Content Overlay -->
+<div class="absolute bottom-0 left-0 w-full p-6 text-on-primary">
+<h4 class="font-headline-lg-mobile text-headline-lg-mobile mb-4">Structured Elegance</h4>
+<ul class="space-y-3 font-body-sm text-body-sm text-surface-variant/90">
+<li class="flex items-start gap-3">
+<span class="material-symbols-outlined text-[18px] text-tertiary-fixed-dim mt-0.5">check_circle</span>
+                                     Balances your silhouette with defined shoulders.
+                                 </li>
+<li class="flex items-start gap-3">
+<span class="material-symbols-outlined text-[18px] text-tertiary-fixed-dim mt-0.5">check_circle</span>
+                                     Appropriate for high-end dinner settings.
+                                 </li>
+</ul>
+</div>
+</div>
+</div>
+</div>
+</section>
+<!-- Theme Transitions -->
+<section class="space-y-12 pb-24">
+<div class="border-b border-outline-variant/20 pb-4">
+<h3 class="font-headline-lg text-headline-lg text-primary">Theme Contexts</h3>
+<p class="font-body-sm text-body-sm text-on-surface-variant mt-2 uppercase tracking-wider">Onyx vs. Cream Environments</p>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+<!-- Onyx Theme Mock -->
+<div class="bg-primary text-on-primary p-12 rounded-xl min-h-[400px] flex flex-col justify-between relative overflow-hidden">
+<div class="absolute top-0 right-0 p-8 opacity-10">
+<span class="font-display-lg text-[120px] leading-none">Y</span>
+</div>
+<div class="space-y-2 z-10">
+<span class="font-label-caps text-label-caps text-tertiary-fixed-dim tracking-widest uppercase">Presentation Mode</span>
+<h4 class="font-headline-lg text-headline-lg">Impact First</h4>
+<p class="font-body-sm text-body-sm text-surface-variant/70 max-w-sm mt-4">
+                            A cinematic, high-contrast experience that makes every interaction feel intentional. Used for final presentations and major reveals.
+                        </p>
+</div>
+<div class="mt-12 z-10">
+<button class="bg-on-primary text-primary px-button-px py-button-py font-label-caps text-label-caps uppercase tracking-widest hover:bg-surface-variant transition-colors duration-300 w-fit flex items-center gap-3">
+                            View Lookbook <span class="material-symbols-outlined">arrow_forward</span>
+</button>
+</div>
+</div>
+<!-- Cream Theme Mock -->
+<div class="bg-surface-container-low border border-outline-variant/30 text-on-surface p-12 rounded-xl min-h-[400px] flex flex-col justify-between relative">
+<div class="space-y-2">
+<span class="font-label-caps text-label-caps text-on-surface-variant tracking-widest uppercase">Studio Mode</span>
+<h4 class="font-headline-lg text-headline-lg text-primary">Personal &amp; Calm</h4>
+<p class="font-body-sm text-body-sm text-on-surface-muted max-w-sm mt-4">
+                            Warm, minimal, and welcoming. Designed to feel like your private styling suite where curation happens.
+                        </p>
+</div>
+<div class="mt-12 flex gap-4">
+<div class="w-12 h-12 rounded-full border border-outline flex items-center justify-center text-on-surface-variant hover:border-primary hover:text-primary transition-colors cursor-pointer">
+<span class="material-symbols-outlined">favorite</span>
+</div>
+<div class="w-12 h-12 rounded-full border border-outline flex items-center justify-center text-on-surface-variant hover:border-primary hover:text-primary transition-colors cursor-pointer">
+<span class="material-symbols-outlined">tune</span>
+</div>
+</div>
+</div>
+</div>
+</section>
+</main>
+</body></html>

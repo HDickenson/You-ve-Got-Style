@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Trust &amp; Privacy</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;600;700&amp;family=Playfair+Display:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "outline": "#747878",
+                        "surface-variant": "#e4e2e2",
+                        "surface-tint": "#5f5e5e",
+                        "on-primary-container": "#858383",
+                        "tertiary": "#000000",
+                        "primary-fixed": "#e5e2e1",
+                        "inverse-surface": "#303031",
+                        "on-secondary-fixed": "#1c1c19",
+                        "on-tertiary-container": "#a17f3b",
+                        "inverse-on-surface": "#f2f0f0",
+                        "on-primary-fixed": "#1c1b1b",
+                        "on-secondary-fixed-variant": "#474743",
+                        "secondary-container": "#e5e2dd",
+                        "on-error-container": "#93000a",
+                        "surface-bright": "#fbf9f8",
+                        "on-secondary": "#ffffff",
+                        "on-surface-variant": "#444748",
+                        "surface-container": "#efeded",
+                        "surface": "#fbf9f8",
+                        "outline-variant": "#c4c7c7",
+                        "tertiary-container": "#261900",
+                        "on-secondary-container": "#656461",
+                        "on-surface": "#1b1c1c",
+                        "surface-container-highest": "#e4e2e2",
+                        "on-primary": "#ffffff",
+                        "on-tertiary-fixed": "#261900",
+                        "on-background": "#1b1c1c",
+                        "surface-container-high": "#e9e8e7",
+                        "inverse-primary": "#c8c6c5",
+                        "on-tertiary": "#ffffff",
+                        "surface-container-low": "#f5f3f3",
+                        "background": "#fbf9f8",
+                        "surface-container-lowest": "#ffffff",
+                        "secondary": "#5f5e5b",
+                        "primary": "#000000",
+                        "on-primary-fixed-variant": "#474646",
+                        "error-container": "#ffdad6",
+                        "surface-dim": "#dbdad9",
+                        "primary-fixed-dim": "#c8c6c5",
+                        "tertiary-fixed": "#ffdea5",
+                        "secondary-fixed-dim": "#c8c6c2",
+                        "error": "#ba1a1a",
+                        "tertiary-fixed-dim": "#e9c176",
+                        "secondary-fixed": "#e5e2dd",
+                        "on-tertiary-fixed-variant": "#5d4201",
+                        "on-error": "#ffffff",
+                        "primary-container": "#1c1b1b"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.125rem",
+                        "lg": "0.25rem",
+                        "xl": "0.5rem",
+                        "full": "0.75rem"
+                    },
+                    "spacing": {
+                        "gutter": "16px",
+                        "container-margin": "24px",
+                        "unit": "4px",
+                        "section-gap": "48px"
+                    },
+                    "fontFamily": {
+                        "body-lg": ["Hanken Grotesk"],
+                        "body-sm": ["Hanken Grotesk"],
+                        "display-lg": ["Playfair Display"],
+                        "title-md": ["Hanken Grotesk"],
+                        "headline-lg": ["Playfair Display"],
+                        "label-caps": ["Hanken Grotesk"],
+                        "headline-lg-mobile": ["Playfair Display"]
+                    },
+                    "fontSize": {
+                        "body-lg": ["16px", { "lineHeight": "26px", "fontWeight": "400" }],
+                        "body-sm": ["14px", { "lineHeight": "20px", "fontWeight": "400" }],
+                        "display-lg": ["48px", { "lineHeight": "56px", "letterSpacing": "-0.02em", "fontWeight": "600" }],
+                        "title-md": ["18px", { "lineHeight": "24px", "letterSpacing": "0.05em", "fontWeight": "600" }],
+                        "headline-lg": ["32px", { "lineHeight": "40px", "fontWeight": "500" }],
+                        "label-caps": ["12px", { "lineHeight": "16px", "letterSpacing": "0.1em", "fontWeight": "700" }],
+                        "headline-lg-mobile": ["28px", { "lineHeight": "34px", "fontWeight": "500" }]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        /* Minimalist rectangular toggle styling */
+        .toggle-checkbox:checked {
+            right: 0;
+            border-color: #a17f3b; /* on-tertiary-container */
+        }
+        .toggle-checkbox:checked + .toggle-label {
+            background-color: #a17f3b; /* on-tertiary-container */
+        }
+        .toggle-checkbox:checked + .toggle-label:after {
+            transform: translateX(100%);
+            border-color: #ffffff;
+            background-color: #ffffff;
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+</head>
+<body class="bg-surface-dim font-body-lg text-on-surface antialiased flex items-center justify-center min-h-screen p-0 md:p-container-margin selection:bg-tertiary-fixed selection:text-on-tertiary-fixed">
+<!-- Modal Overlay Container -->
+<div class="w-full h-full md:h-auto max-w-lg bg-surface flex flex-col relative overflow-hidden md:rounded-none border-0 md:border border-outline/10 shadow-none md:shadow-2xl">
+<!-- Header Actions -->
+<div class="flex justify-between items-center p-container-margin pb-0">
+<div class="w-8"></div> <!-- Spacer for center alignment if needed -->
+<button aria-label="Close modal" class="w-10 h-10 flex items-center justify-center text-on-surface hover:text-on-tertiary-container transition-colors group cursor-pointer">
+<span class="material-symbols-outlined transition-transform group-hover:rotate-90" style="font-variation-settings: 'FILL' 0, 'wght' 200, 'GRAD' 0, 'opsz' 24;">close</span>
+</button>
+</div>
+<!-- Scrollable Content Area -->
+<div class="flex-1 px-container-margin pt-8 pb-32 md:pb-container-margin overflow-y-auto">
+<!-- Iconography & Typography -->
+<div class="mb-12">
+<span class="material-symbols-outlined text-[40px] text-on-tertiary-container mb-6 block" style="font-variation-settings: 'FILL' 0, 'wght' 100, 'GRAD' 0, 'opsz' 40;">fingerprint</span>
+<h1 class="font-headline-lg-mobile md:font-headline-lg text-headline-lg-mobile md:text-headline-lg text-primary mb-6">
+                    Your Privacy,<br/>
+<span class="italic text-on-surface-variant">Secured.</span>
+</h1>
+<p class="font-body-lg text-body-lg text-on-surface-variant mb-6">
+                    At Atelier AI, the precision of our craftsmanship is matched only by our commitment to your privacy.
+                </p>
+<p class="font-body-lg text-body-lg text-on-surface-variant">
+                    Your 3D biometric data and facial measurements are processed securely and locally on your device. We strictly adhere to the UAE Personal Data Protection Law (PDPL), ensuring your spatial data remains exclusively yours and never enters the cloud without explicit instruction.
+                </p>
+</div>
+<hr class="border-t border-outline/20 mb-8"/>
+<!-- Interactive Toggle Section -->
+<div class="flex items-start justify-between gap-4 mb-section-gap">
+<div class="flex-1">
+<h2 class="font-title-md text-title-md text-primary mb-1">Secure Local Processing</h2>
+<p class="font-body-sm text-body-sm text-on-surface-variant">Mandatory for biometric processing.</p>
+</div>
+<!-- Rectangular Architectural Toggle -->
+<div class="relative inline-block w-12 h-6 align-middle select-none mt-1">
+<input checked="" class="toggle-checkbox absolute block w-6 h-6 rounded-none bg-surface border-outline/30 appearance-none cursor-pointer z-10 transition-transform duration-300 ease-in-out border-r" disabled="" id="local-processing-toggle" name="toggle" type="checkbox"/>
+<label class="toggle-label block overflow-hidden h-6 rounded-none bg-surface-variant cursor-not-allowed transition-colors duration-300 ease-in-out relative" for="local-processing-toggle">
+<span class="absolute left-0 top-0 bottom-0 w-6 bg-primary transition-transform duration-300 ease-in-out transform translate-x-6 border border-outline/20 flex items-center justify-center">
+<span class="material-symbols-outlined text-[14px] text-on-primary">check</span>
+</span>
+</label>
+</div>
+</div>
+</div>
+<!-- Thumb Zone Sticky Action -->
+<div class="absolute bottom-0 left-0 right-0 p-container-margin bg-gradient-to-t from-surface via-surface to-transparent pt-12 md:relative md:bg-none md:p-container-margin md:pt-0">
+<button class="w-full bg-primary text-on-primary font-label-caps text-label-caps uppercase py-5 px-6 flex items-center justify-between group hover:bg-inverse-surface transition-colors duration-300 relative border border-transparent hover:border-on-tertiary-container/30">
+<!-- Gold Accent Line -->
+<div class="absolute inset-y-0 left-0 w-1 bg-on-tertiary-container transition-all duration-300 group-hover:w-2"></div>
+<span class="pl-2 tracking-widest">Confirm &amp; Continue</span>
+<span class="material-symbols-outlined text-on-tertiary-container transition-transform duration-300 group-hover:translate-x-1" style="font-variation-settings: 'FILL' 0, 'wght' 200, 'GRAD' 0, 'opsz' 24;">arrow_forward</span>
+</button>
+</div>
+</div>
+</body></html>

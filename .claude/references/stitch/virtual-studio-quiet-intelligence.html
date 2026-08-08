@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+
+<html class="h-full" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0, viewport-fit=cover" name="viewport"/>
+<title>Generative Virtual Studio</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "on-secondary-fixed": "#1c1c19",
+                        "on-secondary-fixed-variant": "#474743",
+                        "tertiary-fixed": "#ffdea5",
+                        "overlay-gradient": "rgba(0,0,0,0.6)",
+                        "secondary-container": "#e5e2dd",
+                        "outline": "#7e7576",
+                        "surface-container-low": "#f5f3f3",
+                        "on-surface-variant": "#4c4546",
+                        "error": "#ba1a1a",
+                        "on-error-container": "#93000a",
+                        "inverse-on-surface": "#f2f0f0",
+                        "surface-container": "#efeded",
+                        "tertiary": "#000000",
+                        "inverse-primary": "#c6c6c6",
+                        "surface-tint": "#5e5e5e",
+                        "on-tertiary": "#ffffff",
+                        "on-secondary": "#ffffff",
+                        "on-primary": "#ffffff",
+                        "secondary-fixed-dim": "#c8c6c2",
+                        "on-surface": "#1b1c1c",
+                        "on-tertiary-fixed-variant": "#5d4201",
+                        "secondary-fixed": "#e5e2dd",
+                        "on-surface-muted": "#444748",
+                        "primary-container": "#1b1b1b",
+                        "primary": "#000000",
+                        "error-container": "#ffdad6",
+                        "inverse-surface": "#303030",
+                        "surface": "#FBF9F8",
+                        "surface-variant": "#e3e2e2",
+                        "on-primary-container": "#848484",
+                        "outline-variant": "#cfc4c5",
+                        "on-primary-fixed-variant": "#474747",
+                        "surface-container-high": "#e9e8e7",
+                        "tertiary-container": "#261900",
+                        "surface-container-lowest": "#ffffff",
+                        "on-secondary-container": "#656461",
+                        "on-error": "#ffffff",
+                        "on-primary-fixed": "#1b1b1b",
+                        "on-background": "#1b1c1c",
+                        "on-tertiary-fixed": "#261900",
+                        "on-tertiary-container": "#a17f3b",
+                        "surface-bright": "#fbf9f8",
+                        "surface-container-highest": "#e3e2e2",
+                        "primary-fixed": "#e2e2e2",
+                        "tertiary-fixed-dim": "#e9c176",
+                        "primary-fixed-dim": "#c6c6c6",
+                        "background": "#fbf9f8",
+                        "surface-dim": "#dbdad9",
+                        "secondary": "#5f5e5b"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.125rem",
+                        "lg": "0.25rem",
+                        "xl": "0.5rem",
+                        "full": "0.75rem"
+                    },
+                    "spacing": {
+                        "container-margin": "24px",
+                        "gutter": "16px",
+                        "button-px": "48px",
+                        "button-py": "16px",
+                        "unit": "4px",
+                        "section-gap": "48px"
+                    },
+                    "fontFamily": {
+                        "headline-lg-mobile": ["Playfair Display"],
+                        "display-lg": ["Playfair Display"],
+                        "title-md": ["Hanken Grotesk"],
+                        "label-caps": ["Hanken Grotesk"],
+                        "headline-lg": ["Playfair Display"],
+                        "body-lg": ["Hanken Grotesk"],
+                        "body-sm": ["Hanken Grotesk"]
+                    },
+                    "fontSize": {
+                        "headline-lg-mobile": ["28px", { "lineHeight": "34px", "fontWeight": "500" }],
+                        "display-lg": ["72px", { "lineHeight": "80px", "letterSpacing": "-0.02em", "fontWeight": "600" }],
+                        "title-md": ["18px", { "lineHeight": "24px", "letterSpacing": "0.05em", "fontWeight": "600" }],
+                        "label-caps": ["12px", { "lineHeight": "16px", "letterSpacing": "0.1em", "fontWeight": "700" }],
+                        "headline-lg": ["32px", { "lineHeight": "40px", "fontWeight": "500" }],
+                        "body-lg": ["16px", { "lineHeight": "26px", "fontWeight": "400" }],
+                        "body-sm": ["14px", { "lineHeight": "20px", "fontWeight": "400" }]
+                    }
+                }
+            }
+        }
+    </script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<style>
+        @import url('https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;600;700&family=Playfair+Display:wght@500;600&display=swap');
+        
+        .hide-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .hide-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+        
+        body {
+            min-height: max(884px, 100dvh);
+            background-color: #FAF6F1; /* Warm Cream */
+        }
+        
+        .orb-shadow {
+            box-shadow: 0 0 60px 20px rgba(255, 255, 255, 0.8), 0 10px 20px rgba(0, 0, 0, 0.05);
+        }
+    </style>
+</head>
+<body class="text-on-surface font-body-lg h-full overflow-hidden flex flex-col relative selection:bg-surface-variant selection:text-on-surface">
+<!-- Top Left Brand Mark -->
+<header class="absolute top-12 left-6 z-50">
+<h1 class="font-display-lg text-primary text-4xl leading-none">Y</h1>
+</header>
+<!-- Virtual Studio Canvas -->
+<main class="relative flex-grow h-full w-full overflow-hidden">
+<!-- 3D Digital Twin -->
+<div class="absolute inset-0 w-full h-full bg-cover bg-center object-cover" data-alt="A highly realistic, high-fidelity 3D digital twin rendering of a sophisticated professional Middle Eastern woman standing confidently in a minimalist, luxury interior space." style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuCvFTEylMpB2dlIihVq8XwRfoKX4qjNObB5vHFxMgyPhc5CBU9RDMIlpqmVkoSeeVqTUzZqHyNJdF3OoGh6v1kgm8wbHNxuPOIXBi3sQCjkljfkHH4xgkxDlmXL_1hEB6696GkC4cXICvIbN4UQUTKweF2OOejr_ntNQGRJHI3HObSqbIs67Gcr5otbYFIlXuGCcvsaii4kYBAjuOXmzBV5X-RT2RVwQON1ntIOQ1NCiwNBDLytjDtvqA'); background-position: top center;"></div>
+<!-- Subtle gradient overlay at bottom for blending -->
+<div class="absolute inset-x-0 bottom-0 h-64 bg-gradient-to-t from-[#FAF6F1] via-[#FAF6F1]/50 to-transparent pointer-events-none z-10"></div>
+</main>
+<!-- Primary Action Orb -->
+<div class="absolute bottom-28 left-1/2 -translate-x-1/2 z-40">
+<button class="relative w-32 h-32 bg-white rounded-full flex flex-col items-center justify-center text-primary orb-shadow tap-highlight-none hover:scale-105 transition-transform duration-300">
+<span class="font-display-lg text-4xl mb-1">Y</span>
+<span class="font-label-caps text-[10px] tracking-widest font-bold">STYLE ME</span>
+</button>
+</div>
+<!-- Minimalist Bottom Navigation -->
+<nav class="absolute bottom-0 w-full h-24 bg-[#EFEBE4]/90 backdrop-blur-xl flex justify-around items-center px-4 pb-safe pt-2 z-50 rounded-t-[2rem]">
+<a class="flex flex-col items-center justify-center text-on-surface-variant/60 hover:text-primary transition-colors tap-highlight-none group" href="#">
+<span class="material-symbols-outlined text-2xl mb-1 group-hover:scale-110 transition-transform font-light">home</span>
+<span class="font-body-sm text-[11px]">Home</span>
+</a>
+<a class="flex flex-col items-center justify-center text-on-surface-variant/60 hover:text-primary transition-colors tap-highlight-none group" href="#">
+<span class="material-symbols-outlined text-2xl mb-1 group-hover:scale-110 transition-transform font-light">person</span>
+<span class="font-body-sm text-[11px]">Studio</span>
+</a>
+<a class="flex flex-col items-center justify-center text-primary transition-colors tap-highlight-none group" href="#">
+<span class="material-symbols-outlined text-2xl mb-1 group-hover:scale-110 transition-transform font-light">auto_awesome</span>
+<span class="font-body-sm text-[11px]">Intelligence</span>
+</a>
+<a class="flex flex-col items-center justify-center text-on-surface-variant/60 hover:text-primary transition-colors tap-highlight-none group" href="#">
+<span class="material-symbols-outlined text-2xl mb-1 group-hover:scale-110 transition-transform font-light">checkroom</span>
+<span class="font-body-sm text-[11px]">Closet</span>
+</a>
+<a class="flex flex-col items-center justify-center text-on-surface-variant/60 hover:text-primary transition-colors tap-highlight-none group" href="#">
+<span class="material-symbols-outlined text-2xl mb-1 group-hover:scale-110 transition-transform font-light">account_circle</span>
+<span class="font-body-sm text-[11px]">Profile</span>
+</a>
+</nav>
+</body></html>

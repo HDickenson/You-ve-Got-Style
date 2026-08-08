@@ -1,4 +1,10 @@
-import { BrandSizeMapping, UserMeasurements } from '../types';
+import {
+  BrandSizeMapping,
+  MenswearMeasurements,
+  UserMeasurements,
+  Wardrobe,
+  WomenswearMeasurements,
+} from '../types';
 
 export const GCC_LUXURY_BRANDS = [
   {
@@ -70,56 +76,161 @@ export const GCC_LUXURY_BRANDS = [
   }
 ];
 
-export function calculatePhotogrammetryMeasurements(heightCm: number): UserMeasurements {
-  // Photogrammetry formula derived from height-to-body proportion ratio (Golden Ratio & Anthropometric tables)
+/**
+ * A different table, not the womenswear one relabelled — menswear grades
+ * against chest, waist and neck, and the three houses that carry both lines
+ * (Cucinelli, Loro Piana, the Zegna/Massimo Dutti crossover) cut men in
+ * IT/EUR 46-56, an entirely different number range from the FR/IT 34-44
+ * above.
+ */
+export const GCC_LUXURY_BRANDS_MENSWEAR = [
+  {
+    name: 'Brunello Cucinelli',
+    country: 'Italy',
+    fitType: 'Structured' as const,
+    sizeTable: [
+      { size: 'IT 46 (S)', chest: [88, 92], waist: [76, 80], neck: [37, 38] },
+      { size: 'IT 48 (M)', chest: [93, 97], waist: [81, 85], neck: [39, 40] },
+      { size: 'IT 50 (L)', chest: [98, 102], waist: [86, 90], neck: [41, 42] },
+      { size: 'IT 52 (XL)', chest: [103, 107], waist: [91, 95], neck: [43, 44] },
+      { size: 'IT 54 (XXL)', chest: [108, 112], waist: [96, 100], neck: [45, 46] },
+    ]
+  },
+  {
+    name: 'Loro Piana',
+    country: 'Italy',
+    fitType: 'Relaxed fit' as const,
+    sizeTable: [
+      { size: 'IT 46 (S)', chest: [89, 93], waist: [77, 81], neck: [37, 38] },
+      { size: 'IT 48 (M)', chest: [94, 98], waist: [82, 86], neck: [39, 40] },
+      { size: 'IT 50 (L)', chest: [99, 103], waist: [87, 91], neck: [41, 42] },
+      { size: 'IT 52 (XL)', chest: [104, 108], waist: [92, 96], neck: [43, 44] },
+      { size: 'IT 54 (XXL)', chest: [109, 113], waist: [97, 101], neck: [45, 46] },
+      { size: 'IT 56 (3XL)', chest: [114, 118], waist: [102, 106], neck: [47, 48] },
+    ]
+  },
+  {
+    name: 'Zegna',
+    country: 'Italy',
+    fitType: 'True to size' as const,
+    sizeTable: [
+      { size: 'IT 46 (S)', chest: [88, 91], waist: [75, 79], neck: [36, 37] },
+      { size: 'IT 48 (M)', chest: [92, 96], waist: [80, 84], neck: [38, 39] },
+      { size: 'IT 50 (L)', chest: [97, 101], waist: [85, 89], neck: [40, 41] },
+      { size: 'IT 52 (XL)', chest: [102, 106], waist: [90, 94], neck: [42, 43] },
+      { size: 'IT 54 (XXL)', chest: [107, 111], waist: [95, 99], neck: [44, 45] },
+    ]
+  },
+  {
+    name: 'Massimo Dutti Limited',
+    country: 'Spain / GCC',
+    fitType: 'True to size' as const,
+    sizeTable: [
+      { size: 'EUR 46 / S', chest: [88, 92], waist: [76, 80], neck: [37, 38] },
+      { size: 'EUR 48 / M', chest: [93, 97], waist: [81, 85], neck: [39, 40] },
+      { size: 'EUR 50 / L', chest: [98, 102], waist: [86, 90], neck: [41, 42] },
+      { size: 'EUR 52 / XL', chest: [103, 107], waist: [91, 95], neck: [43, 44] },
+    ]
+  }
+];
+
+function womenswearProportions(heightCm: number): WomenswearMeasurements {
+  // Fixed reference proportions scaled by height ratio — a starting point,
+  // not a measurement of anyone. Nothing here scans or triangulates a real
+  // body; these constants are estimates, and the copy that surfaces this
+  // data says so.
   const heightRatio = heightCm / 170;
-  
+
   const chestCm = Math.round(88 * heightRatio);
   const waistCm = Math.round(68 * heightRatio);
   const hipsCm = Math.round(95 * heightRatio);
   const inseamCm = Math.round(heightCm * 0.46);
 
   return {
+    wardrobe: 'womenswear',
     heightCm,
     chestCm,
     waistCm,
     hipsCm,
     inseamCm,
-    confidenceScore: 0.98,
-    meshPoints: [
-      { id: 'p1', x: 0, y: -0.85, z: 0, label: 'Crown' },
-      { id: 'p2', x: -0.22, y: -0.55, z: 0, label: 'Shoulders (Width: ' + Math.round(39 * heightRatio) + 'cm)' },
-      { id: 'p3', x: 0, y: -0.38, z: 0.1, label: 'Bust/Chest (' + chestCm + 'cm)' },
-      { id: 'p4', x: 0, y: -0.15, z: 0.05, label: 'Natural Waist (' + waistCm + 'cm)' },
-      { id: 'p5', x: 0, y: 0.1, z: 0.12, label: 'Hips (' + hipsCm + 'cm)' },
-      { id: 'p6', x: -0.12, y: 0.55, z: 0, label: 'Inseam (' + inseamCm + 'cm)' },
-      { id: 'p7', x: 0.12, y: 0.95, z: 0, label: 'Ground Anchor' },
-    ]
   };
 }
 
-export function mapMeasurementsToBrandSizes(measurements: UserMeasurements): BrandSizeMapping[] {
-  return GCC_LUXURY_BRANDS.map(brand => {
-    // Find closest match based on chest and waist
-    let matchedSize = brand.sizeTable[1].size; // default fallback
-    let bestDiff = 999;
+/**
+ * Same height-ratio formula shape as the womenswear fork, against male
+ * anthropometric reference values instead — chest, waist, neck and sleeve,
+ * no hip circumference. This is still a height-only estimate, the same known
+ * weakness the womenswear formula has; forking it does not make it more
+ * precise than it is.
+ */
+function menswearProportions(heightCm: number): MenswearMeasurements {
+  const heightRatio = heightCm / 170;
 
-    for (const entry of brand.sizeTable) {
-      const chestAvg = (entry.chest[0] + entry.chest[1]) / 2;
-      const waistAvg = (entry.waist[0] + entry.waist[1]) / 2;
-      const diff = Math.abs(measurements.chestCm - chestAvg) + Math.abs(measurements.waistCm - waistAvg);
+  const chestCm = Math.round(96 * heightRatio);
+  const waistCm = Math.round(80 * heightRatio);
+  const neckCm = Math.round(38 * heightRatio);
+  const sleeveCm = Math.round(63 * heightRatio);
+  const inseamCm = Math.round(heightCm * 0.46);
 
-      if (diff < bestDiff) {
-        bestDiff = diff;
-        matchedSize = entry.size;
-      }
+  return {
+    wardrobe: 'menswear',
+    heightCm,
+    chestCm,
+    waistCm,
+    neckCm,
+    sleeveCm,
+    inseamCm,
+  };
+}
+
+export function estimateMeasurementsFromHeight(heightCm: number): WomenswearMeasurements;
+export function estimateMeasurementsFromHeight(heightCm: number, wardrobe: 'menswear'): MenswearMeasurements;
+export function estimateMeasurementsFromHeight(heightCm: number, wardrobe: 'womenswear'): WomenswearMeasurements;
+export function estimateMeasurementsFromHeight(heightCm: number, wardrobe: Wardrobe): UserMeasurements;
+export function estimateMeasurementsFromHeight(
+  heightCm: number,
+  wardrobe: Wardrobe = 'womenswear',
+): UserMeasurements {
+  return wardrobe === 'menswear' ? menswearProportions(heightCm) : womenswearProportions(heightCm);
+}
+
+/** Closest chest/waist match within one brand's table. The matcher generalises across wardrobes; only the tables and fields underneath it fork. */
+function nearestSize(
+  sizeTable: ReadonlyArray<{ size: string; chest: number[]; waist: number[] }>,
+  chestCm: number,
+  waistCm: number,
+): string {
+  let matchedSize = sizeTable[1].size; // default fallback
+  let bestDiff = 999;
+
+  for (const entry of sizeTable) {
+    const chestAvg = (entry.chest[0] + entry.chest[1]) / 2;
+    const waistAvg = (entry.waist[0] + entry.waist[1]) / 2;
+    const diff = Math.abs(chestCm - chestAvg) + Math.abs(waistCm - waistAvg);
+
+    if (diff < bestDiff) {
+      bestDiff = diff;
+      matchedSize = entry.size;
     }
+  }
 
-    return {
+  return matchedSize;
+}
+
+export function mapMeasurementsToBrandSizes(measurements: UserMeasurements): BrandSizeMapping[] {
+  if (measurements.wardrobe === 'menswear') {
+    return GCC_LUXURY_BRANDS_MENSWEAR.map(brand => ({
       brandName: brand.name,
-      recommendedSize: matchedSize,
+      recommendedSize: nearestSize(brand.sizeTable, measurements.chestCm, measurements.waistCm),
       fitsToType: brand.fitType,
-      fitDescription: `Optimal drape based on ${measurements.chestCm}cm bust & ${measurements.waistCm}cm waist.`
-    };
-  });
+      fitDescription: `Optimal drape based on ${measurements.chestCm}cm chest & ${measurements.waistCm}cm waist.`
+    }));
+  }
+
+  return GCC_LUXURY_BRANDS.map(brand => ({
+    brandName: brand.name,
+    recommendedSize: nearestSize(brand.sizeTable, measurements.chestCm, measurements.waistCm),
+    fitsToType: brand.fitType,
+    fitDescription: `Optimal drape based on ${measurements.chestCm}cm bust & ${measurements.waistCm}cm waist.`
+  }));
 }

@@ -1,6 +1,11 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { Camera, Mic, CheckCircle2, ShieldAlert, Sparkles, RefreshCw, Upload, Volume2, Info, ArrowRight, Smartphone } from 'lucide-react';
+import React, { useEffect, useRef, useState } from 'react';
+import { ArrowRight, Check, Upload } from 'lucide-react';
 import { CapturedProfile } from '../types';
+import { Display, OccasionTitle, YMark } from './brand';
+import { Button, Card, CardContent, Slider, Switch } from './ui';
+import { ActionRow, AppContainer, Stack } from './layout';
+import { DURATION } from '../lib/motion';
+import { cn } from '../lib/cn';
 
 interface HandsFreeCaptureProps {
   onCaptureComplete: (profile: CapturedProfile) => void;
@@ -8,365 +13,710 @@ interface HandsFreeCaptureProps {
   setHeightCm: (height: number) => void;
 }
 
+/** Upright and level, within a tight camera-alignment tolerance. */
+const PITCH_TARGET = 90;
+const TOLERANCE = 3;
+const PITCH_MIN = 70;
+const PITCH_MAX = 110;
+const ROLL_RANGE = 20;
+
+/** Alignment has to hold for a beat before it counts — a live sensor sitting on
+ *  the tolerance boundary would otherwise flap the gold and re-announce the
+ *  instruction every few hundred milliseconds. */
+const SETTLE_MS = DURATION.resolve * 1000;
+
+/** How long a live sensor gets to settle on its own before the reader is
+ *  offered a way out. A tablet propped in a stand can sit at a fixed recline
+ *  that never crosses the tolerance band — that reader needs a path forward,
+ *  not an indefinite wait on a reading that will never change. */
+const GRACE_MS = 6000;
+
+/** The grabbed still holds in the viewfinder — the Reveal, then the same again
+ *  to look at what was taken — before the live preview comes back. */
+const HOLD_MS = DURATION.reveal * 2000;
+
+/**
+ * The promises the gate is asking the reader to accept. Three, plainly stated —
+ * a consent screen that lists nothing is a formality with a switch on it. Each
+ * one is a statement this codebase actually keeps: the sizing is computed here
+ * from height alone, the frames are never written anywhere, and the one moment
+ * a frame leaves the device is named rather than buried two screens later.
+ */
+const PROMISES: ReadonlyArray<{ title: string; body: string }> = [
+  {
+    title: 'Sized on this device',
+    body: 'Your height is what sizes you, and that is worked out here. Nothing is sent to measure you.',
+  },
+  {
+    title: 'Never written down',
+    body: 'The frames are held for this session only. Retake replaces them, and closing the app ends them.',
+  },
+  {
+    title: 'Sent only when you ask',
+    body: 'To show a look on you, one frame is sent away to be rendered. That happens when you ask for a look, and never otherwise.',
+  },
+];
+
+/**
+ * A hairline instrument, and only that: a mark travelling toward a target. It
+ * does not report degrees — a decimal readout is a system report, and the frame
+ * itself already says whether it is level. The indicator is the ground's own
+ * ink at every position, because gold on this screen is spent once, inside the
+ * frame, on the silhouette.
+ */
+function Gauge({
+  label,
+  value,
+  min,
+  max,
+}: {
+  label: string;
+  value: number;
+  min: number;
+  max: number;
+}) {
+  const percent = Math.min(Math.max(((value - min) / (max - min)) * 100, 0), 100);
+
+  return (
+    <div className="flex items-center gap-4">
+      <span className="w-14 shrink-0 text-eyebrow font-medium uppercase text-fg-muted">
+        {label}
+      </span>
+
+      <div className="relative h-6 min-w-0 flex-1" aria-hidden="true">
+        <span className="absolute inset-x-0 top-1/2 block h-px -translate-y-1/2 bg-rule" />
+        {/* The target, marked once in the middle of the run. */}
+        <span className="absolute top-1/2 start-1/2 block h-3 w-px -translate-x-1/2 -translate-y-1/2 bg-fg-muted" />
+        <span
+          className="absolute top-1/2 block h-4 w-0.5 -translate-x-1/2 -translate-y-1/2 rounded-full bg-fg transition-[inset-inline-start] duration-resolve ease-resolve"
+          style={{ insetInlineStart: `${percent}%` }}
+        />
+      </div>
+    </div>
+  );
+}
+
+/**
+ * Stitch's abstract figure, redrawn on brand: hairline, dashed, never filled.
+ * It is a framing guide over a live room, not decoration, so it is drawn to
+ * survive daylight and sized to teach the distance the reader is asked to
+ * stand at — a guide they are told to fill has to look fillable.
+ */
+function Silhouette({ aligned }: { aligned: boolean }) {
+  return (
+    <svg
+      viewBox="0 0 200 400"
+      fill="none"
+      aria-hidden="true"
+      focusable="false"
+      className={cn(
+        'h-[92%] w-auto transition-colors duration-resolve ease-resolve',
+        aligned ? 'text-gold' : 'text-fg/60',
+      )}
+    >
+      <path
+        d="M100 20 C120 20, 130 40, 130 60 C130 80, 110 90, 100 90 C90 90, 70 80, 70 60 C70 40, 80 20, 100 20 Z"
+        stroke="currentColor"
+        strokeDasharray="2 8"
+        strokeWidth="1"
+      />
+      <path
+        d="M100 100 L140 120 L130 250 L100 380 L70 250 L60 120 Z"
+        stroke="currentColor"
+        strokeDasharray="2 8"
+        strokeWidth="1"
+      />
+      <path
+        d="M60 120 L30 180 M140 120 L170 180"
+        stroke="currentColor"
+        strokeDasharray="2 8"
+        strokeWidth="1"
+      />
+    </svg>
+  );
+}
+
+const CORNER = [
+  'top-4 start-4 border-t border-s',
+  'top-4 end-4 border-t border-e',
+  'bottom-4 start-4 border-b border-s',
+  'bottom-4 end-4 border-b border-e',
+];
+
 export const HandsFreeCapture: React.FC<HandsFreeCaptureProps> = ({
   onCaptureComplete,
   heightCm,
   setHeightCm,
 }) => {
-  // Sensor State
-  const [pitchAngle, setPitchAngle] = useState<number>(82); // Simulated pitch initially slightly off 90°
-  const [isSensorVerified, setIsSensorVerified] = useState<boolean>(false);
-  const [autoLevelActive, setAutoLevelActive] = useState<boolean>(true);
+  // The gate. Nothing below it runs — no sensor reading is acted on, no camera
+  // permission is requested — until the reader has actually said yes.
+  const [agreed, setAgreed] = useState<boolean>(false);
+  const [consented, setConsented] = useState<boolean>(false);
 
-  // Voice & Capture State
-  const [captureStep, setCaptureStep] = useState<'sensor' | 'front' | 'side' | 'ready'>('sensor');
-  const [voiceInstruction, setVoiceInstruction] = useState<string>(
-    "Prop your device vertically at 90°. The screen will unlock when aligned."
-  );
-  const [isListening, setIsListening] = useState<boolean>(false);
-  const [frontPhoto, setFrontPhoto] = useState<string | null>(
-    'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=800&q=80'
-  );
-  const [sidePhoto, setSidePhoto] = useState<string | null>(
-    'https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&w=800&q=80'
-  );
-  const [webcamActive, setWebcamActive] = useState<boolean>(false);
+  // Sensors. Pitch is front-to-back tilt, roll is side-to-side.
+  const [pitch, setPitch] = useState<number>(82);
+  const [roll, setRoll] = useState<number>(0);
+  const [sensorLive, setSensorLive] = useState<boolean>(false);
+
+  // The way out for a reader whose live sensor is never going to settle — a
+  // stand holds its recline, it does not drift toward level. Offered only
+  // after a grace period, and only while genuinely stuck, so it never
+  // preempts a sensor that is about to succeed on its own.
+  const [overrideAvailable, setOverrideAvailable] = useState<boolean>(false);
+  const [manualOverride, setManualOverride] = useState<boolean>(false);
+  const manualOverrideRef = useRef(false);
+  useEffect(() => {
+    manualOverrideRef.current = manualOverride;
+  }, [manualOverride]);
+
+  // Capture. The frames start empty: a stock photograph of a stranger standing
+  // in for the reader's own body is not a placeholder, it is a lie with a face.
+  const [frontPhoto, setFrontPhoto] = useState<string | null>(null);
+  const [sidePhoto, setSidePhoto] = useState<string | null>(null);
+  const [heldFrame, setHeldFrame] = useState<string | null>(null);
+  const [cameraActive, setCameraActive] = useState<boolean>(false);
+  const [cameraBlocked, setCameraBlocked] = useState<boolean>(false);
+  const [listening, setListening] = useState<boolean>(false);
+  const [voiceUsed, setVoiceUsed] = useState<boolean>(false);
 
   const videoRef = useRef<HTMLVideoElement | null>(null);
+  const streamRef = useRef<MediaStream | null>(null);
+  const fileRef = useRef<HTMLInputElement | null>(null);
+  const holdRef = useRef<number | null>(null);
 
-  // Accelerometer / Gyroscope Hook with Web API fallback
+  const withinTolerance =
+    Math.abs(pitch - PITCH_TARGET) <= TOLERANCE && Math.abs(roll) <= TOLERANCE;
+
+  // Alignment the screen acts on: the reading has to hold, not merely touch the
+  // boundary. Everything the reader sees or hears — the silhouette, the pill,
+  // the spoken instruction, the shutter — waits for this rather than the raw
+  // sensor, so a phone resting at 87.2° does not strobe.
+  const [aligned, setAligned] = useState<boolean>(false);
   useEffect(() => {
-    const handleOrientation = (e: DeviceOrientationEvent) => {
-      if (e.beta !== null) {
-        const beta = Math.abs(e.beta); // Beta represents front-to-back tilt
-        setPitchAngle(Math.round(beta * 10) / 10);
+    const settle = window.setTimeout(() => setAligned(withinTolerance), SETTLE_MS);
+    return () => window.clearTimeout(settle);
+  }, [withinTolerance]);
+
+  // A live sensor that hasn't aligned after a full grace period is treated as
+  // stuck, not slow — offer the manual override rather than leaving the
+  // reader waiting on a reading that a propped device will never produce.
+  useEffect(() => {
+    if (!sensorLive || aligned) {
+      setOverrideAvailable(false);
+      return;
+    }
+    const grace = window.setTimeout(() => setOverrideAvailable(true), GRACE_MS);
+    return () => window.clearTimeout(grace);
+  }, [sensorLive, aligned]);
+
+  const step: 'front' | 'side' | 'ready' = !frontPhoto
+    ? 'front'
+    : !sidePhoto
+      ? 'side'
+      : 'ready';
+
+  // Accelerometer / gyroscope, where the device has one. Where it does not, the
+  // reader levels the frame by hand and the screen says so rather than
+  // pretending a sensor is reporting.
+  useEffect(() => {
+    if (!consented) return;
+
+    const handleOrientation = (event: DeviceOrientationEvent) => {
+      if (event.beta === null && event.gamma === null) return;
+      setSensorLive(true);
+      if (event.beta !== null && !manualOverrideRef.current) {
+        setPitch(Math.round(Math.abs(event.beta) * 10) / 10);
       }
+      if (event.gamma !== null) setRoll(Math.round(event.gamma * 10) / 10);
     };
 
-    if (window.DeviceOrientationEvent) {
-      window.addEventListener('deviceorientation', handleOrientation);
-    }
+    window.addEventListener('deviceorientation', handleOrientation);
+    return () => window.removeEventListener('deviceorientation', handleOrientation);
+  }, [consented]);
 
+  // The camera stops when the screen goes away. Without this the indicator light
+  // stays on after the reader has moved to their measurements.
+  useEffect(() => {
     return () => {
-      if (window.DeviceOrientationEvent) {
-        window.removeEventListener('deviceorientation', handleOrientation);
-      }
+      streamRef.current?.getTracks().forEach((track) => track.stop());
+      if (holdRef.current !== null) window.clearTimeout(holdRef.current);
     };
   }, []);
 
-  // Sensor Verification Logic
+  // The stream is opened from the consent gate, where there is no <video> yet
+  // to hand it to. Attaching here — after the viewfinder has mounted — is what
+  // makes the preview appear rather than a permanently black frame.
   useEffect(() => {
-    const isVert = Math.abs(pitchAngle - 90) <= 3;
-    setIsSensorVerified(isVert);
-
-    if (isVert && captureStep === 'sensor') {
-      setVoiceInstruction("Perfect 90° alignment detected! Step back 2 steps. Say 'Snap' when ready for Front Shot.");
-      setCaptureStep('front');
+    if (cameraActive && videoRef.current && streamRef.current) {
+      videoRef.current.srcObject = streamRef.current;
     }
-  }, [pitchAngle, captureStep]);
+  }, [cameraActive]);
 
-  // Voice Assistant Speech Recognition (Web Speech API)
-  const startVoiceListener = () => {
-    setIsListening(true);
-    setVoiceInstruction("Listening for 'Snap' voice trigger...");
-
-    const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
-    if (SpeechRecognition) {
-      const recognition = new SpeechRecognition();
-      recognition.continuous = false;
-      recognition.lang = 'en-US';
-
-      recognition.onresult = (event: any) => {
-        const transcript = event.results[0][0].transcript.toLowerCase();
-        if (transcript.includes('snap') || transcript.includes('cheese') || transcript.includes('shoot') || transcript.includes('take')) {
-          triggerCapture();
-        } else {
-          setVoiceInstruction(`Heard "${transcript}". Please say "Snap"!`);
-        }
-        setIsListening(false);
-      };
-
-      recognition.onerror = () => {
-        setIsListening(false);
-        setVoiceInstruction("Voice listening paused. Tap 'Snap' or say 'Snap' again.");
-      };
-
-      recognition.start();
-    } else {
-      // Fallback simulated voice trigger after 2.5 seconds
-      setTimeout(() => {
-        setIsListening(false);
-        triggerCapture();
-      }, 2500);
-    }
-  };
-
-  const playSuccessSound = () => {
+  const openCamera = async () => {
     try {
-      const audioCtx = new (window.AudioContext || (window as any).webkitAudioContext)();
-      const oscillator = audioCtx.createOscillator();
-      const gainNode = audioCtx.createGain();
-      
-      oscillator.type = 'sine';
-      oscillator.frequency.setValueAtTime(880, audioCtx.currentTime); // A5
-      oscillator.frequency.exponentialRampToValueAtTime(1760, audioCtx.currentTime + 0.1); // A6
-      
-      gainNode.gain.setValueAtTime(0, audioCtx.currentTime);
-      gainNode.gain.linearRampToValueAtTime(0.3, audioCtx.currentTime + 0.05);
-      gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.3);
-      
-      oscillator.connect(gainNode);
-      gainNode.connect(audioCtx.destination);
-      
-      oscillator.start();
-      oscillator.stop(audioCtx.currentTime + 0.3);
-    } catch (e) {
-      console.warn('Audio feedback not supported', e);
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: { facingMode: 'user' },
+      });
+      streamRef.current = stream;
+      setCameraActive(true);
+      setCameraBlocked(false);
+    } catch {
+      // No camera, or the reader declined at the OS prompt. Upload still works.
+      setCameraActive(false);
+      setCameraBlocked(true);
     }
   };
 
-  const triggerCapture = () => {
-    playSuccessSound();
-    if (captureStep === 'front' || captureStep === 'sensor') {
-      setCaptureStep('side');
-      setVoiceInstruction("Front photo locked! Now turn 90° for your Side Profile shot. Say 'Snap' when ready.");
-    } else if (captureStep === 'side') {
-      setCaptureStep('ready');
-      setVoiceInstruction("All photogrammetry profiles captured! Processing 3D mesh measurements...");
-    }
+  const grantConsent = () => {
+    setConsented(true);
+    void openCamera();
   };
 
-  // Start webcam preview
-  const enableWebcam = async () => {
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user' } });
-      if (videoRef.current) {
-        videoRef.current.srcObject = stream;
-        setWebcamActive(true);
+  /** A still off the live preview — what "captured" has to mean to be true. */
+  const grabFrame = (): string | null => {
+    const video = videoRef.current;
+    if (!video || !video.videoWidth) return null;
+    const canvas = document.createElement('canvas');
+    canvas.width = video.videoWidth;
+    canvas.height = video.videoHeight;
+    const context = canvas.getContext('2d');
+    if (!context) return null;
+    context.drawImage(video, 0, 0, canvas.width, canvas.height);
+    return canvas.toDataURL('image/jpeg', 0.9);
+  };
+
+  const takeFrame = () => {
+    const shot = grabFrame();
+    if (!shot) return;
+    if (step === 'front') setFrontPhoto(shot);
+    else if (step === 'side') setSidePhoto(shot);
+
+    // The frame the reader just gave is shown back to them, in the viewfinder,
+    // as a Reveal — a capture that changes nothing on screen but a checkmark
+    // eleven pixels tall is not a capture the reader can believe in.
+    setHeldFrame(shot);
+    if (holdRef.current !== null) window.clearTimeout(holdRef.current);
+    holdRef.current = window.setTimeout(() => setHeldFrame(null), HOLD_MS);
+  };
+
+  const listen = () => {
+    setListening(true);
+
+    const Recognition =
+      (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+
+    if (!Recognition) {
+      // No speech engine: the same button is still the shutter.
+      setListening(false);
+      takeFrame();
+      return;
+    }
+
+    const recognition = new Recognition();
+    recognition.continuous = false;
+    recognition.lang = 'en-US';
+
+    recognition.onresult = (event: any) => {
+      const heard = String(event.results[0][0].transcript).toLowerCase();
+      setListening(false);
+      if (/snap|shoot|take|cheese/.test(heard)) {
+        setVoiceUsed(true);
+        takeFrame();
       }
-    } catch (err) {
-      console.warn("Camera access unavailable or iframe restricted:", err);
-      setWebcamActive(false);
-    }
+    };
+
+    recognition.onerror = () => setListening(false);
+    recognition.onend = () => setListening(false);
+
+    recognition.start();
   };
 
-  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>, profile: 'front' | 'side') => {
-    const file = e.target.files?.[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        if (profile === 'front') setFrontPhoto(reader.result as string);
-        else setSidePhoto(reader.result as string);
-      };
-      reader.readAsDataURL(file);
-    }
+  const handleUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      const result = reader.result as string;
+      if (step === 'front') setFrontPhoto(result);
+      else setSidePhoto(result);
+    };
+    reader.readAsDataURL(file);
+    event.target.value = '';
   };
 
-  const handleProceedToSizing = () => {
+  const retake = () => {
+    setFrontPhoto(null);
+    setSidePhoto(null);
+    setHeldFrame(null);
+    setVoiceUsed(false);
+  };
+
+  const finish = () => {
+    streamRef.current?.getTracks().forEach((track) => track.stop());
     onCaptureComplete({
       frontPhoto,
       sidePhoto,
       heightCm,
       timestamp: Date.now(),
-      isSensorVerified,
-      isVoiceTriggered: true,
+      // A reading set by hand — whether because there was never a sensor, or
+      // because a live one was overridden — is not a sensor verifying the
+      // frame. Only an unoverridden live sensor settling in tolerance is.
+      isSensorVerified: aligned && sensorLive && !manualOverride,
+      isVoiceTriggered: voiceUsed,
     });
   };
 
+  const instruction = listening
+    ? 'Listening.'
+    : heldFrame
+      ? 'Held.'
+      : !aligned
+        ? 'Stand the phone up and let it settle level.'
+        : step === 'front'
+          ? 'Step back until the outline holds you, then say “Snap”.'
+          : step === 'side'
+            ? 'Turn a quarter turn to your right, then say “Snap” again.'
+            : 'Both frames are held. Your fit is ready to read.';
+
+  /* ---------------------------------------------------------------- consent */
+
+  if (!consented) {
+    return (
+      <AppContainer id="module-handsfree-capture" className="py-8 md:py-12">
+        <Stack gap={32}>
+          <div className="grid gap-8 lg:grid-cols-2 lg:items-start lg:gap-12">
+            <Stack gap={16}>
+              <span className="text-eyebrow font-medium uppercase text-fg-muted">
+                Before we begin
+              </span>
+              {/* The one editorial moment on this screen, and it has to be a
+                  sentence the code keeps: the camera opens only after the
+                  switch, and a frame is sent only when a look is asked for. */}
+              <Display>Nothing leaves this device unless you ask.</Display>
+              <p className="max-w-measure text-body text-fg-muted">
+                Your height sizes you. Two frames are so a look can be shown on
+                you rather than on a stranger. This is the only screen that
+                asks, and nothing is captured until you say so here.
+              </p>
+            </Stack>
+
+            <Stack gap={24}>
+              <div className="grid gap-4 md:grid-cols-3 lg:grid-cols-1">
+                {PROMISES.map((promise) => (
+                  <div
+                    key={promise.title}
+                    className="border-t border-rule pt-4 lg:border-t-0 lg:border-s lg:pt-0 lg:ps-6"
+                  >
+                    <p className="text-body font-medium text-fg">{promise.title}</p>
+                    <p className="max-w-measure text-body text-fg-muted">
+                      {promise.body}
+                    </p>
+                  </div>
+                ))}
+              </div>
+
+              {/* Capped at tablet portrait. A switch and the label it controls
+                  cannot sit 350px apart across 704px of card and still read as
+                  one control — the extra width is composition elsewhere, not
+                  distance here. At lg: the two-column split already caps it. */}
+              <Card className="md:mx-auto md:w-full md:max-w-action lg:mx-0 lg:max-w-none">
+                <CardContent className="flex items-start justify-between gap-6 p-6 md:p-8">
+                  <div className="min-w-0">
+                    <p
+                      id="capture-consent-label"
+                      className="text-body font-medium text-fg"
+                    >
+                      Use my camera to take my two frames
+                    </p>
+                    <p className="max-w-measure text-body text-fg-muted">
+                      The camera cannot open until this is on, and this is the
+                      only thing we ask for.
+                    </p>
+                  </div>
+                  <Switch
+                    checked={agreed}
+                    onCheckedChange={setAgreed}
+                    aria-labelledby="capture-consent-label"
+                  />
+                </CardContent>
+              </Card>
+            </Stack>
+          </div>
+
+          <ActionRow>
+            <Button onClick={grantConsent} disabled={!agreed}>
+              Open the studio
+              <ArrowRight className="size-4" aria-hidden="true" />
+            </Button>
+          </ActionRow>
+        </Stack>
+      </AppContainer>
+    );
+  }
+
+  /* ---------------------------------------------------------------- capture */
+
   return (
-    <div id="module-handsfree-capture" className="min-h-[85vh] bg-stone-950 text-stone-100 p-4 max-w-md mx-auto flex flex-col justify-between">
-      {/* Module Title Banner */}
-      <div className="text-center mb-3">
-        <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-500/10 border border-amber-500/30 text-amber-300 text-xs font-mono font-medium mb-1">
-          <Smartphone className="w-3.5 h-3.5" />
-          <span>Module 1: Voice & Sensor Capture</span>
-        </div>
-        <h2 className="text-xl font-serif font-bold text-amber-100">Hands-Free 3D Mirror</h2>
-        <p className="text-xs text-stone-400">Eliminates "The 6-Foot Problem" with 90° sensor lock & voice trigger.</p>
-      </div>
+    <AppContainer id="module-handsfree-capture" className="py-8 md:py-12">
+      {/* Phone and tablet portrait stack; tablet landscape sets the viewfinder
+          beside its guidance instead of under it. The frame is capped at the
+          drawer measure at every size — a portrait viewfinder stretched to
+          1024px is a phone layout wearing a tablet. */}
+      <div className="flex flex-col gap-8 lg:flex-row lg:items-start lg:gap-12">
+        <Stack gap={16} className="mx-auto w-full max-w-drawer lg:mx-0 lg:shrink-0">
+          <div className="relative aspect-[3/4] w-full overflow-hidden rounded-card border border-rule bg-surface">
+            {cameraActive ? (
+              <video
+                ref={videoRef}
+                autoPlay
+                playsInline
+                muted
+                className="absolute inset-0 size-full object-cover"
+              />
+            ) : sidePhoto || frontPhoto ? (
+              <img
+                src={sidePhoto || frontPhoto || ''}
+                alt="Your most recent frame"
+                className="absolute inset-0 size-full animate-reveal object-cover"
+              />
+            ) : null}
 
-      {/* 90-Degree Accelerometer Alignment Meter */}
-      <div className="bg-stone-900/90 border border-stone-800 rounded-2xl p-3.5 mb-3 shadow-lg">
-        <div className="flex items-center justify-between mb-2">
-          <div className="flex items-center gap-2">
-            <div className={`w-2.5 h-2.5 rounded-full ${isSensorVerified ? 'bg-emerald-400 animate-ping' : 'bg-amber-500'}`} />
-            <span className="text-xs font-semibold tracking-wider uppercase text-stone-300">
-              Vertical Gyroscope Check
-            </span>
-          </div>
-          <span className={`text-xs font-mono font-bold px-2 py-0.5 rounded ${
-            isSensorVerified ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40' : 'bg-amber-500/20 text-amber-300 border border-amber-500/40'
-          }`}>
-            Pitch: {pitchAngle}° / 90.0°
-          </span>
-        </div>
+            {/* The still, held over the live preview for a beat: the Reveal is
+                the moment the reader learns the capture happened. */}
+            {heldFrame ? (
+              <img
+                src={heldFrame}
+                alt=""
+                aria-hidden="true"
+                className="absolute inset-0 size-full animate-reveal object-cover"
+              />
+            ) : null}
 
-        {/* Visual Spirit Level Gauge */}
-        <div className="relative h-6 bg-stone-950 rounded-full border border-stone-700 overflow-hidden flex items-center px-1 mb-2">
-          {/* Target 90° Corridor */}
-          <div className="absolute left-[45%] right-[45%] top-0 bottom-0 bg-emerald-500/30 border-x border-emerald-400 z-0" />
-          
-          {/* Moving Indicator */}
-          <div
-            className={`relative z-10 w-4 h-4 rounded-full transition-all duration-300 shadow-md ${
-              isSensorVerified ? 'bg-emerald-400 ring-4 ring-emerald-500/50' : 'bg-amber-400'
-            }`}
-            style={{ left: `${Math.min(Math.max(((pitchAngle - 70) / 40) * 100, 2), 94)}%` }}
-          />
-        </div>
+            {CORNER.map((corner) => (
+              <span
+                key={corner}
+                aria-hidden="true"
+                className={cn('absolute block size-6 border-fg/30', corner)}
+              />
+            ))}
 
-        {/* Sensor Simulation Slider for iFrame testing */}
-        <div className="flex items-center justify-between gap-2 text-[11px] text-stone-400">
-          <span>Manual Sensor Alignment:</span>
-          <input
-            id="sensor-pitch-slider"
-            type="range"
-            min="70"
-            max="110"
-            step="0.5"
-            value={pitchAngle}
-            onChange={(e) => setPitchAngle(parseFloat(e.target.value))}
-            className="w-28 accent-amber-500 cursor-pointer"
-          />
-          <button
-            id="btn-calibrate-90"
-            onClick={() => setPitchAngle(90)}
-            className="text-amber-400 hover:underline font-mono text-[10px]"
-          >
-            Lock 90°
-          </button>
-        </div>
-      </div>
-
-      {/* Main Camera Viewfinder & Blur Lock overlay */}
-      <div className="relative rounded-2xl overflow-hidden border border-stone-800 bg-stone-900 aspect-[3/4] flex flex-col justify-between p-4 shadow-2xl">
-        {/* Unlocks only when 90° alignment reached */}
-        {!isSensorVerified && (
-          <div className="absolute inset-0 bg-stone-950/80 backdrop-blur-md z-30 flex flex-col items-center justify-center p-6 text-center">
-            <div className="w-12 h-12 rounded-full bg-amber-500/20 border border-amber-500/50 flex items-center justify-center text-amber-400 mb-3 animate-bounce">
-              <Smartphone className="w-6 h-6 rotate-90" />
+            <div className="absolute inset-0 flex items-center justify-center">
+              <Silhouette aligned={aligned} />
             </div>
-            <h3 className="text-base font-serif font-bold text-amber-200 mb-1">
-              Prop Phone Vertically
-            </h3>
-            <p className="text-xs text-stone-300 max-w-xs mb-4">
-              To ensure 100% accurate photogrammetry measurements, tilt phone until pitch reaches 90° (±3°).
-            </p>
-            <button
-              id="btn-unlock-sensor"
-              onClick={() => setPitchAngle(90)}
-              className="px-4 py-2 rounded-full bg-amber-500 hover:bg-amber-400 text-stone-950 text-xs font-bold transition-all shadow-lg"
-            >
-              Align to 90° Automatically
-            </button>
-          </div>
-        )}
 
-        {/* Background Preview (Live Webcam or Captured Profile Preview) */}
-        <div className="absolute inset-0 bg-stone-900 z-0 flex items-center justify-center">
-          {webcamActive ? (
-            <video ref={videoRef} autoPlay playsInline muted className="w-full h-full object-cover" />
-          ) : captureStep === 'side' ? (
-            <img src={sidePhoto || ''} alt="Side profile preview" className="w-full h-full object-cover opacity-80" referrerPolicy="no-referrer" />
-          ) : (
-            <img src={frontPhoto || ''} alt="Front profile preview" className="w-full h-full object-cover opacity-80" referrerPolicy="no-referrer" />
+            <div className="absolute inset-x-4 top-4 flex justify-center">
+              <span
+                className={cn(
+                  'inline-flex items-center gap-2 rounded-full border px-4 py-2',
+                  'bg-surface/70 text-eyebrow font-medium uppercase backdrop-blur-md',
+                  'transition-colors duration-resolve ease-resolve',
+                  aligned ? 'border-fg text-fg' : 'border-rule text-fg-muted',
+                )}
+              >
+                <span
+                  aria-hidden="true"
+                  className={cn(
+                    'block size-1.5 rounded-full',
+                    aligned ? 'bg-fg' : 'bg-fg-muted',
+                  )}
+                />
+                {aligned ? 'Level' : 'Not level yet'}
+              </span>
+            </div>
+
+            {cameraBlocked ? (
+              <p className="absolute inset-x-6 bottom-6 text-center text-body text-fg-muted">
+                No camera here. Upload two frames instead.
+              </p>
+            ) : null}
+          </div>
+
+          {/* Which of the two frames are held. Sans, tabular where it counts. */}
+          <ul className="grid grid-cols-2 gap-4">
+            {[
+              { label: 'Front', held: Boolean(frontPhoto) },
+              { label: 'Side', held: Boolean(sidePhoto) },
+            ].map((frame) => (
+              <li
+                key={frame.label}
+                className={cn(
+                  'flex items-center gap-2 border-t pt-3 text-eyebrow font-medium uppercase',
+                  frame.held ? 'border-fg text-fg' : 'border-rule text-fg-muted',
+                )}
+              >
+                {frame.held ? (
+                  <Check className="size-4 shrink-0" aria-hidden="true" />
+                ) : null}
+                {frame.label}
+                <span className="sr-only">
+                  {frame.held ? ' frame held' : ' frame not yet taken'}
+                </span>
+              </li>
+            ))}
+          </ul>
+        </Stack>
+
+        {/* The surrounding space carries the instruments and the guidance. On
+            tablet portrait those two sit side by side rather than growing. */}
+        <Stack gap={24} className="min-w-0 flex-1 lg:max-w-drawer">
+          {/* The one editorial line on the screen between two Displays. The
+              studio is the theatrical heart of the flow and had no voice. */}
+          <OccasionTitle>Two frames, and we take it from there.</OccasionTitle>
+
+          <p role="status" className="max-w-measure text-body text-fg">
+            {instruction}
+          </p>
+
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-1">
+            <Card>
+              <CardContent className="p-6 md:p-8">
+                <Stack gap={16}>
+                  <span className="text-control font-medium uppercase text-fg-muted">
+                    How the phone sits
+                  </span>
+                  <Gauge
+                    label="Tilt"
+                    value={pitch}
+                    min={PITCH_MIN}
+                    max={PITCH_MAX}
+                  />
+                  <Gauge
+                    label="Lean"
+                    value={roll}
+                    min={-ROLL_RANGE}
+                    max={ROLL_RANGE}
+                  />
+                  {!sensorLive || manualOverride ? (
+                    <Stack gap={8}>
+                      <label
+                        htmlFor="capture-tilt"
+                        className="text-body text-fg-muted"
+                      >
+                        {sensorLive
+                          ? 'Set it by hand — the live reading is being ignored.'
+                          : 'This device cannot feel how it is standing. Set it by hand.'}
+                      </label>
+                      <Slider
+                        id="capture-tilt"
+                        value={pitch}
+                        min={PITCH_MIN}
+                        max={PITCH_MAX}
+                        step={0.5}
+                        onValueChange={setPitch}
+                      />
+                    </Stack>
+                  ) : overrideAvailable ? (
+                    <button
+                      type="button"
+                      onClick={() => setManualOverride(true)}
+                      className="text-left text-body text-fg-muted underline decoration-rule underline-offset-4 hoverable:hover:text-fg"
+                    >
+                      Still not settling? Set the tilt by hand instead.
+                    </button>
+                  ) : null}
+                </Stack>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardContent className="p-6 md:p-8">
+                <Stack gap={16}>
+                  <div className="flex items-baseline justify-between gap-4">
+                    <label
+                      htmlFor="capture-height"
+                      className="text-control font-medium uppercase text-fg-muted"
+                    >
+                      Your height
+                    </label>
+                    <span className="text-price tabular text-fg">{heightCm} cm</span>
+                  </div>
+                  <Slider
+                    id="capture-height"
+                    value={heightCm}
+                    min={150}
+                    max={195}
+                    onValueChange={setHeightCm}
+                  />
+                  <p className="max-w-measure text-body text-fg-muted">
+                    Height is the ruler every measurement is scaled from. Get
+                    this one right and the rest follow.
+                  </p>
+                </Stack>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* The signature moment: one round shutter, carrying the mark, that
+              answers to a word. The caption carries the reason the shutter is
+              unavailable — a disabled control is dropped from the
+              accessibility tree in several browsers, so the reason has to live
+              somewhere that is not the button. */}
+          {step === 'ready' ? null : (
+            <div className="flex flex-col items-center gap-4">
+              <button
+                type="button"
+                onClick={listen}
+                disabled={!aligned || !cameraActive || Boolean(heldFrame)}
+                aria-label={`Capture your ${step} frame — say Snap or tap`}
+                className={cn(
+                  'relative inline-flex size-20 items-center justify-center rounded-full',
+                  'border border-rule bg-surface text-fg',
+                  'transition-colors duration-shift ease-shift',
+                  'disabled:pointer-events-none disabled:opacity-40',
+                  'motion-safe:active:scale-[0.98]',
+                  'hoverable:hover:border-fg',
+                )}
+              >
+                {listening ? (
+                  <span
+                    aria-hidden="true"
+                    className="absolute inset-0 rounded-full border border-fg motion-safe:animate-breath"
+                  />
+                ) : null}
+                <YMark className="h-7" />
+              </button>
+              <span className="text-eyebrow font-medium uppercase text-fg-muted">
+                {listening
+                  ? 'Listening'
+                  : heldFrame
+                    ? 'Frame held'
+                    : !cameraActive
+                      ? 'Upload your frames instead'
+                      : !aligned
+                        ? 'Level the phone first'
+                        : 'Say “Snap” or tap'}
+              </span>
+            </div>
           )}
 
-          {/* Grid Overlay for 3D Mesh Extraction */}
-          <div className="absolute inset-0 bg-[linear-gradient(to_right,#ffffff0a_1px,transparent_1px),linear-gradient(to_bottom,#ffffff0a_1px,transparent_1px)] bg-[size:24px_24px] pointer-events-none" />
-        </div>
+          <input
+            ref={fileRef}
+            type="file"
+            accept="image/*"
+            className="hidden"
+            onChange={handleUpload}
+          />
 
-        {/* Top Floating Status Badges */}
-        <div className="relative z-10 flex items-center justify-between">
-          <span className="px-3 py-1 rounded-full bg-stone-950/80 border border-stone-700 text-[11px] font-mono text-amber-300 flex items-center gap-1">
-            <Sparkles className="w-3 h-3" />
-            {captureStep === 'front' ? 'FRONT PROFILE' : captureStep === 'side' ? 'SIDE PROFILE' : 'CAPTURED'}
-          </span>
-
-          <button
-            id="btn-toggle-webcam"
-            onClick={enableWebcam}
-            className="px-2.5 py-1 rounded-full bg-stone-900/80 hover:bg-stone-800 border border-stone-700 text-[10px] text-stone-300 flex items-center gap-1"
-          >
-            <Camera className="w-3 h-3" />
-            {webcamActive ? 'Webcam Active' : 'Use Camera'}
-          </button>
-        </div>
-
-        {/* VUI Voice Agent Banner */}
-        <div className="relative z-10 bg-stone-950/85 border border-stone-800 rounded-xl p-3 backdrop-blur-md">
-          <div className="flex items-center gap-2 mb-1">
-            <div className={`w-2.5 h-2.5 rounded-full ${isListening ? 'bg-amber-400 animate-ping' : 'bg-emerald-400'}`} />
-            <span className="text-[11px] font-semibold tracking-wider text-amber-300 uppercase flex items-center gap-1">
-              <Volume2 className="w-3.5 h-3.5" /> Voice Assistant
-            </span>
-          </div>
-          <p className="text-xs text-stone-200 font-sans leading-snug">
-            "{voiceInstruction}"
-          </p>
-        </div>
-
-        {/* Shutter Action & Controls - Strictly Minimalist */}
-        <div className="relative z-10 flex items-center justify-between pt-2 gap-2">
-          {/* File Upload Alternative */}
-          <label className="p-2.5 rounded-xl bg-stone-900 border border-stone-800 text-stone-300 hover:text-white cursor-pointer shadow flex items-center gap-1 text-xs">
-            <Upload className="w-4 h-4 text-amber-400" />
-            <span className="hidden sm:inline">Upload</span>
-            <input
-              type="file"
-              accept="image/*"
-              className="hidden"
-              onChange={(e) => handleFileUpload(e, captureStep === 'side' ? 'side' : 'front')}
-            />
-          </label>
-
-          {/* Voice 'Snap' Shutter Button */}
-          <button
-            id="btn-voice-snap"
-            onClick={startVoiceListener}
-            disabled={!isSensorVerified}
-            className={`flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-xl font-bold text-xs transition-all shadow-xl transform active:scale-95 ${
-              isListening
-                ? 'bg-amber-400 text-stone-950 ring-4 ring-amber-500/50 animate-pulse'
-                : 'bg-gradient-to-r from-amber-500 to-amber-400 text-stone-950 hover:from-amber-400 hover:to-amber-300'
-            }`}
-          >
-            <Mic className="w-4 h-4" />
-            <span>{isListening ? "Listening..." : "Say 'Snap' or Tap"}</span>
-          </button>
-        </div>
+          <ActionRow>
+            {step === 'ready' ? (
+              <>
+                <Button variant="secondary" onClick={retake}>
+                  Retake
+                </Button>
+                <Button onClick={finish}>
+                  Read my fit
+                  <ArrowRight className="size-4" aria-hidden="true" />
+                </Button>
+              </>
+            ) : (
+              <Button variant="secondary" onClick={() => fileRef.current?.click()}>
+                <Upload className="size-4" aria-hidden="true" />
+                Upload this frame
+              </Button>
+            )}
+          </ActionRow>
+        </Stack>
       </div>
-
-      {/* Height Slider Input */}
-      <div className="bg-stone-900/90 border border-stone-800 rounded-2xl p-3.5 my-3 shadow-md">
-        <div className="flex items-center justify-between mb-1.5">
-          <label htmlFor="height-cm-slider" className="text-xs font-semibold text-stone-300">
-            User Height Calibration:
-          </label>
-          <span className="text-xs font-mono font-bold text-amber-400 bg-amber-500/10 px-2 py-0.5 rounded border border-amber-500/30">
-            {heightCm} cm
-          </span>
-        </div>
-        <input
-          id="height-cm-slider"
-          type="range"
-          min="150"
-          max="195"
-          value={heightCm}
-          onChange={(e) => setHeightCm(parseInt(e.target.value))}
-          className="w-full accent-amber-500 cursor-pointer"
-        />
-      </div>
-
-      {/* Primary Call to Action -> Sizing Engine */}
-      <button
-        id="btn-proceed-sizing"
-        onClick={handleProceedToSizing}
-        className="w-full py-3.5 px-4 rounded-xl bg-amber-500 hover:bg-amber-400 text-stone-950 font-bold text-xs uppercase tracking-wider transition-all shadow-lg flex items-center justify-center gap-2"
-      >
-        <span>Generate 3D Sizing & Mesh</span>
-        <ArrowRight className="w-4 h-4" />
-      </button>
-    </div>
+    </AppContainer>
   );
 };

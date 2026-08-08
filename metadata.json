@@ -1,9 +1,8 @@
 {
   "name": "You've Got Style",
-  "description": "AI-powered personal stylist & virtual try-on engine featuring voice-guided capture, 3D photogrammetry sizing, style guardrails, and occasion capsule discovery.",
+  "description": "AI-powered personal stylist featuring style guardrails, height-and-measurement grading across luxury brands, and virtual try-on.",
   "requestFramePermissions": [
-    "camera",
-    "microphone"
+    "camera"
   ],
   "majorCapabilities": [
     "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"

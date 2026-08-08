@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" name="viewport"/>
+<title>Atelier AI - Onboarding - Voice</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;600;700&amp;family=Playfair+Display:wght@500;600&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+          darkMode: "class",
+          theme: {
+            extend: {
+              "colors": {
+                      "secondary-fixed-dim": "#c8c6c2",
+                      "surface-tint": "#5f5e5e",
+                      "on-primary": "#ffffff",
+                      "on-secondary-container": "#656461",
+                      "surface-container": "#efeded",
+                      "on-tertiary-fixed-variant": "#5d4201",
+                      "on-error": "#ffffff",
+                      "surface-container-low": "#f5f3f3",
+                      "surface-bright": "#fbf9f8",
+                      "secondary-fixed": "#e5e2dd",
+                      "inverse-surface": "#303031",
+                      "surface-container-high": "#e9e8e7",
+                      "surface-container-highest": "#e4e2e2",
+                      "outline": "#747878",
+                      "error": "#ba1a1a",
+                      "on-surface": "#1b1c1c",
+                      "on-secondary": "#ffffff",
+                      "surface-variant": "#e4e2e2",
+                      "on-secondary-fixed": "#1c1c19",
+                      "error-container": "#ffdad6",
+                      "on-primary-container": "#858383",
+                      "surface-dim": "#dbdad9",
+                      "secondary-container": "#e5e2dd",
+                      "on-tertiary-fixed": "#261900",
+                      "on-surface-variant": "#444748",
+                      "primary-fixed": "#e5e2e1",
+                      "background": "#fbf9f8",
+                      "outline-variant": "#c4c7c7",
+                      "secondary": "#5f5e5b",
+                      "primary": "#000000",
+                      "surface-container-lowest": "#ffffff",
+                      "tertiary-fixed": "#ffdea5",
+                      "tertiary": "#000000",
+                      "on-background": "#1b1c1c",
+                      "tertiary-container": "#261900",
+                      "tertiary-fixed-dim": "#e9c176",
+                      "inverse-on-surface": "#f2f0f0",
+                      "surface": "#fbf9f8",
+                      "on-tertiary-container": "#a17f3b",
+                      "on-primary-fixed-variant": "#474646",
+                      "on-secondary-fixed-variant": "#474743",
+                      "on-primary-fixed": "#1c1b1b",
+                      "primary-container": "#1c1b1b",
+                      "primary-fixed-dim": "#c8c6c5",
+                      "inverse-primary": "#c8c6c5",
+                      "on-tertiary": "#ffffff",
+                      "on-error-container": "#93000a"
+              },
+              "borderRadius": {
+                      "DEFAULT": "0.125rem",
+                      "lg": "0.25rem",
+                      "xl": "0.5rem",
+                      "full": "0.75rem"
+              },
+              "spacing": {
+                      "unit": "4px",
+                      "container-margin": "24px",
+                      "gutter": "16px",
+                      "section-gap": "48px"
+              },
+              "fontFamily": {
+                      "body-lg": [
+                              "Hanken Grotesk"
+                      ],
+                      "label-caps": [
+                              "Hanken Grotesk"
+                      ],
+                      "display-lg": [
+                              "Playfair Display"
+                      ],
+                      "headline-lg-mobile": [
+                              "Playfair Display"
+                      ],
+                      "title-md": [
+                              "Hanken Grotesk"
+                      ],
+                      "body-sm": [
+                              "Hanken Grotesk"
+                      ],
+                      "headline-lg": [
+                              "Playfair Display"
+                      ]
+              },
+              "fontSize": {
+                      "body-lg": [
+                              "16px",
+                              {
+                                      "lineHeight": "26px",
+                                      "fontWeight": "400"
+                              }
+                      ],
+                      "label-caps": [
+                              "12px",
+                              {
+                                      "lineHeight": "16px",
+                                      "letterSpacing": "0.1em",
+                                      "fontWeight": "700"
+                              }
+                      ],
+                      "display-lg": [
+                              "48px",
+                              {
+                                      "lineHeight": "56px",
+                                      "letterSpacing": "-0.02em",
+                                      "fontWeight": "600"
+                              }
+                      ],
+                      "headline-lg-mobile": [
+                              "28px",
+                              {
+                                      "lineHeight": "34px",
+                                      "fontWeight": "500"
+                              }
+                      ],
+                      "title-md": [
+                              "18px",
+                              {
+                                      "lineHeight": "24px",
+                                      "letterSpacing": "0.05em",
+                                      "fontWeight": "600"
+                              }
+                      ],
+                      "body-sm": [
+                              "14px",
+                              {
+                                      "lineHeight": "20px",
+                                      "fontWeight": "400"
+                              }
+                      ],
+                      "headline-lg": [
+                              "32px",
+                              {
+                                      "lineHeight": "40px",
+                                      "fontWeight": "500"
+                              }
+                      ]
+              }
+      },
+          },
+        }
+      </script>
+<style>
+        .pulse-ring {
+            animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+        }
+        
+        .pulse-ring-delayed {
+            animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+            animation-delay: 1s;
+        }
+
+        @keyframes pulse {
+            0%, 100% {
+                opacity: 0;
+                transform: scale(0.8);
+            }
+            50% {
+                opacity: 0.2;
+                transform: scale(1.5);
+            }
+        }
+
+        .soundwave {
+            animation: wave 1s ease-in-out infinite alternate;
+        }
+
+        @keyframes wave {
+            0% { height: 10px; }
+            100% { height: 40px; }
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-background text-on-background min-h-screen flex flex-col items-center justify-center relative overflow-hidden font-body-lg text-body-lg">
+<!-- Ambient Background Effect -->
+<div class="absolute inset-0 z-0 pointer-events-none opacity-30">
+<div class="absolute top-1/4 -left-1/4 w-[150%] h-[50%] bg-gradient-to-r from-transparent via-surface-variant to-transparent blur-3xl transform rotate-12"></div>
+</div>
+<!-- Onboarding Canvas -->
+<main class="relative z-10 w-full max-w-[400px] h-screen max-h-[850px] mx-auto flex flex-col px-container-margin py-section-gap safe-top safe-bottom bg-surface md:rounded-3xl md:h-[800px] md:my-8 md:shadow-[0px_4px_40px_rgba(0,0,0,0.08)] border border-outline/10">
+<!-- Progress Indicator -->
+<div class="w-full flex gap-2 mb-12">
+<div class="h-1 flex-1 bg-outline-variant/30 rounded-full"></div>
+<div class="h-1 flex-1 bg-outline-variant/30 rounded-full"></div>
+<div class="h-1 flex-1 bg-primary rounded-full"></div>
+</div>
+<!-- Visual Hero Area -->
+<div class="flex-1 flex flex-col items-center justify-center relative w-full mt-8">
+<!-- Decorative Soundwaves -->
+<div class="absolute flex items-center justify-center gap-1.5 opacity-20 z-0">
+<div class="w-0.5 h-4 bg-primary rounded-full soundwave" style="animation-delay: 0.1s"></div>
+<div class="w-0.5 h-8 bg-primary rounded-full soundwave" style="animation-delay: 0.3s"></div>
+<div class="w-0.5 h-12 bg-primary rounded-full soundwave" style="animation-delay: 0.5s"></div>
+<div class="w-0.5 h-6 bg-primary rounded-full soundwave" style="animation-delay: 0.2s"></div>
+<div class="w-0.5 h-10 bg-primary rounded-full soundwave" style="animation-delay: 0.4s"></div>
+<div class="w-24"></div> <!-- Spacer for icon -->
+<div class="w-0.5 h-10 bg-primary rounded-full soundwave" style="animation-delay: 0.4s"></div>
+<div class="w-0.5 h-6 bg-primary rounded-full soundwave" style="animation-delay: 0.2s"></div>
+<div class="w-0.5 h-12 bg-primary rounded-full soundwave" style="animation-delay: 0.5s"></div>
+<div class="w-0.5 h-8 bg-primary rounded-full soundwave" style="animation-delay: 0.3s"></div>
+<div class="w-0.5 h-4 bg-primary rounded-full soundwave" style="animation-delay: 0.1s"></div>
+</div>
+<!-- Pulsing Mic Icon -->
+<div class="relative flex items-center justify-center w-32 h-32 z-10">
+<div class="absolute inset-0 border-2 border-primary rounded-full pulse-ring"></div>
+<div class="absolute inset-0 border border-primary rounded-full pulse-ring-delayed"></div>
+<div class="w-20 h-20 bg-surface border border-outline/20 rounded-full flex items-center justify-center shadow-[0px_4px_20px_rgba(0,0,0,0.05)] z-20 backdrop-blur-md">
+<span class="material-symbols-outlined text-4xl text-primary font-light" style="font-variation-settings: 'wght' 200;">
+                        mic_external_on
+                    </span>
+</div>
+</div>
+</div>
+<!-- Typography & Content -->
+<div class="text-center mt-12 mb-auto z-10">
+<h1 class="font-headline-lg-mobile text-headline-lg-mobile text-primary tracking-tight mb-4 md:font-headline-lg md:text-headline-lg">Speak Your Style.</h1>
+<p class="font-body-lg text-body-lg text-on-surface-variant max-w-[280px] mx-auto">
+                Command your wardrobe using natural language. Just ask to see your evening wear or winter coats.
+            </p>
+</div>
+<!-- Actions -->
+<div class="w-full flex flex-col gap-4 mt-8 z-10 pb-8">
+<button class="w-full h-14 bg-primary text-on-primary font-label-caps text-label-caps uppercase rounded-DEFAULT flex items-center justify-center tracking-widest hover:bg-inverse-surface transition-colors duration-300" onclick="document.getElementById('privacyModal').classList.remove('hidden')">
+                Complete Setup
+            </button>
+<button class="w-full h-14 bg-transparent border border-outline/20 text-primary font-label-caps text-label-caps uppercase rounded-DEFAULT flex items-center justify-center tracking-widest hover:bg-surface-variant transition-colors duration-300">
+                Skip for Now
+            </button>
+</div>
+</main>
+<!-- Privacy Modal (Hidden by default) -->
+<div class="hidden fixed inset-0 z-50 flex items-end sm:items-center justify-center" id="privacyModal">
+<!-- Backdrop -->
+<div class="absolute inset-0 bg-primary/20 backdrop-blur-xl" onclick="document.getElementById('privacyModal').classList.add('hidden')"></div>
+<!-- Modal Content -->
+<div class="relative w-full sm:w-auto sm:min-w-[400px] bg-surface rounded-t-3xl sm:rounded-3xl p-8 transform transition-transform shadow-[0px_-10px_40px_rgba(0,0,0,0.05)] border border-outline/10">
+<!-- Close handle mobile -->
+<div class="w-12 h-1 bg-outline/20 rounded-full mx-auto mb-8 sm:hidden"></div>
+<div class="flex items-start justify-between mb-6">
+<div class="w-12 h-12 rounded-full bg-surface-variant/50 flex items-center justify-center">
+<span class="material-symbols-outlined text-primary">security</span>
+</div>
+<button class="text-on-surface-variant hover:text-primary transition-colors" onclick="document.getElementById('privacyModal').classList.add('hidden')">
+<span class="material-symbols-outlined">close</span>
+</button>
+</div>
+<h2 class="font-title-md text-title-md text-primary mb-3">Privacy &amp; Permissions</h2>
+<p class="font-body-sm text-body-sm text-on-surface-variant mb-8 leading-relaxed">
+                To enable voice commands, Atelier AI requires access to your device microphone. We only process audio when you actively initiate a command. Your voice data is never sold to third parties.
+            </p>
+<div class="space-y-4">
+<button class="w-full h-12 bg-primary text-on-primary font-label-caps text-label-caps uppercase rounded-DEFAULT flex items-center justify-center tracking-widest hover:bg-inverse-surface transition-colors duration-300">
+                    Accept &amp; Continue
+                </button>
+<button class="w-full h-12 bg-transparent text-on-surface-variant font-label-caps text-label-caps uppercase rounded-DEFAULT flex items-center justify-center tracking-widest hover:text-primary transition-colors duration-300" onclick="document.getElementById('privacyModal').classList.add('hidden')">
+                    Review Terms
+                </button>
+</div>
+</div>
+</div>
+</body></html>
