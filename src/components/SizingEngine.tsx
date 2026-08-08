@@ -1,34 +1,78 @@
-import React from 'react';
+import React, { useMemo, useState } from 'react';
 import { ArrowRight } from 'lucide-react';
-import { UserMeasurements, WomenswearMeasurements, BrandSizeMapping, CapturedProfile } from '../types';
+import {
+  BrandSizeMapping,
+  CapturedProfile,
+  UserMeasurements,
+  Wardrobe,
+} from '../types';
 import {
   estimateMeasurementsFromHeight,
   mapMeasurementsToBrandSizes,
 } from '../data/brandGrading';
 import { Display } from './brand';
-import { Badge, Button, Card } from './ui';
+import { Badge, Button, Card, Slider } from './ui';
 import { ActionRow, AppContainer, ResponsiveGrid, Stack } from './layout';
 
 interface SizingEngineProps {
   capturedProfile: CapturedProfile;
+  wardrobe: Wardrobe;
   onProceedToGuardrails: (
     measurements: UserMeasurements,
     brandSizes: BrandSizeMapping[],
   ) => void;
 }
 
+interface EditableField {
+  key: string;
+  label: string;
+  min: number;
+  max: number;
+}
+
+/** Bust, waist and hip circumference carry the fit; inseam sets length. */
+const WOMENSWEAR_FIELDS: EditableField[] = [
+  { key: 'chestCm', label: 'Bust', min: 70, max: 130 },
+  { key: 'waistCm', label: 'Waist', min: 55, max: 115 },
+  { key: 'hipsCm', label: 'Hips', min: 75, max: 135 },
+  { key: 'inseamCm', label: 'Inseam', min: 65, max: 100 },
+];
+
+/** Chest, waist, neck and sleeve carry the fit; hips are not a menswear cutting reference. */
+const MENSWEAR_FIELDS: EditableField[] = [
+  { key: 'chestCm', label: 'Chest', min: 80, max: 140 },
+  { key: 'waistCm', label: 'Waist', min: 65, max: 125 },
+  { key: 'neckCm', label: 'Neck', min: 33, max: 50 },
+  { key: 'sleeveCm', label: 'Sleeve', min: 55, max: 72 },
+  { key: 'inseamCm', label: 'Inseam', min: 68, max: 100 },
+];
+
 /**
  * The figure is a diagram, not a readout — the numbers live in the table below
  * where they can be tabular, selectable and read aloud. Eight-point type inside
- * an SVG is neither.
+ * an SVG is neither. `hips` is omitted for menswear rather than relabelled —
+ * there is no menswear circumference at that position to show.
  */
-function Figure({ chest, waist, hips }: { chest: number; waist: number; hips: number }) {
+function Figure({
+  chest,
+  waist,
+  hips,
+}: {
+  chest: number;
+  waist: number;
+  hips?: number;
+}) {
+  const label =
+    hips === undefined
+      ? `Body diagram: chest ${chest} centimetres, waist ${waist} centimetres.`
+      : `Body diagram: chest ${chest} centimetres, waist ${waist} centimetres, hips ${hips} centimetres.`;
+
   return (
     <svg
       viewBox="0 0 200 300"
       fill="none"
       role="img"
-      aria-label={`Body diagram: chest ${chest} centimetres, waist ${waist} centimetres, hips ${hips} centimetres.`}
+      aria-label={label}
       className="size-full"
     >
       {/* Plumb line */}
@@ -50,7 +94,7 @@ function Figure({ chest, waist, hips }: { chest: number; waist: number; hips: nu
         <path d="M 68 65 L 132 65" />
       </g>
 
-      {/* The three circumferences the grading actually turns on */}
+      {/* The circumferences the grading actually turns on */}
       <g
         stroke="currentColor"
         strokeWidth="1"
@@ -59,7 +103,9 @@ function Figure({ chest, waist, hips }: { chest: number; waist: number; hips: nu
       >
         <ellipse cx="100" cy="95" rx="32" ry="12" />
         <ellipse cx="100" cy="135" rx="24" ry="9" />
-        <ellipse cx="100" cy="175" rx="34" ry="14" />
+        {hips !== undefined ? (
+          <ellipse cx="100" cy="175" rx="34" ry="14" />
+        ) : null}
       </g>
 
       {/* Inseam */}
@@ -78,23 +124,36 @@ function Figure({ chest, waist, hips }: { chest: number; waist: number; hips: nu
 
 export const SizingEngine: React.FC<SizingEngineProps> = ({
   capturedProfile,
+  wardrobe,
   onProceedToGuardrails,
 }) => {
-  // Still womenswear-only: this screen does not yet take a wardrobe prop
-  // (that wiring is the Phase 1 form rebuild, tracked separately), so it
-  // keeps calling the no-wardrobe overload and the concrete type it returns.
-  const measurements: WomenswearMeasurements = estimateMeasurementsFromHeight(
-    capturedProfile.heightCm,
+  // Seeded once from height, then owned here — every edit below moves this
+  // state, never a fresh call back into the estimator.
+  const [measurements, setMeasurements] = useState<UserMeasurements>(() =>
+    estimateMeasurementsFromHeight(capturedProfile.heightCm, wardrobe),
   );
-  const brandSizes: BrandSizeMapping[] = mapMeasurementsToBrandSizes(measurements);
+  // Which fields the customer has actually set, versus which are still the
+  // height-derived guess. This is the fact "Estimated" vs "Yours" reads off —
+  // never a copy decision made independently of it.
+  const [touchedFields, setTouchedFields] = useState<Record<string, boolean>>(
+    {},
+  );
 
-  const rows: ReadonlyArray<{ label: string; value: number }> = [
-    { label: 'Height', value: measurements.heightCm },
-    { label: 'Chest', value: measurements.chestCm },
-    { label: 'Waist', value: measurements.waistCm },
-    { label: 'Hips', value: measurements.hipsCm },
-    { label: 'Inseam', value: measurements.inseamCm },
-  ];
+  const brandSizes = useMemo(
+    () => mapMeasurementsToBrandSizes(measurements),
+    [measurements],
+  );
+
+  const fields =
+    measurements.wardrobe === 'menswear' ? MENSWEAR_FIELDS : WOMENSWEAR_FIELDS;
+
+  const handleFieldChange = (key: string, value: number) => {
+    setMeasurements((prev) => ({ ...prev, [key]: value }) as UserMeasurements);
+    setTouchedFields((prev) => ({ ...prev, [key]: true }));
+  };
+
+  const hipsCm =
+    measurements.wardrobe === 'womenswear' ? measurements.hipsCm : undefined;
 
   return (
     // Resolve, not Reveal: this is a computed result settling into place, not
@@ -115,8 +174,8 @@ export const SizingEngine: React.FC<SizingEngineProps> = ({
           <Display>Your fit, in numbers.</Display>
           <p className="max-w-measure text-body text-fg-muted">
             Graded from your height against standard proportions — a starting
-            point, not a tape measure. Every look you are shown from here is cut
-            to these numbers.
+            point, not a tape measure. Adjust anything that's off below and
+            every size updates with it.
           </p>
         </Stack>
 
@@ -139,38 +198,76 @@ export const SizingEngine: React.FC<SizingEngineProps> = ({
                 <Figure
                   chest={measurements.chestCm}
                   waist={measurements.waistCm}
-                  hips={measurements.hipsCm}
+                  hips={hipsCm}
                 />
               </div>
             </div>
           </Card>
 
           <Stack gap={24} className="lg:justify-between">
-            <span className="text-control font-medium uppercase text-fg-muted">
-              Measurements
-            </span>
+            <Stack gap={4}>
+              <span className="text-control font-medium uppercase text-fg-muted">
+                Measurements
+              </span>
+              <p className="max-w-measure text-body text-fg-muted">
+                Estimated until you say otherwise. Move any slider to give us
+                your own number — the sizes below recalculate against it
+                immediately.
+              </p>
+            </Stack>
 
-            {/* One column under the thumb, two across a tablet — the table
-                composes into the extra width instead of stretching one row.
-                There are five measurements, so at two columns the last one
-                would sit alone beside a dead cell; it spans the full width
-                when it is the odd one out. */}
-            <dl className="grid gap-x-12 md:grid-cols-2">
-              {rows.map((row) => (
-                <div
-                  key={row.label}
-                  className="flex items-baseline justify-between gap-4 border-b border-rule py-3 md:[&:last-child:nth-child(odd)]:col-span-2"
-                >
-                  <dt className="text-body text-fg-muted">{row.label}</dt>
-                  <dd className="text-price tabular text-fg">{row.value} cm</dd>
-                </div>
-              ))}
-            </dl>
+            <div className="flex items-baseline justify-between gap-4 border-b border-rule py-3">
+              <span className="text-body text-fg-muted">Height</span>
+              <span className="text-price tabular text-fg">
+                {measurements.heightCm} cm
+              </span>
+            </div>
 
-            <p className="max-w-measure text-body text-fg-muted">
-              Measurements hold to the nearest centimetre. Adjust your height in
-              the studio and every number here follows.
-            </p>
+            {/* One column under the thumb, two across a tablet. */}
+            <div className="grid gap-x-12 gap-y-6 md:grid-cols-2">
+              {fields.map((field) => {
+                const value = (
+                  measurements as unknown as Record<string, number>
+                )[field.key];
+                const isYours = touchedFields[field.key] === true;
+                const sliderId = `sizing-${field.key}`;
+
+                return (
+                  <div
+                    key={field.key}
+                    className="md:[&:last-child:nth-child(odd)]:col-span-2"
+                  >
+                    <div className="flex items-baseline justify-between gap-4">
+                      <label
+                        htmlFor={sliderId}
+                        className="text-body text-fg-muted"
+                      >
+                        {field.label}
+                      </label>
+                      <span className="flex items-center gap-2">
+                        <Badge variant={isYours ? 'gold' : 'outline'}>
+                          {isYours ? 'Yours' : 'Estimated'}
+                        </Badge>
+                        <span className="text-price tabular text-fg">
+                          {value} cm
+                        </span>
+                      </span>
+                    </div>
+                    <Slider
+                      id={sliderId}
+                      className="mt-2"
+                      min={field.min}
+                      max={field.max}
+                      value={value}
+                      aria-valuetext={`${value} centimetres`}
+                      onValueChange={(next) =>
+                        handleFieldChange(field.key, next)
+                      }
+                    />
+                  </div>
+                );
+              })}
+            </div>
           </Stack>
         </div>
 
