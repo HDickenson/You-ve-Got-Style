@@ -229,6 +229,13 @@ export default function App() {
         // compliance_check below, which is kept only as the model's own
         // (untrusted) annotation.
         attributes: data.attributes,
+        // The colours a guardrail is actually checked against — the
+        // template's fixed swatch stands in only when the server, for
+        // whatever reason, didn't send one; it is never preferred over the
+        // model's own colours the way it silently was before.
+        colorPalette: Array.isArray(data.colorPalette)
+          ? data.colorPalette
+          : COMPOSED_LOOK_TEMPLATE.colorPalette,
         // Fail CLOSED. Modest wear and the other Style Like You rules are hard
         // guardrails, not preferences — a look whose compliance the model did
         // not assert is unverified, and unverified must never render as
