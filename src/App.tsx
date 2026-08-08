@@ -291,6 +291,7 @@ export default function App() {
         {currentPhase === 'sizing' && (
           <SizingEngine
             capturedProfile={capturedProfile}
+            wardrobe={wardrobe ?? 'womenswear'}
             onProceedToGuardrails={handleProceedToGuardrails}
           />
         )}
