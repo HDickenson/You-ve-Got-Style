@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { ShoppingBag, Menu, X, User, SlidersHorizontal, Camera, Activity, ShieldCheck, Sparkles, Check, LogIn, LogOut, LayoutDashboard } from 'lucide-react';
+import { ShoppingBag, Menu, X, User, SlidersHorizontal, Camera, Activity, ShieldCheck, Sparkles, Check, LogIn, LogOut, LayoutDashboard, Package } from 'lucide-react';
 import { AppPhase, StyleConstraints } from '../types';
 import { auth, signIn, signOut } from '../firebase';
 import { onAuthStateChanged, User as FirebaseUser } from 'firebase/auth';
@@ -252,6 +252,25 @@ export const HeaderNav: React.FC<HeaderNavProps> = ({
                     <span className="text-xs font-serif font-semibold">Social Lookbook</span>
                   </div>
                   {currentPhase === 'social-lookbook' && <Check className="w-3.5 h-3.5 text-amber-400" />}
+                </button>
+
+                {/* Digital Closet */}
+                <button
+                  onClick={() => {
+                    setPhase('digital-closet');
+                    setIsMenuOpen(false);
+                  }}
+                  className={`w-full p-3 rounded-xl border flex items-center justify-between transition-all ${
+                    currentPhase === 'digital-closet'
+                      ? 'bg-amber-500/10 border-amber-500 text-amber-200 font-bold'
+                      : 'bg-stone-950 border-stone-800 hover:border-stone-700 text-stone-300'
+                  }`}
+                >
+                  <div className="flex items-center gap-2.5">
+                    <Package className="w-4 h-4 text-amber-400" />
+                    <span className="text-xs font-serif font-semibold">Digital Closet</span>
+                  </div>
+                  {currentPhase === 'digital-closet' && <Check className="w-3.5 h-3.5 text-amber-400" />}
                 </button>
 
                 {/* AI Features */}

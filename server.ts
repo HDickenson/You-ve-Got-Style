@@ -401,6 +401,110 @@ Please generate a curated luxury look that complies 100% with these guardrails.`
     }
   });
 
+  // 9. Scan Closet Items
+  app.post("/api/scan-closet", async (req, res) => {
+    try {
+      const { imageBase64 } = req.body;
+      const ai = getAiClient();
+      if (!ai) return res.status(500).json({ error: "API Key not configured." });
+
+      const cleanBase64 = imageBase64.replace(/^data:image\/\w+;base64,/, "");
+      
+      const systemInstruction = `You are a fashion AI specialized in cataloging clothing. Analyze the provided photo containing one or more clothing items and catalog them. For each item, provide a category ('Tops', 'Bottoms', 'Outerwear', 'Shoes', 'Accessories', 'Other'), a short description, and its primary color. Return ONLY JSON matching the schema.`;
+
+      const response = await ai.models.generateContent({
+        model: "gemini-3.1-pro-preview",
+        contents: {
+          parts: [
+            { inlineData: { mimeType: "image/jpeg", data: cleanBase64 } },
+            { text: "Analyze this image and catalog the clothing items in it, returning JSON." }
+          ]
+        },
+        config: {
+          systemInstruction,
+          responseMimeType: "application/json",
+          responseSchema: {
+            type: Type.OBJECT,
+            properties: {
+              items: {
+                type: Type.ARRAY,
+                items: {
+                  type: Type.OBJECT,
+                  properties: {
+                    category: { type: Type.STRING },
+                    description: { type: Type.STRING },
+                    color: { type: Type.STRING },
+                    fabric: { type: Type.STRING }
+                  },
+                  required: ["category", "description", "color"]
+                }
+              }
+            },
+            required: ["items"]
+          }
+        }
+      });
+      const parsedData = JSON.parse(response.text || '{"items": []}');
+      res.json(parsedData);
+    } catch (err: any) {
+      console.error(err);
+      res.status(500).json({ error: err.message });
+    }
+  });
+
+  // 10. Sizing Assistant - Analyze best-fitting clothing photos
+  app.post("/api/analyze-sizing", async (req, res) => {
+    try {
+      const { imageBase64 } = req.body;
+      const ai = getAiClient();
+      if (!ai) return res.status(500).json({ error: "API Key not configured." });
+
+      const cleanBase64 = imageBase64.replace(/^data:image\/\w+;base64,/, "");
+
+      const systemInstruction = `You are an elite master tailor and fashion sizing expert. Analyze the photo of the user's best-fitting garment. Estimate its fit characteristics (e.g. shoulder cut, chest drop, waist taper, armhole depth) and compare it against major luxury brands (e.g., Tom Ford, Brunello Cucinelli, Loro Piana, Zegna). Return JSON with garmentType, keyFitDetails, and brandComparisons array with brandName, recommendedSize, fitNote, and alignmentPercentage.`;
+
+      const response = await ai.models.generateContent({
+        model: "gemini-3.6-flash",
+        contents: {
+          parts: [
+            { inlineData: { mimeType: "image/jpeg", data: cleanBase64 } },
+            { text: "Analyze this best-fitting garment and compare fit across luxury brands." }
+          ]
+        },
+        config: {
+          systemInstruction,
+          responseMimeType: "application/json",
+          responseSchema: {
+            type: Type.OBJECT,
+            properties: {
+              garmentType: { type: Type.STRING },
+              keyFitDetails: { type: Type.STRING },
+              brandComparisons: {
+                type: Type.ARRAY,
+                items: {
+                  type: Type.OBJECT,
+                  properties: {
+                    brandName: { type: Type.STRING },
+                    recommendedSize: { type: Type.STRING },
+                    fitNote: { type: Type.STRING },
+                    alignmentPercentage: { type: Type.NUMBER }
+                  },
+                  required: ["brandName", "recommendedSize", "fitNote", "alignmentPercentage"]
+                }
+              }
+            },
+            required: ["garmentType", "keyFitDetails", "brandComparisons"]
+          }
+        }
+      });
+      const parsedData = JSON.parse(response.text || '{}');
+      res.json(parsedData);
+    } catch (err: any) {
+      console.error(err);
+      res.status(500).json({ error: err.message });
+    }
+  });
+
   // Vite middleware / Static serving
   if (process.env.NODE_ENV !== "production") {
     const vite = await createViteServer({

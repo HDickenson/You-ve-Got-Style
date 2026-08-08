@@ -11,7 +11,8 @@ import { AIFeatures } from './components/AIFeatures';
 import { StyleInsightsModal } from './components/StyleInsightsModal';
 import { FitAnalytics } from './components/FitAnalytics';
 import { SocialLookbook } from './components/SocialLookbook';
-import { AppPhase, CapturedProfile, UserMeasurements, BrandSizeMapping, StyleConstraints, FashionLook } from './types';
+import { DigitalCloset } from './components/DigitalCloset';
+import { AppPhase, CapturedProfile, UserMeasurements, BrandSizeMapping, StyleConstraints, FashionLook, ClosetItem } from './types';
 import { INITIAL_LOOKS } from './data/sampleLooks';
 import { calculatePhotogrammetryMeasurements, mapMeasurementsToBrandSizes } from './data/brandGrading';
 import { auth } from './firebase';
@@ -58,6 +59,7 @@ export default function App() {
   // Looks & Capsule State
   const [looksList, setLooksList] = useState<FashionLook[]>(INITIAL_LOOKS);
   const [savedLooks, setSavedLooks] = useState<FashionLook[]>([INITIAL_LOOKS[0]]);
+  const [closetItems, setClosetItems] = useState<ClosetItem[]>([]);
   const [checkoutLook, setCheckoutLook] = useState<FashionLook | null>(null);
 
   // AI Loading State
@@ -288,6 +290,13 @@ export default function App() {
 
         {currentPhase === 'social-lookbook' && (
           <SocialLookbook savedLooks={savedLooks} />
+        )}
+
+        {currentPhase === 'digital-closet' && (
+          <DigitalCloset 
+            closetItems={closetItems} 
+            onAddItems={(items) => setClosetItems(prev => [...items, ...prev])} 
+          />
         )}
       </main>
 

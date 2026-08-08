@@ -55,7 +55,7 @@ export interface CapturedProfile {
   isVoiceTriggered: boolean;
 }
 
-export type AppPhase = 'onboarding' | 'sizing' | 'guardrails' | 'discovery' | 'capsule' | 'ai-features' | 'moodboard' | 'fit-analytics' | 'social-lookbook';
+export type AppPhase = 'onboarding' | 'sizing' | 'guardrails' | 'discovery' | 'capsule' | 'ai-features' | 'moodboard' | 'fit-analytics' | 'social-lookbook' | 'digital-closet';
 
 export interface CheckoutItem {
   look: FashionLook;
@@ -72,4 +72,13 @@ export interface MoodboardItem {
   x: number;
   y: number;
   zIndex: number;
+}
+
+export interface ClosetItem {
+  id: string;
+  category: 'Tops' | 'Bottoms' | 'Outerwear' | 'Shoes' | 'Accessories' | 'Other';
+  description: string;
+  color: string;
+  fabric?: string;
+  imageUrl?: string;
 }
