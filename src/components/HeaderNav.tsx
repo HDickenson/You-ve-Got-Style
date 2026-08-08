@@ -5,9 +5,10 @@ import {
   Compass,
   Menu,
   Ruler,
+  Shirt,
   SlidersHorizontal,
 } from 'lucide-react';
-import { AppPhase, StyleConstraints } from '../types';
+import { AppPhase, StyleConstraints, Wardrobe } from '../types';
 import { YMark, Wordmark } from './brand';
 import { Badge, Button, Separator, Sheet } from './ui';
 import { AppContainer } from './layout';
@@ -19,6 +20,8 @@ interface HeaderNavProps {
   savedCount: number;
   constraints: StyleConstraints;
   onOpenGuardrails: () => void;
+  wardrobe: Wardrobe | null;
+  onOpenWardrobe: () => void;
   heightCm: number;
   onFindLook?: (occasion: string) => Promise<void>;
   isFinding?: boolean;
@@ -26,11 +29,17 @@ interface HeaderNavProps {
 
 /** The context word beside the Y. One word — the screen says the rest. */
 const CONTEXT: Record<AppPhase, string> = {
+  wardrobe: 'Welcome',
   onboarding: 'Studio',
   sizing: 'Fit',
   guardrails: 'Guardrails',
   discovery: 'Discover',
   capsule: 'Capsule',
+};
+
+const WARDROBE_LABEL: Record<Wardrobe, string> = {
+  womenswear: 'Womenswear',
+  menswear: 'Menswear',
 };
 
 const DESTINATIONS: ReadonlyArray<{
@@ -61,6 +70,8 @@ export const HeaderNav: React.FC<HeaderNavProps> = ({
   savedCount,
   constraints,
   onOpenGuardrails,
+  wardrobe,
+  onOpenWardrobe,
   heightCm,
   onFindLook,
   isFinding,
@@ -195,6 +206,23 @@ export const HeaderNav: React.FC<HeaderNavProps> = ({
         </nav>
 
         <Separator className="my-6" />
+
+        <button
+          type="button"
+          onClick={() => {
+            onOpenWardrobe();
+            setIsMenuOpen(false);
+          }}
+          className={cn(ROW, 'hoverable:hover:bg-fg/5')}
+        >
+          <Shirt className="size-5 shrink-0 text-fg-muted" aria-hidden="true" />
+          <span className="min-w-0 flex-1 truncate text-body text-fg">
+            Shopping for
+          </span>
+          {wardrobe ? (
+            <Badge className="tabular">{WARDROBE_LABEL[wardrobe]}</Badge>
+          ) : null}
+        </button>
 
         <button
           type="button"
