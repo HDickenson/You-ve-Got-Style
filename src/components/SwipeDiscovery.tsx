@@ -21,6 +21,12 @@ interface SwipeDiscoveryProps {
   onBuyLook: (look: FashionLook) => void;
   onFindLook: (occasion: string) => Promise<void>;
   isFinding: boolean;
+  /** Three seconds into `isFinding` with nothing back yet. Optional so this
+   *  component still type-checks against a shell that predates the slow
+   *  path. */
+  isFindingSlow?: boolean;
+  /** Set when the last `onFindLook` failed. Cleared by the next attempt. */
+  findError?: string | null;
 }
 
 const OCCASIONS = [
@@ -115,6 +121,8 @@ export const SwipeDiscovery: React.FC<SwipeDiscoveryProps> = ({
   onBuyLook,
   onFindLook,
   isFinding,
+  isFindingSlow = false,
+  findError = null,
 }) => {
   const [selectedOccasion, setSelectedOccasion] = useState<string>('All Occasions');
   const [currentIndex, setCurrentIndex] = useState<number>(0);
@@ -283,7 +291,10 @@ export const SwipeDiscovery: React.FC<SwipeDiscoveryProps> = ({
           <div className={cn(PLATE, 'lg:mx-0 lg:justify-self-end')}>
             {isFinding ? (
               /* Outcomes, not machinery — and nothing spins. The mark breathes
-                 while the look is composed, and stops when it lands. */
+                 while the look is composed, and stops when it lands. Past
+                 three seconds the sentence changes — the mark keeps
+                 breathing rather than a progress bar pretending to know how
+                 much is left. */
               <div
                 role="status"
                 aria-live="polite"
@@ -292,7 +303,21 @@ export const SwipeDiscovery: React.FC<SwipeDiscoveryProps> = ({
                 <YMark className="h-8 w-auto motion-safe:animate-breath" />
                 {/* A sentence the concierge says, so it is set as a sentence —
                     13px tracked caps would make it a system state chip. */}
-                <p className="text-body text-fg-muted">Finding your look…</p>
+                <p className="text-body text-fg-muted">
+                  {isFindingSlow
+                    ? 'Still composing — this is taking longer than usual.'
+                    : 'Finding your look…'}
+                </p>
+              </div>
+            ) : findError ? (
+              /* A failure is not content: it replaces the plate rather than
+                 rendering inside it, and it says what happened and what to
+                 do next — nothing about the network or the model. */
+              <div className="flex aspect-[4/5] w-full flex-col items-center justify-center gap-6 rounded-hero border border-rule bg-surface-raised p-6 text-center">
+                <p className="max-w-measure text-body text-fg-muted">{findError}</p>
+                <Button size="sm" onClick={() => void onFindLook(selectedOccasion)}>
+                  Try again
+                </Button>
               </div>
             ) : activeLook ? (
               <article
@@ -390,7 +415,7 @@ export const SwipeDiscovery: React.FC<SwipeDiscoveryProps> = ({
             )}
           </div>
 
-          {activeLook && !isFinding ? (
+          {activeLook && !isFinding && !findError ? (
             <div
               className={cn(
                 PLATE,
