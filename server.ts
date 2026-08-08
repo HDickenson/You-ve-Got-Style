@@ -41,39 +41,7 @@ async function startServer() {
     res.json({ status: "ok", timestamp: new Date().toISOString() });
   });
 
-  // 2. Sizing Engine Endpoint (Photogrammetry Calculation)
-  app.post("/api/photogrammetry", (req, res) => {
-    try {
-      const { heightCm = 170 } = req.body;
-      const heightRatio = heightCm / 170;
-
-      const chestCm = Math.round(88 * heightRatio);
-      const waistCm = Math.round(68 * heightRatio);
-      const hipsCm = Math.round(95 * heightRatio);
-      const inseamCm = Math.round(heightCm * 0.46);
-
-      res.json({
-        heightCm,
-        chestCm,
-        waistCm,
-        hipsCm,
-        inseamCm,
-        confidenceScore: 0.98,
-        brandSizes: [
-          { brandName: "Chanel", size: `FR ${Math.round(36 + (heightCm - 165) * 0.2)}`, fit: "Slightly Tailored" },
-          { brandName: "Zimmermann", size: `Size ${Math.round(1 + (heightCm - 165) * 0.1)}`, fit: "True to Size" },
-          { brandName: "Loro Piana", size: `IT ${Math.round(40 + (heightCm - 165) * 0.2)}`, fit: "Relaxed Fit" },
-          { brandName: "Khaite", size: `US ${Math.round(4 + (heightCm - 165) * 0.2)}`, fit: "Structured" },
-          { brandName: "Brunello Cucinelli", size: `IT ${Math.round(40 + (heightCm - 165) * 0.2)}`, fit: "Structured" },
-          { brandName: "Massimo Dutti", size: `EUR ${Math.round(36 + (heightCm - 165) * 0.2)}`, fit: "True to Size" },
-        ],
-      });
-    } catch (err: any) {
-      res.status(500).json({ error: err.message || "Photogrammetry calculation failed" });
-    }
-  });
-
-  // 3. "Style Like You" AI Styling Recommendation Engine (PRD System Instruction & Structured Output)
+  // 2. "Style Like You" AI Styling Recommendation Engine (PRD System Instruction & Structured Output)
   app.post("/api/style-recommendations", async (req, res) => {
     try {
       const {
@@ -301,7 +269,7 @@ Please generate a curated luxury look that complies 100% with these guardrails.$
     }
   });
 
-  // 4. Digital Twin Virtual Try-On Image Generation ("Nano Banana")
+  // 3. Digital Twin Virtual Try-On Image Generation ("Nano Banana")
   app.post("/api/generate-tryon", async (req, res) => {
     try {
       const {

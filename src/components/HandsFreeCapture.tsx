@@ -13,7 +13,7 @@ interface HandsFreeCaptureProps {
   setHeightCm: (height: number) => void;
 }
 
-/** Upright and level, within the tolerance photogrammetry actually needs. */
+/** Upright and level, within a tight camera-alignment tolerance. */
 const PITCH_TARGET = 90;
 const TOLERANCE = 3;
 const PITCH_MIN = 70;

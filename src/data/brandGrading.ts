@@ -135,7 +135,10 @@ export const GCC_LUXURY_BRANDS_MENSWEAR = [
 ];
 
 function womenswearProportions(heightCm: number): WomenswearMeasurements {
-  // Photogrammetry formula derived from height-to-body proportion ratio (Golden Ratio & Anthropometric tables)
+  // Fixed reference proportions scaled by height ratio — a starting point,
+  // not a measurement of anyone. Nothing here scans or triangulates a real
+  // body; these constants are estimates, and the copy that surfaces this
+  // data says so.
   const heightRatio = heightCm / 170;
 
   const chestCm = Math.round(88 * heightRatio);
@@ -150,16 +153,6 @@ function womenswearProportions(heightCm: number): WomenswearMeasurements {
     waistCm,
     hipsCm,
     inseamCm,
-    confidenceScore: 0.98,
-    meshPoints: [
-      { id: 'p1', x: 0, y: -0.85, z: 0, label: 'Crown' },
-      { id: 'p2', x: -0.22, y: -0.55, z: 0, label: 'Shoulders (Width: ' + Math.round(39 * heightRatio) + 'cm)' },
-      { id: 'p3', x: 0, y: -0.38, z: 0.1, label: 'Bust/Chest (' + chestCm + 'cm)' },
-      { id: 'p4', x: 0, y: -0.15, z: 0.05, label: 'Natural Waist (' + waistCm + 'cm)' },
-      { id: 'p5', x: 0, y: 0.1, z: 0.12, label: 'Hips (' + hipsCm + 'cm)' },
-      { id: 'p6', x: -0.12, y: 0.55, z: 0, label: 'Inseam (' + inseamCm + 'cm)' },
-      { id: 'p7', x: 0.12, y: 0.95, z: 0, label: 'Ground Anchor' },
-    ]
   };
 }
 
@@ -187,24 +180,14 @@ function menswearProportions(heightCm: number): MenswearMeasurements {
     neckCm,
     sleeveCm,
     inseamCm,
-    confidenceScore: 0.98,
-    meshPoints: [
-      { id: 'p1', x: 0, y: -0.85, z: 0, label: 'Crown' },
-      { id: 'p2', x: -0.22, y: -0.55, z: 0, label: 'Shoulders (Width: ' + Math.round(45 * heightRatio) + 'cm)' },
-      { id: 'p3', x: 0, y: -0.62, z: 0.05, label: 'Neck (' + neckCm + 'cm)' },
-      { id: 'p4', x: 0, y: -0.38, z: 0.1, label: 'Chest (' + chestCm + 'cm)' },
-      { id: 'p5', x: 0, y: -0.15, z: 0.05, label: 'Natural Waist (' + waistCm + 'cm)' },
-      { id: 'p6', x: -0.12, y: 0.55, z: 0, label: 'Inseam (' + inseamCm + 'cm)' },
-      { id: 'p7', x: 0.12, y: 0.95, z: 0, label: 'Ground Anchor' },
-    ]
   };
 }
 
-export function calculatePhotogrammetryMeasurements(heightCm: number): WomenswearMeasurements;
-export function calculatePhotogrammetryMeasurements(heightCm: number, wardrobe: 'menswear'): MenswearMeasurements;
-export function calculatePhotogrammetryMeasurements(heightCm: number, wardrobe: 'womenswear'): WomenswearMeasurements;
-export function calculatePhotogrammetryMeasurements(heightCm: number, wardrobe: Wardrobe): UserMeasurements;
-export function calculatePhotogrammetryMeasurements(
+export function estimateMeasurementsFromHeight(heightCm: number): WomenswearMeasurements;
+export function estimateMeasurementsFromHeight(heightCm: number, wardrobe: 'menswear'): MenswearMeasurements;
+export function estimateMeasurementsFromHeight(heightCm: number, wardrobe: 'womenswear'): WomenswearMeasurements;
+export function estimateMeasurementsFromHeight(heightCm: number, wardrobe: Wardrobe): UserMeasurements;
+export function estimateMeasurementsFromHeight(
   heightCm: number,
   wardrobe: Wardrobe = 'womenswear',
 ): UserMeasurements {

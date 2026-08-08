@@ -9,8 +9,6 @@ export type Wardrobe = 'womenswear' | 'menswear';
 
 interface MeasurementsBase {
   heightCm: number;
-  confidenceScore: number;
-  meshPoints?: Array<{ id: string; x: number; y: number; z: number; label: string }>;
 }
 
 /** Bust, waist and hip circumference carry the fit. */
