@@ -183,9 +183,8 @@ Please generate a curated luxury look that complies 100% with these guardrails.`
 
       if (!ai) {
         return res.json({
-          success: true,
-          imageUrl: "https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?auto=format&fit=crop&w=1000&q=80",
-          note: "Fallback studio render (Configure GEMINI_API_KEY for dynamic Nano Banana rendering).",
+          success: false,
+          error: "Try-on rendering is not configured (GEMINI_API_KEY missing).",
         });
       }
 
@@ -233,16 +232,15 @@ Please generate a curated luxury look that complies 100% with these guardrails.`
         res.json({ success: true, imageUrl: generatedImageUrl });
       } else {
         res.json({
-          success: true,
-          imageUrl: "https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?auto=format&fit=crop&w=1000&q=80",
+          success: false,
+          error: "The model did not return an image.",
         });
       }
     } catch (err: any) {
       console.error("Try-on generation error:", err);
       res.json({
         success: false,
-        fallbackUrl: "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&w=1000&q=80",
-        message: err.message,
+        error: err.message || "Try-on generation failed.",
       });
     }
   });
