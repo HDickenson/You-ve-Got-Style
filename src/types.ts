@@ -133,7 +133,6 @@ export interface FashionLook {
   dress_garment?: string;
   compliance_check: boolean;
   capsule_synergy: string;
-  brand_sizes: BrandSizeMapping[];
   imageUrl: string;
   /** Set when try-on generation was attempted and failed, so the UI can say so instead of passing the placeholder off as a real render. */
   imageGenerationFailed?: boolean;

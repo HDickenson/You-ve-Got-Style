@@ -39,7 +39,6 @@ function look(overrides: Partial<FashionLook>): FashionLook {
     colorPalette: ['#1A2B4C'],
     imageUrl: '/look-placeholder.svg',
     tags: ['Modest Wear'],
-    brand_sizes: [],
     attributes: COMPLIANT_ATTRIBUTES,
     ...overrides,
   };
@@ -117,5 +116,71 @@ describe('SwipeDiscovery — fail-closed rendering', () => {
 
     expect(screen.queryByText('Should Never Appear On Screen')).not.toBeInTheDocument();
     expect(screen.getByText('Nothing composed for this occasion yet.')).toBeInTheDocument();
+  });
+
+  it('does not crash — and does not render — a look whose attributes were never populated once a hard guardrail is active', () => {
+    // Reproduces the reopening's F1: a look composed while every guardrail
+    // was off can reach the deck without `attributes`; the crash only
+    // surfaced once a hard rule was switched on and this component tried to
+    // read `attributes.neckline` off it.
+    const noAttributes = look({
+      id: 'look-no-attributes',
+      look_title: 'Should Never Appear On Screen',
+      attributes: undefined as unknown as GarmentAttributes,
+    });
+    const compliant = look({ id: 'look-compliant', look_title: 'The Only Look Allowed To Show' });
+
+    expect(() =>
+      render(
+        <SwipeDiscovery
+          looks={[noAttributes, compliant]}
+          constraints={ALL_GUARDRAILS_ON}
+          capturedProfile={capturedProfile}
+          brandSizes={[]}
+          onSwipeRight={noop}
+          onSwipeLeft={noop}
+          onBuyLook={noop}
+          onFindLook={noopAsync}
+          isFinding={false}
+        />,
+      ),
+    ).not.toThrow();
+
+    expect(screen.queryByText('Should Never Appear On Screen')).not.toBeInTheDocument();
+    expect(screen.getByText('The Only Look Allowed To Show')).toBeInTheDocument();
+  });
+
+  it('does not claim "Within your guardrails" when only a spend ceiling is set and no guardrail is switched on', () => {
+    // F4: a spend ceiling is a preference, not a guardrail — it must not be
+    // able to satisfy a badge that claims guardrails were verified.
+    const compliant = look({ id: 'look-compliant', look_title: 'In Budget Look' });
+    const noGuardrailsOnlyBudget: StyleConstraints = {
+      wardrobe: 'womenswear',
+      modestWear: false,
+      sleevesBelowElbow: false,
+      noTrousers: false,
+      hemlineBelowKnee: false,
+      noNeonColors: false,
+      noLoudPrints: false,
+      preferredFabrics: [],
+      maxPriceAED: 50_000,
+    };
+
+    render(
+      <SwipeDiscovery
+        looks={[compliant]}
+        constraints={noGuardrailsOnlyBudget}
+        capturedProfile={capturedProfile}
+        brandSizes={[]}
+        onSwipeRight={noop}
+        onSwipeLeft={noop}
+        onBuyLook={noop}
+        onFindLook={noopAsync}
+        isFinding={false}
+      />,
+    );
+
+    expect(screen.getByText('In Budget Look')).toBeInTheDocument();
+    expect(screen.queryByText('Within your guardrails')).not.toBeInTheDocument();
   });
 });

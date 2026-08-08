@@ -1,6 +1,12 @@
 import { describe, expect, it } from 'vitest';
 import { FashionLook, GarmentAttributes, StyleConstraints } from '../types';
-import { evaluateLook, filterByHardGuardrails, holdsRule, withinPriceCeiling } from './guardrails';
+import {
+  evaluateLook,
+  filterByHardGuardrails,
+  holdsRule,
+  isValidStyleConstraints,
+  withinPriceCeiling,
+} from './guardrails';
 
 const ALL_GUARDRAILS_ON: StyleConstraints = {
   wardrobe: 'womenswear',
@@ -38,7 +44,6 @@ function look(overrides: Partial<FashionLook>): FashionLook {
     colorPalette: ['#1A2B4C'],
     imageUrl: '/look-placeholder.svg',
     tags: ['Modest Wear'],
-    brand_sizes: [],
     attributes: COMPLIANT_ATTRIBUTES,
     ...overrides,
   };
@@ -101,6 +106,74 @@ describe('holdsRule — typed attributes, no prose parsing', () => {
     expect(
       holdsRule('noLoudPrints', { attributes: { ...COMPLIANT_ATTRIBUTES, pattern: 'printed' }, colorPalette: [] }),
     ).toBe(false);
+  });
+
+  it('fails hemlineBelowKnee for a knee-length hemline — the rule promises midi, maxi and floor only', () => {
+    expect(
+      holdsRule('hemlineBelowKnee', { attributes: { ...COMPLIANT_ATTRIBUTES, hemline: 'knee' }, colorPalette: [] }),
+    ).toBe(false);
+  });
+
+  it('fails closed rather than throwing when attributes were never populated', () => {
+    // Mirrors a look whose source failed to state attributes at all — the
+    // shape guardrails.ts's own type says is required, but a caller
+    // upstream (or a malformed API response) can still hand over `undefined`.
+    const subject = { attributes: undefined as unknown as GarmentAttributes, colorPalette: [] };
+    expect(() => holdsRule('modestWear', subject)).not.toThrow();
+    expect(holdsRule('modestWear', subject)).toBe(false);
+    expect(holdsRule('sleevesBelowElbow', subject)).toBe(false);
+    expect(holdsRule('hemlineBelowKnee', subject)).toBe(false);
+    expect(holdsRule('noTrousers', subject)).toBe(false);
+    expect(holdsRule('noLoudPrints', subject)).toBe(false);
+  });
+
+  it('never lets a look without attributes crash evaluateLook', () => {
+    const noAttributesLook = { attributes: undefined as unknown as GarmentAttributes, colorPalette: [] };
+    expect(() => evaluateLook(noAttributesLook, ALL_GUARDRAILS_ON)).not.toThrow();
+    expect(evaluateLook(noAttributesLook, ALL_GUARDRAILS_ON).passesHard).toBe(false);
+  });
+});
+
+describe('isValidStyleConstraints — the server boundary', () => {
+  it('accepts a well-formed womenswear constraints object', () => {
+    expect(isValidStyleConstraints(ALL_GUARDRAILS_ON)).toBe(true);
+  });
+
+  it('rejects a menswear-shaped constraints object rather than silently enforcing nothing', () => {
+    // The exact shape of the adversarial probe from the reopening: a
+    // constraints object whose keys match none of the womenswear rules
+    // above, which previously produced zero active rules and passed every
+    // hard guardrail vacuously.
+    const menswearShaped = {
+      wardrobe: 'menswear',
+      modestWear: true,
+      sleevesBelowElbow: true,
+      coveredShoulders: true,
+      kneesCovered: true,
+      noShorts: true,
+      relaxedSilhouette: true,
+      traditionalFormalwearEligible: true,
+      noNeonColors: true,
+      noLoudPrints: true,
+      preferredFabrics: [],
+    };
+    expect(isValidStyleConstraints(menswearShaped)).toBe(false);
+  });
+
+  it('rejects null, undefined, arrays and empty objects', () => {
+    expect(isValidStyleConstraints(null)).toBe(false);
+    expect(isValidStyleConstraints(undefined)).toBe(false);
+    expect(isValidStyleConstraints([])).toBe(false);
+    expect(isValidStyleConstraints({})).toBe(false);
+  });
+
+  it('rejects a constraints object with a non-boolean guardrail key', () => {
+    expect(isValidStyleConstraints({ ...ALL_GUARDRAILS_ON, noTrousers: 'true' })).toBe(false);
+  });
+
+  it('rejects a maxPriceAED that is not a number', () => {
+    expect(isValidStyleConstraints({ ...ALL_GUARDRAILS_ON, maxPriceAED: '5000' })).toBe(false);
+    expect(isValidStyleConstraints({ ...ALL_GUARDRAILS_ON, maxPriceAED: 5000 })).toBe(true);
   });
 });
 

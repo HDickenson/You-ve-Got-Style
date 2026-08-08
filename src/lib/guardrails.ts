@@ -75,6 +75,29 @@ export const SOFT_KEYS: ReadonlyArray<SoftGuardrailKey> = SOFT_RULES.map(
 );
 
 /**
+ * Runtime guard for the server boundary. `StyleConstraints` is a
+ * compile-time type — an HTTP body can carry anything, including a
+ * `MenswearStyleConstraints`-shaped object whose keys match none of the
+ * rules above. Accepting that silently is how absence fails open at the
+ * constraint layer: zero recognised keys means zero active rules means every
+ * hard guardrail passes vacuously, on a wardrobe this module has no rule set
+ * for. There is no menswear enforcement implemented yet, so a menswear (or
+ * otherwise unrecognised) constraints body must be rejected here, not
+ * accepted and left unenforced.
+ */
+export function isValidStyleConstraints(value: unknown): value is StyleConstraints {
+  if (!value || typeof value !== 'object') return false;
+  const c = value as Record<string, unknown>;
+  if (c.wardrobe !== 'womenswear') return false;
+  if (![...HARD_KEYS, ...SOFT_KEYS].every((key) => typeof c[key] === 'boolean')) return false;
+  if (!Array.isArray(c.preferredFabrics) || !c.preferredFabrics.every((f) => typeof f === 'string')) {
+    return false;
+  }
+  if (c.maxPriceAED !== undefined && typeof c.maxPriceAED !== 'number') return false;
+  return true;
+}
+
+/**
  * The minimum a look has to state for its guardrails to be checked — discrete
  * facts, not prose to infer them from. A source that cannot answer "does this
  * cover the knee" except by writing a sentence about a garment is not a
@@ -122,13 +145,22 @@ function isNeonColor(hex: string): boolean {
  */
 export function holdsRule(key: GuardrailKey, subject: GuardrailSubject): boolean {
   const a = subject.attributes;
+  // A look whose source never populated `attributes` (the type promises it
+  // is required; a caller upstream of this one is the one that broke that
+  // promise) gets no benefit of the doubt — this fails closed instead of
+  // throwing on `a.neckline`, which previously turned "guardrail switched on
+  // after the fact" into a blank screen rather than a filtered look.
+  if (!a && key !== 'noNeonColors') return false;
   switch (key) {
     case 'modestWear':
       return MODEST_NECKLINES.has(a.neckline) && a.opacity === 'opaque';
     case 'sleevesBelowElbow':
       return a.sleeveLength === 'elbow' || a.sleeveLength === 'three-quarter' || a.sleeveLength === 'long';
     case 'hemlineBelowKnee':
-      return a.hemline === 'knee' || a.hemline === 'midi' || a.hemline === 'maxi' || a.hemline === 'floor';
+      // 'knee' sits at the knee, not below it — the rule's own copy promises
+      // "Midi, maxi and floor lengths only," so accepting it here would be
+      // enforcement that quietly disagrees with what the toggle says it does.
+      return a.hemline === 'midi' || a.hemline === 'maxi' || a.hemline === 'floor';
     case 'noTrousers':
       return a.bottomCategory === 'skirt' || a.bottomCategory === 'dress';
     case 'noNeonColors':

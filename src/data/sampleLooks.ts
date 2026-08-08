@@ -56,12 +56,6 @@ export const INITIAL_LOOKS: FashionLook[] = [
       bottomCategory: 'trousers',
       pattern: 'solid',
     },
-    brand_sizes: [
-      { brandName: 'Chanel', recommendedSize: 'FR 38 (US 6)', fitsToType: 'Slightly tailored', fitDescription: 'Precision shoulder alignment' },
-      { brandName: 'Loro Piana', recommendedSize: 'IT 42 (US 6)', fitsToType: 'Relaxed fit', fitDescription: 'Fluid drape through waist' },
-      { brandName: 'Khaite', recommendedSize: 'US 6 / M', fitsToType: 'Structured', fitDescription: 'Snug high-waist trim' },
-      { brandName: 'Massimo Dutti', recommendedSize: 'EUR 38 / M', fitsToType: 'True to size', fitDescription: 'Standard luxury tailoring' }
-    ]
   },
   {
     id: 'look-2',
@@ -86,11 +80,6 @@ export const INITIAL_LOOKS: FashionLook[] = [
       bottomCategory: 'skirt',
       pattern: 'solid',
     },
-    brand_sizes: [
-      { brandName: 'Zimmermann', recommendedSize: 'Size 1 (US 6)', fitsToType: 'True to size', fitDescription: 'Flowing silhouette with cinched cuffs' },
-      { brandName: 'Chanel', recommendedSize: 'FR 38 (US 6)', fitsToType: 'Slightly tailored', fitDescription: 'Comfortable bust clearance' },
-      { brandName: 'Brunello Cucinelli', recommendedSize: 'IT 40 (M)', fitsToType: 'Structured', fitDescription: 'Elegant sleeve drop' }
-    ]
   },
   {
     id: 'look-3',
@@ -115,11 +104,6 @@ export const INITIAL_LOOKS: FashionLook[] = [
       bottomCategory: 'skirt',
       pattern: 'solid',
     },
-    brand_sizes: [
-      { brandName: 'Loro Piana', recommendedSize: 'IT 40 (US 4)', fitsToType: 'Relaxed fit', fitDescription: 'Ultra-soft relaxed fit' },
-      { brandName: 'Massimo Dutti', recommendedSize: 'EUR 36 / S', fitsToType: 'True to size', fitDescription: 'Gentle waist drape' },
-      { brandName: 'Khaite', recommendedSize: 'US 4 / S', fitsToType: 'Structured', fitDescription: 'Refined neckline framing' }
-    ]
   },
   {
     id: 'look-4',
@@ -144,10 +128,6 @@ export const INITIAL_LOOKS: FashionLook[] = [
       bottomCategory: 'trousers',
       pattern: 'solid',
     },
-    brand_sizes: [
-      { brandName: 'Khaite', recommendedSize: 'US 6 / M', fitsToType: 'Structured', fitDescription: 'Precision shoulder sculpting' },
-      { brandName: 'Chanel', recommendedSize: 'FR 38 (US 6)', fitsToType: 'Slightly tailored', fitDescription: 'Clean chest line' }
-    ]
   },
   {
     id: 'look-5',
@@ -172,9 +152,5 @@ export const INITIAL_LOOKS: FashionLook[] = [
       bottomCategory: 'dress',
       pattern: 'textured',
     },
-    brand_sizes: [
-      { brandName: 'Brunello Cucinelli', recommendedSize: 'IT 40 (M)', fitsToType: 'Structured', fitDescription: 'Majestic floor-length drape' },
-      { brandName: 'Zimmermann', recommendedSize: 'Size 1 (US 6)', fitsToType: 'True to size', fitDescription: 'Perfect sleeve length drop' }
-    ]
   }
 ];
