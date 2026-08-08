@@ -76,16 +76,13 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
 
   if (!shown) return null;
 
-  const sizes =
-    shown.brand_sizes && shown.brand_sizes.length > 0
-      ? shown.brand_sizes
-      : brandSizes;
-
-  // One brand is being bought, so one size is answered. The rest of the
+  // One brand is being bought, so one size is answered from the customer's
+  // own computed table — never a literal stamped on the look, which would go
+  // stale the moment the customer edits a measurement. The rest of the
   // grading table is a size chart, and a size chart is not a concierge.
   const sizeValue =
-    sizes.find((entry) => entry.brandName === shown.brand)?.recommendedSize ??
-    'Your measured size';
+    brandSizes.find((entry) => entry.brandName === shown.brand)
+      ?.recommendedSize ?? 'Your measured size';
 
   const pieces = [
     shown.dress_garment,

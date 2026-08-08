@@ -245,7 +245,6 @@ export default function App() {
         capsule_synergy: data.capsule_synergy || 'Pairs seamlessly with your existing luxury capsule wardrobe.',
         imageUrl: generatedImageUrl,
         imageGenerationFailed,
-        brand_sizes: brandSizes,
       };
 
       setLooksList((prev) => [foundLook, ...prev]);

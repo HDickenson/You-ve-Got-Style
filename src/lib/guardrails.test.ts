@@ -44,7 +44,6 @@ function look(overrides: Partial<FashionLook>): FashionLook {
     colorPalette: ['#1A2B4C'],
     imageUrl: '/look-placeholder.svg',
     tags: ['Modest Wear'],
-    brand_sizes: [],
     attributes: COMPLIANT_ATTRIBUTES,
     ...overrides,
   };

@@ -274,7 +274,14 @@ export const SwipeDiscovery: React.FC<SwipeDiscoveryProps> = ({
   // a guardrail being verified, and the two must stay visibly distinct
   // rather than share this badge's copy.
   const withinGuardrails = hasActiveGuardrails && softMissed.length === 0;
-  const size = activeLook?.brand_sizes?.[0] ?? brandSizes[0];
+  // The customer's own computed table is the only source for this — never a
+  // literal stamped on the look. Matched by the look's own house, so a
+  // Chanel look shows the customer's Chanel size, not any house's; a look by
+  // a house outside the graded catalogue (an atelier-composed piece) shows
+  // none, honestly, rather than a mismatched borrowed number.
+  const size = activeLook
+    ? brandSizes.find((entry) => entry.brandName === activeLook.brand)
+    : undefined;
 
   // The garments, as the card states them. A dress replaces the pair.
   const attributes: ReadonlyArray<[string, string]> = activeLook
