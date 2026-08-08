@@ -22,8 +22,8 @@ Express (server.ts, 242 lines)
    |
    |  @google/genai
    v
-Gemini  —  gemini-3.1-flash-image  (try-on)
-        —  structured-output model  (styling)
+Gemini  —  gemini-3.6-flash        (styling, structured output)
+        —  gemini-3.1-flash-image  (try-on)
 ```
 
 Development serves the SPA through Vite middleware; production serves `dist/` from the same
