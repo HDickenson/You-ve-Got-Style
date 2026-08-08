@@ -149,6 +149,60 @@ Raised against YGS-2.
 
 ---
 
+## D6 — Firebase provides authentication (YGS-40)
+
+**Decided.** Firebase Auth is in scope. It also explains the dependency that appeared in the
+API-hardening branch: that branch had picked up `main`'s lineage, where Firebase already
+existed.
+
+**What it overturns.** ROADMAP's lab constraint read *"No database, no accounts, no
+payments, no server-side state."* **Accounts are now in.** Database, payments and
+server-side state are **not**, unless separately ruled — this does not extend to them by
+implication. Phase 4's "no accounts, no cross-device sync" is superseded.
+
+**Scope.** `firebase/auth` only, imported modularly. Not the compat bundle, not Firestore,
+not Analytics. It arrives through `package.json` as a reviewed dependency with a commit
+message saying why, never through a regenerated lockfile. `recharts` appeared in the same
+branch, is used by nothing, and is **not** covered by this ruling.
+
+**The consequence that is not technical.** Today nothing persists, which makes the consent
+screen's promise — *"The frames are held for this session only"* — true by absence rather
+than by mechanism. With an account the question stops being *does this survive a refresh*
+and becomes **what is attached to this person, and for how long.** Body measurements against
+an identity is a materially different product, and in a UAE/KSA context that is PDPL
+territory — the exact ground this project already cleared once by removing compliance claims
+it could not back.
+
+**Suri rules on what an account may hold before any auth code exists**, and may block alone:
+what may be stored, whether frames may *ever* be persisted, what the consent screen must say
+once an account exists, and what deleting an account must actually delete.
+
+---
+
+## D7 — The foundation becomes `main`. The six screens become proposals (YGS-20)
+
+**Decided.** `feat/brand-foundation` replaced `main` rather than merging into it. Executed as
+a merge commit with both parents whose tree is byte-identical to the foundation.
+
+**Why.** Measured against the foundation's own gates, `main` had no `DESIGN.md`, zero
+`--*: initial` declarations so no token layer existed, 28 raw hex values in components, and
+a failing detector. Merging conflicted in eight files including every core screen. Its six
+newer screens were built without the token layer, the design contract, or any of the honesty
+work — merging them would have reintroduced precisely what this sprint removed.
+
+**Nothing was discarded.** `main`'s three commits and all six screens are preserved on
+`archive/main-features-2026-08-08`, verified reachable by object.
+
+**Carried forward:** the Firebase work. `firestore.rules` and `security_spec.md` are the
+starting point for D6 rather than a blank page — evidence written before the question was
+asked, not an answer to it.
+
+**Package manager:** `main` used bun, the foundation uses npm, and CI is built on `npm ci`.
+The foundation's choice stands by default; adopting bun would be a separate deliberate
+change, not something inherited through a merge.
+
+---
+
 ## Standing rules established during the sprint
 
 - **Delivered means pushed.** Work not reachable on the remote is not delivered. Two agents
@@ -161,5 +215,9 @@ Raised against YGS-2.
   "Your size is held while you finish here", which is a factual assertion about system state
   with no inventory behind it.
 - **Prefer absence to fabrication.** If a value cannot be computed, show nothing.
+- **A decision that lives only in a comment thread does not exist.** D6 and D7 were ruled,
+  acted on, and left out of this file for hours. An agent assessing the archived screens
+  read `main:DECISIONS.md`, found only D1-D5, and said so rather than guessing — which is
+  correct behaviour, and it still cost that assessment its most relevant context.
 - **A lab build may be incomplete; it may not imply readiness it does not have.** English-only
   is fine. "Same day" delivery to Dubai, with no logistics behind it, is not.
