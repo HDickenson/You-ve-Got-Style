@@ -4,12 +4,13 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "dev": "tsx server.ts",
     "build": "vite build && esbuild server.ts --bundle --platform=node --format=cjs --packages=external --sourcemap --outfile=dist/server.cjs",
-    "start": "node dist/server.cjs",
+    "capture": "node scripts/capture.mjs",
     "clean": "rm -rf dist server.js",
+    "dev": "tsx server.ts",
     "lint": "tsc --noEmit",
-    "capture": "node scripts/capture.mjs"
+    "preview": "npm run capture && node scripts/build-preview.mjs",
+    "start": "node dist/server.cjs"
   },
   "dependencies": {
     "@google/genai": "^2.4.0",
@@ -37,3 +38,4 @@
     "vite": "^6.2.3"
   }
 }
+
