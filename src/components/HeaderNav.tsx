@@ -1,6 +1,8 @@
-import React, { useState } from 'react';
-import { ShoppingBag, Menu, X, User, SlidersHorizontal, Camera, Activity, ShieldCheck, Sparkles, Check } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { ShoppingBag, Menu, X, User, SlidersHorizontal, Camera, Activity, ShieldCheck, Sparkles, Check, LogIn, LogOut, LayoutDashboard } from 'lucide-react';
 import { AppPhase, StyleConstraints } from '../types';
+import { auth, signIn, signOut } from '../firebase';
+import { onAuthStateChanged, User as FirebaseUser } from 'firebase/auth';
 
 interface HeaderNavProps {
   currentPhase: AppPhase;
@@ -11,6 +13,7 @@ interface HeaderNavProps {
   heightCm: number;
   onGenerateAiLook?: (occasion: string) => Promise<void>;
   isGeneratingAi?: boolean;
+  onOpenInsights?: () => void;
 }
 
 export const HeaderNav: React.FC<HeaderNavProps> = ({
@@ -22,8 +25,17 @@ export const HeaderNav: React.FC<HeaderNavProps> = ({
   heightCm,
   onGenerateAiLook,
   isGeneratingAi,
+  onOpenInsights,
 }) => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [user, setUser] = useState<FirebaseUser | null>(null);
+
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
+      setUser(currentUser);
+    });
+    return () => unsubscribe();
+  }, []);
 
   const activeConstraintCount = [
     constraints.modestWear,
@@ -77,12 +89,16 @@ export const HeaderNav: React.FC<HeaderNavProps> = ({
               {/* Drawer Header */}
               <div className="flex items-center justify-between pb-4 border-b border-stone-800 mb-6">
                 <div className="flex items-center gap-2">
-                  <div className="w-9 h-9 rounded-full bg-gradient-to-tr from-amber-600 to-amber-200 flex items-center justify-center text-stone-950 font-serif font-bold text-sm shadow">
-                    YS
-                  </div>
+                  {user && user.photoURL ? (
+                    <img src={user.photoURL} alt="Profile" className="w-9 h-9 rounded-full shadow border border-amber-500/30" />
+                  ) : (
+                    <div className="w-9 h-9 rounded-full bg-gradient-to-tr from-amber-600 to-amber-200 flex items-center justify-center text-stone-950 font-serif font-bold text-sm shadow">
+                      {user ? (user.displayName?.[0] || 'U') : 'YS'}
+                    </div>
+                  )}
                   <div>
-                    <h2 className="font-serif font-bold text-base text-amber-100">Stylist Profile</h2>
-                    <p className="text-[10px] font-mono text-stone-400">GCC Luxury Suite • {heightCm}cm</p>
+                    <h2 className="font-serif font-bold text-base text-amber-100">{user ? user.displayName || 'Stylist Profile' : 'Stylist Profile'}</h2>
+                    <p className="text-[10px] font-mono text-stone-400">{user ? user.email : 'GCC Luxury Suite'} • {heightCm}cm</p>
                   </div>
                 </div>
                 <button
@@ -181,6 +197,82 @@ export const HeaderNav: React.FC<HeaderNavProps> = ({
                   )}
                 </button>
 
+                {/* Moodboard */}
+                <button
+                  onClick={() => {
+                    setPhase('moodboard');
+                    setIsMenuOpen(false);
+                  }}
+                  className={`w-full p-3 rounded-xl border flex items-center justify-between transition-all ${
+                    currentPhase === 'moodboard'
+                      ? 'bg-amber-500/10 border-amber-500 text-amber-200 font-bold'
+                      : 'bg-stone-950 border-stone-800 hover:border-stone-700 text-stone-300'
+                  }`}
+                >
+                  <div className="flex items-center gap-2.5">
+                    <LayoutDashboard className="w-4 h-4 text-amber-400" />
+                    <span className="text-xs font-serif font-semibold">Moodboard</span>
+                  </div>
+                  {currentPhase === 'moodboard' && <Check className="w-3.5 h-3.5 text-amber-400" />}
+                </button>
+
+                {/* Fit Analytics */}
+                <button
+                  onClick={() => {
+                    setPhase('fit-analytics');
+                    setIsMenuOpen(false);
+                  }}
+                  className={`w-full p-3 rounded-xl border flex items-center justify-between transition-all ${
+                    currentPhase === 'fit-analytics'
+                      ? 'bg-amber-500/10 border-amber-500 text-amber-200 font-bold'
+                      : 'bg-stone-950 border-stone-800 hover:border-stone-700 text-stone-300'
+                  }`}
+                >
+                  <div className="flex items-center gap-2.5">
+                    <Activity className="w-4 h-4 text-amber-400" />
+                    <span className="text-xs font-serif font-semibold">Fit Analytics</span>
+                  </div>
+                  {currentPhase === 'fit-analytics' && <Check className="w-3.5 h-3.5 text-amber-400" />}
+                </button>
+
+                {/* Social Lookbook */}
+                <button
+                  onClick={() => {
+                    setPhase('social-lookbook');
+                    setIsMenuOpen(false);
+                  }}
+                  className={`w-full p-3 rounded-xl border flex items-center justify-between transition-all ${
+                    currentPhase === 'social-lookbook'
+                      ? 'bg-amber-500/10 border-amber-500 text-amber-200 font-bold'
+                      : 'bg-stone-950 border-stone-800 hover:border-stone-700 text-stone-300'
+                  }`}
+                >
+                  <div className="flex items-center gap-2.5">
+                    <Camera className="w-4 h-4 text-amber-400" />
+                    <span className="text-xs font-serif font-semibold">Social Lookbook</span>
+                  </div>
+                  {currentPhase === 'social-lookbook' && <Check className="w-3.5 h-3.5 text-amber-400" />}
+                </button>
+
+                {/* AI Features */}
+                <button
+                  onClick={() => {
+                    setPhase('ai-features');
+                    setIsMenuOpen(false);
+                  }}
+                  className={`w-full p-3 rounded-xl border flex items-center justify-between transition-all ${
+                    currentPhase === 'ai-features'
+                      ? 'bg-amber-500/10 border-amber-500 text-amber-200 font-bold'
+                      : 'bg-stone-950 border-stone-800 hover:border-stone-700 text-stone-300'
+                  }`}
+                >
+                  <div className="flex items-center gap-2.5">
+                    <Sparkles className="w-4 h-4 text-amber-400" />
+                    <span className="text-xs font-serif font-semibold">Gemini Intelligence</span>
+                  </div>
+                  {currentPhase === 'ai-features' && <Check className="w-3.5 h-3.5 text-amber-400" />}
+                </button>
+
                 {/* Gemini AI Look Synthesis Button */}
                 {onGenerateAiLook && (
                   <button
@@ -218,13 +310,48 @@ export const HeaderNav: React.FC<HeaderNavProps> = ({
                     {activeConstraintCount} Active
                   </span>
                 </button>
+
+                {/* Style Insights Modal */}
+                {onOpenInsights && (
+                  <button
+                    onClick={() => {
+                      onOpenInsights();
+                      setIsMenuOpen(false);
+                    }}
+                    className="w-full p-3 rounded-xl border bg-stone-950 border-stone-800 hover:border-stone-700 text-stone-300 flex items-center justify-between transition-all mt-2"
+                  >
+                    <div className="flex items-center gap-2.5">
+                      <Sparkles className="w-4 h-4 text-amber-400" />
+                      <span className="text-xs font-serif font-semibold">Daily Style Insight</span>
+                    </div>
+                  </button>
+                )}
               </div>
             </div>
 
             {/* Footer Information */}
-            <div className="pt-4 border-t border-stone-800 text-[10px] font-mono text-stone-500 space-y-1">
-              <p>Engine: Gemini 2.5 Flash + Photogrammetry</p>
-              <p>Security: UAE PDPL On-Device Compliance</p>
+            <div className="pt-4 border-t border-stone-800 text-[10px] font-mono text-stone-500 space-y-3">
+              {user ? (
+                <button
+                  onClick={() => signOut()}
+                  className="w-full flex items-center justify-center gap-2 py-2 rounded border border-stone-800 hover:bg-stone-800 text-stone-400 transition-colors"
+                >
+                  <LogOut className="w-3.5 h-3.5" />
+                  <span>Sign Out</span>
+                </button>
+              ) : (
+                <button
+                  onClick={() => signIn()}
+                  className="w-full flex items-center justify-center gap-2 py-2 rounded bg-amber-500 hover:bg-amber-400 text-stone-950 font-bold transition-colors"
+                >
+                  <LogIn className="w-3.5 h-3.5" />
+                  <span>Sign In with Google</span>
+                </button>
+              )}
+              <div className="space-y-1">
+                <p>Engine: Gemini 2.5 Flash + Photogrammetry</p>
+                <p>Security: UAE PDPL On-Device Compliance</p>
+              </div>
             </div>
           </div>
         </div>

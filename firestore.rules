@@ -1,0 +1,94 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // 1. Global Safety Net
+    match /{document=**} { 
+      allow read, write: if false; 
+    }
+
+    // Phase 3: Primitive Definition
+    function isValidId(id) { 
+      return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$'); 
+    }
+    function incoming() { return request.resource.data; }
+    function existing() { return resource.data; }
+    function isSignedIn() { return request.auth != null; }
+    function isOwner(userId) { return isSignedIn() && request.auth.uid == userId; }
+
+    // Phase 2: Validation Blueprints
+    function isValidUserProfile(data, userId) {
+      return data.keys().hasAll(['userId', 'heightCm', 'constraints', 'createdAt', 'updatedAt']) &&
+             data.keys().size() == 5 &&
+             data.userId == userId &&
+             data.heightCm is number &&
+             data.constraints is map &&
+             data.constraints.keys().hasAll(['modestWear', 'sleevesBelowElbow', 'noTrousers', 'hemlineBelowKnee', 'noNeonColors', 'noLoudPrints', 'preferredFabrics', 'preferredAesthetics']) &&
+             data.constraints.keys().size() == 8 &&
+             data.constraints.modestWear is bool &&
+             data.constraints.sleevesBelowElbow is bool &&
+             data.constraints.noTrousers is bool &&
+             data.constraints.hemlineBelowKnee is bool &&
+             data.constraints.noNeonColors is bool &&
+             data.constraints.noLoudPrints is bool &&
+             data.constraints.preferredFabrics is list &&
+             data.constraints.preferredFabrics.size() <= 20 &&
+             (data.constraints.preferredFabrics.size() == 0 || data.constraints.preferredFabrics[0] is string) &&
+             data.constraints.preferredAesthetics is list &&
+             data.constraints.preferredAesthetics.size() <= 10 &&
+             (data.constraints.preferredAesthetics.size() == 0 || data.constraints.preferredAesthetics[0] is string) &&
+             data.createdAt is number &&
+             data.updatedAt is number;
+    }
+
+    function isValidSavedLook(data, userId, lookId) {
+      return data.keys().hasAll(['userId', 'lookId', 'look_title', 'occasion', 'top_garment', 'bottom_garment', 'brand', 'priceUSD', 'imageUrl', 'createdAt']) &&
+             data.keys().size() == 10 &&
+             data.userId == userId &&
+             data.lookId == lookId &&
+             data.look_title is string && data.look_title.size() <= 200 &&
+             data.occasion is string && data.occasion.size() <= 100 &&
+             data.top_garment is string && data.top_garment.size() <= 200 &&
+             data.bottom_garment is string && data.bottom_garment.size() <= 200 &&
+             data.brand is string && data.brand.size() <= 100 &&
+             data.priceUSD is number &&
+             data.imageUrl is string && data.imageUrl.size() <= 1000 &&
+             data.createdAt is number;
+    }
+
+    match /users/{userId} {
+      allow get: if isOwner(userId) && isValidId(userId);
+      allow list: if false; // No blanket listing of users
+      
+      allow create: if isOwner(userId) &&
+                       isValidId(userId) &&
+                       isValidUserProfile(incoming(), userId) &&
+                       incoming().createdAt == request.time.toMillis() &&
+                       incoming().updatedAt == request.time.toMillis();
+                       
+      allow update: if isOwner(userId) &&
+                       isValidId(userId) &&
+                       isValidUserProfile(incoming(), userId) &&
+                       incoming().userId == existing().userId &&
+                       incoming().createdAt == existing().createdAt &&
+                       incoming().updatedAt == request.time.toMillis() &&
+                       incoming().diff(existing()).affectedKeys().hasOnly(['heightCm', 'constraints', 'updatedAt']);
+                       
+      allow delete: if false;
+
+      match /savedLooks/{lookId} {
+        allow get: if isOwner(userId) && isValidId(userId) && isValidId(lookId);
+        allow list: if isOwner(userId) && isValidId(userId) && resource.data.userId == request.auth.uid;
+        
+        allow create: if isOwner(userId) &&
+                         isValidId(userId) &&
+                         isValidId(lookId) &&
+                         isValidSavedLook(incoming(), userId, lookId) &&
+                         incoming().createdAt == request.time.toMillis();
+                         
+        allow update: if false; // Looks are immutable once saved, delete and recreate if needed
+        allow delete: if isOwner(userId) && isValidId(userId) && isValidId(lookId);
+      }
+    }
+  }
+}

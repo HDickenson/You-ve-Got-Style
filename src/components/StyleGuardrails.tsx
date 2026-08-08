@@ -30,6 +30,7 @@ export const StyleGuardrails: React.FC<StyleGuardrailsProps> = ({
         noNeonColors: true,
         noLoudPrints: true,
         preferredFabrics: ['Silk', 'Cashmere', 'Virgin Wool'],
+        preferredAesthetics: ['Minimalist', 'Old Money'],
       });
     } else if (preset === 'chic_casual') {
       setConstraints({
@@ -40,6 +41,7 @@ export const StyleGuardrails: React.FC<StyleGuardrailsProps> = ({
         noNeonColors: true,
         noLoudPrints: false,
         preferredFabrics: ['Linen', 'Cotton', 'Cashmere'],
+        preferredAesthetics: ['Parisian Chic', 'Bohemian'],
       });
     } else if (preset === 'gala_evening') {
       setConstraints({
@@ -50,6 +52,7 @@ export const StyleGuardrails: React.FC<StyleGuardrailsProps> = ({
         noNeonColors: true,
         noLoudPrints: true,
         preferredFabrics: ['Silk Satin', 'Chiffon', 'Cashmere'],
+        preferredAesthetics: ['Avant-Garde'],
       });
     }
   };
@@ -232,6 +235,42 @@ export const StyleGuardrails: React.FC<StyleGuardrailsProps> = ({
                 }`}
               >
                 {fab}
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* Preferred Fashion Aesthetics */}
+      <div className="mb-3 bg-stone-900/90 border border-stone-800 rounded-2xl p-3 shadow-md">
+        <span className="text-[11px] uppercase font-mono text-stone-400 block mb-1.5">
+          Preferred Fashion Aesthetics:
+        </span>
+        <div className="flex flex-wrap gap-1.5">
+          {['Parisian Chic', 'Minimalist', 'Avant-Garde', 'Old Money', 'Bohemian', 'Streetwear'].map((aesthetic) => {
+            const isSelected = constraints.preferredAesthetics?.includes(aesthetic);
+            return (
+              <button
+                key={aesthetic}
+                onClick={() => {
+                  setConstraints((prev) => {
+                    const current = prev.preferredAesthetics || [];
+                    const exists = current.includes(aesthetic);
+                    return {
+                      ...prev,
+                      preferredAesthetics: exists
+                        ? current.filter((a) => a !== aesthetic)
+                        : [...current, aesthetic],
+                    };
+                  });
+                }}
+                className={`px-3 py-1 rounded-lg text-xs font-medium transition-all ${
+                  isSelected
+                    ? 'bg-amber-500 text-stone-950 font-bold shadow-sm'
+                    : 'bg-stone-950 text-stone-300 border border-stone-800 hover:border-stone-700'
+                }`}
+              >
+                {aesthetic}
               </button>
             );
           })}

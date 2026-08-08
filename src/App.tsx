@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { HeaderNav } from './components/HeaderNav';
 import { HandsFreeCapture } from './components/HandsFreeCapture';
 import { SizingEngine } from './components/SizingEngine';
@@ -6,11 +6,21 @@ import { StyleGuardrails } from './components/StyleGuardrails';
 import { SwipeDiscovery } from './components/SwipeDiscovery';
 import { CapsuleWardrobe } from './components/CapsuleWardrobe';
 import { CheckoutModal } from './components/CheckoutModal';
+import { Moodboard } from './components/Moodboard';
+import { AIFeatures } from './components/AIFeatures';
+import { StyleInsightsModal } from './components/StyleInsightsModal';
+import { FitAnalytics } from './components/FitAnalytics';
+import { SocialLookbook } from './components/SocialLookbook';
 import { AppPhase, CapturedProfile, UserMeasurements, BrandSizeMapping, StyleConstraints, FashionLook } from './types';
 import { INITIAL_LOOKS } from './data/sampleLooks';
 import { calculatePhotogrammetryMeasurements, mapMeasurementsToBrandSizes } from './data/brandGrading';
+import { auth } from './firebase';
+import { onAuthStateChanged, User as FirebaseUser } from 'firebase/auth';
+import { getUserProfile, createUserProfile, updateUserProfile, getSavedLooks, saveLookToFirebase, removeSavedLookFromFirebase } from './db/firebase-api';
 
 export default function App() {
+  const [user, setUser] = useState<FirebaseUser | null>(null);
+
   // App Phase State
   const [currentPhase, setCurrentPhase] = useState<AppPhase>('discovery'); // Default to instant working discovery UI!
   const [heightCm, setHeightCm] = useState<number>(170);
@@ -42,6 +52,7 @@ export default function App() {
     noNeonColors: true,
     noLoudPrints: true,
     preferredFabrics: ['Mulberry Silk', 'Baby Cashmere', 'Virgin Wool', 'Raw Linen'],
+    preferredAesthetics: ['Minimalist'],
   });
 
   // Looks & Capsule State
@@ -52,6 +63,40 @@ export default function App() {
   // AI Loading State
   const [isGeneratingAi, setIsGeneratingAi] = useState<boolean>(false);
   const [showGuardrailsModal, setShowGuardrailsModal] = useState<boolean>(false);
+  const [showInsightsModal, setShowInsightsModal] = useState<boolean>(false);
+
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
+      setUser(currentUser);
+      if (currentUser) {
+        // Load User Profile
+        const profile = await getUserProfile(currentUser.uid);
+        if (profile) {
+          setHeightCm(profile.heightCm);
+          setConstraints(profile.constraints as StyleConstraints);
+          const newMeas = calculatePhotogrammetryMeasurements(profile.heightCm);
+          setMeasurements(newMeas);
+          setBrandSizes(mapMeasurementsToBrandSizes(newMeas));
+        } else {
+          // Create default profile for new user
+          await createUserProfile(currentUser.uid, heightCm, constraints);
+        }
+
+        // Load Saved Looks
+        const looks = await getSavedLooks(currentUser.uid);
+        if (looks && looks.length > 0) {
+          setSavedLooks(looks);
+        }
+      }
+    });
+    return () => unsubscribe();
+  }, []); // Only run once on mount
+
+  const syncProfileToFirebase = async (newHeightCm: number, newConstraints: StyleConstraints) => {
+    if (user) {
+      await updateUserProfile(user.uid, newHeightCm, newConstraints);
+    }
+  };
 
   // Handlers
   const handleCaptureComplete = (profile: CapturedProfile) => {
@@ -60,6 +105,7 @@ export default function App() {
     setMeasurements(newMeas);
     setBrandSizes(mapMeasurementsToBrandSizes(newMeas));
     setCurrentPhase('sizing');
+    syncProfileToFirebase(profile.heightCm, constraints);
   };
 
   const handleProceedToGuardrails = (meas: UserMeasurements, bSizes: BrandSizeMapping[]) => {
@@ -68,9 +114,12 @@ export default function App() {
     setCurrentPhase('guardrails');
   };
 
-  const handleSwipeRight = (look: FashionLook) => {
+  const handleSwipeRight = async (look: FashionLook) => {
     if (!savedLooks.some((item) => item.id === look.id)) {
       setSavedLooks((prev) => [look, ...prev]);
+      if (user) {
+        await saveLookToFirebase(user.uid, look);
+      }
     }
   };
 
@@ -78,8 +127,11 @@ export default function App() {
     // Rejection recorded for preference weight tuning
   };
 
-  const handleRemoveSavedLook = (lookId: string) => {
+  const handleRemoveSavedLook = async (lookId: string) => {
     setSavedLooks((prev) => prev.filter((item) => item.id !== lookId));
+    if (user) {
+      await removeSavedLookFromFirebase(user.uid, lookId);
+    }
   };
 
   const handleGenerateAiLook = async (occasion: string) => {
@@ -156,6 +208,7 @@ export default function App() {
         heightCm={heightCm}
         onGenerateAiLook={handleGenerateAiLook}
         isGeneratingAi={isGeneratingAi}
+        onOpenInsights={() => setShowInsightsModal(true)}
       />
 
       {/* Main Phase View Controller */}
@@ -178,7 +231,10 @@ export default function App() {
         {currentPhase === 'guardrails' && (
           <StyleGuardrails
             constraints={constraints}
-            setConstraints={setConstraints}
+            setConstraints={(newConstraints) => {
+              setConstraints(newConstraints);
+              if (user) syncProfileToFirebase(heightCm, newConstraints as StyleConstraints);
+            }}
             onSaveAndProceed={() => setCurrentPhase('discovery')}
           />
         )}
@@ -205,6 +261,22 @@ export default function App() {
             onContinueShopping={() => setCurrentPhase('discovery')}
           />
         )}
+
+        {currentPhase === 'ai-features' && (
+          <AIFeatures />
+        )}
+
+        {currentPhase === 'moodboard' && (
+          <Moodboard savedLooks={savedLooks} />
+        )}
+
+        {currentPhase === 'fit-analytics' && (
+          <FitAnalytics measurements={measurements} savedLooks={savedLooks} />
+        )}
+
+        {currentPhase === 'social-lookbook' && (
+          <SocialLookbook savedLooks={savedLooks} />
+        )}
       </main>
 
       {/* Guardrails Settings Modal overlay if requested from header */}
@@ -213,11 +285,22 @@ export default function App() {
           <div className="bg-stone-900 border border-stone-800 text-stone-100 w-full max-w-md rounded-2xl p-4 max-h-[85vh] overflow-y-auto shadow-2xl">
             <StyleGuardrails
               constraints={constraints}
-              setConstraints={setConstraints}
+              setConstraints={(newConstraints) => {
+                setConstraints(newConstraints);
+                if (user) syncProfileToFirebase(heightCm, newConstraints as StyleConstraints);
+              }}
               onSaveAndProceed={() => setShowGuardrailsModal(false)}
             />
           </div>
         </div>
+      )}
+
+      {/* Style Insights Modal overlay */}
+      {showInsightsModal && (
+        <StyleInsightsModal
+          constraints={constraints}
+          onClose={() => setShowInsightsModal(false)}
+        />
       )}
 
       {/* Atomic Checkout Modal */}

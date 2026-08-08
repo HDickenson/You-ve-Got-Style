@@ -1,0 +1,65 @@
+{
+  "entities": {
+    "userProfile": {
+      "title": "User Profile",
+      "description": "User preferences, height, sizing and constraints",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string", "maxLength": 128 },
+        "heightCm": { "type": "number" },
+        "constraints": {
+          "type": "object",
+          "properties": {
+            "modestWear": { "type": "boolean" },
+            "sleevesBelowElbow": { "type": "boolean" },
+            "noTrousers": { "type": "boolean" },
+            "hemlineBelowKnee": { "type": "boolean" },
+            "noNeonColors": { "type": "boolean" },
+            "noLoudPrints": { "type": "boolean" },
+            "preferredFabrics": {
+              "type": "array",
+              "items": { "type": "string" },
+              "maxLength": 20
+            },
+            "preferredAesthetics": {
+              "type": "array",
+              "items": { "type": "string" },
+              "maxLength": 10
+            }
+          }
+        },
+        "createdAt": { "type": "number" },
+        "updatedAt": { "type": "number" }
+      },
+      "required": ["userId", "heightCm", "constraints", "createdAt", "updatedAt"]
+    },
+    "savedLook": {
+      "title": "Saved Look",
+      "description": "A look saved to the user's capsule wardrobe",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string", "maxLength": 128 },
+        "lookId": { "type": "string", "maxLength": 128 },
+        "look_title": { "type": "string", "maxLength": 200 },
+        "occasion": { "type": "string", "maxLength": 100 },
+        "top_garment": { "type": "string", "maxLength": 200 },
+        "bottom_garment": { "type": "string", "maxLength": 200 },
+        "brand": { "type": "string", "maxLength": 100 },
+        "priceUSD": { "type": "number" },
+        "imageUrl": { "type": "string", "maxLength": 1000 },
+        "createdAt": { "type": "number" }
+      },
+      "required": ["userId", "lookId", "look_title", "occasion", "top_garment", "bottom_garment", "brand", "priceUSD", "imageUrl", "createdAt"]
+    }
+  },
+  "firestore": {
+    "users/{userId}": {
+      "schema": { "$ref": "#/entities/userProfile" },
+      "description": "Stores user profiles including their height and style constraints."
+    },
+    "users/{userId}/savedLooks/{lookId}": {
+      "schema": { "$ref": "#/entities/savedLook" },
+      "description": "Stores looks saved by the user in their capsule wardrobe."
+    }
+  }
+}

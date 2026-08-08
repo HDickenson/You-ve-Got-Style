@@ -2,8 +2,9 @@ import express from "express";
 import path from "path";
 import { fileURLToPath } from "url";
 import { createServer as createViteServer } from "vite";
-import { GoogleGenAI, Type } from "@google/genai";
+import { GoogleGenAI, Type, Modality, LiveServerMessage } from "@google/genai";
 import dotenv from "dotenv";
+import { WebSocketServer } from "ws";
 
 dotenv.config();
 
@@ -171,12 +172,15 @@ Please generate a curated luxury look that complies 100% with these guardrails.`
     }
   });
 
-  // 4. Digital Twin Virtual Try-On Image Generation ("Nano Banana")
+  // 4. Digital Twin Virtual Try-On Image Generation
   app.post("/api/generate-tryon", async (req, res) => {
     try {
       const {
         prompt = "Full body studio portrait of an elegant woman wearing luxury modest high-fashion attire",
         userPhotoBase64,
+        modelName = "gemini-3.1-flash-image-preview",
+        imageSize = "1K",
+        aspectRatio = "1:1",
       } = req.body;
 
       const ai = getAiClient();
@@ -209,12 +213,12 @@ Please generate a curated luxury look that complies 100% with these guardrails.`
       }
 
       const response = await ai.models.generateContent({
-        model: "gemini-3.1-flash-image",
+        model: modelName,
         contents: { parts },
         config: {
           imageConfig: {
-            aspectRatio: "3:4",
-            imageSize: "1K",
+            aspectRatio,
+            imageSize,
           },
         },
       });
@@ -247,6 +251,68 @@ Please generate a curated luxury look that complies 100% with these guardrails.`
     }
   });
 
+  // 5. Image Analysis (gemini-3.1-pro-preview)
+  app.post("/api/analyze-image", async (req, res) => {
+    try {
+      const { userPhotoBase64, prompt = "Analyze this style and describe the garments in detail." } = req.body;
+      const ai = getAiClient();
+      if (!ai) return res.json({ analysis: "API Key not configured." });
+
+      const cleanBase64 = userPhotoBase64.replace(/^data:image\/\w+;base64,/, "");
+      const response = await ai.models.generateContent({
+        model: "gemini-3.1-pro-preview",
+        contents: {
+          parts: [
+            { inlineData: { mimeType: "image/jpeg", data: cleanBase64 } },
+            { text: prompt }
+          ]
+        }
+      });
+      res.json({ analysis: response.text });
+    } catch (err: any) {
+      console.error(err);
+      res.status(500).json({ error: err.message });
+    }
+  });
+
+  // 6. Chatbot endpoint (gemini-3.6-flash or gemini-3.1-pro-preview)
+  app.post("/api/chat", async (req, res) => {
+    try {
+      const { history = [], message, modelName = "gemini-3.6-flash" } = req.body;
+      const ai = getAiClient();
+      if (!ai) return res.json({ response: "API Key not configured." });
+
+      const chat = ai.chats.create({
+        model: modelName,
+        config: { systemInstruction: "You are a professional luxury stylist. Give concise, expert advice." }
+      });
+      // Optionally replay history here if needed, but for simplicity we will just send the message
+      const response = await chat.sendMessage({ message });
+      res.json({ response: response.text });
+    } catch (err: any) {
+      console.error(err);
+      res.status(500).json({ error: err.message });
+    }
+  });
+
+  // 7. Quick tip (gemini-3.1-flash-lite)
+  app.post("/api/quick-tip", async (req, res) => {
+    try {
+      const { prompt } = req.body;
+      const ai = getAiClient();
+      if (!ai) return res.json({ tip: "API Key not configured." });
+
+      const response = await ai.models.generateContent({
+        model: "gemini-3.1-flash-lite",
+        contents: prompt || "Give me a quick 1-sentence luxury fashion tip for today."
+      });
+      res.json({ tip: response.text });
+    } catch (err: any) {
+      console.error(err);
+      res.status(500).json({ error: err.message });
+    }
+  });
+
   // Vite middleware / Static serving
   if (process.env.NODE_ENV !== "production") {
     const vite = await createViteServer({
@@ -262,8 +328,58 @@ Please generate a curated luxury look that complies 100% with these guardrails.`
     });
   }
 
-  app.listen(PORT, "0.0.0.0", () => {
+  const server = app.listen(PORT, "0.0.0.0", () => {
     console.log(`[You've Got Style] Server listening on http://0.0.0.0:${PORT}`);
+  });
+
+  // WebSocket Server for Live API (gemini-3.1-flash-live-preview)
+  const wss = new WebSocketServer({ server, path: '/live' });
+  wss.on("connection", async (clientWs) => {
+    const ai = getAiClient();
+    if (!ai) {
+      clientWs.close(1011, "API Key not configured");
+      return;
+    }
+    try {
+      const session = await ai.live.connect({
+        model: "gemini-3.1-flash-live-preview",
+        config: {
+          responseModalities: [Modality.AUDIO],
+          speechConfig: {
+            voiceConfig: { prebuiltVoiceConfig: { voiceName: "Zephyr" } },
+          },
+          systemInstruction: "You are a luxury fashion stylist responding in a professional, brief manner.",
+        },
+        callbacks: {
+          onmessage: (message: LiveServerMessage) => {
+            const audio = message.serverContent?.modelTurn?.parts[0]?.inlineData?.data;
+            if (audio && clientWs.readyState === 1) clientWs.send(JSON.stringify({ audio }));
+            if (message.serverContent?.interrupted && clientWs.readyState === 1)
+              clientWs.send(JSON.stringify({ interrupted: true }));
+          },
+        },
+      });
+
+      clientWs.on("message", (data) => {
+        try {
+          const { audio } = JSON.parse(data.toString());
+          if (audio) {
+            session.sendRealtimeInput({
+              audio: { data: audio, mimeType: "audio/pcm;rate=16000" },
+            });
+          }
+        } catch (e) {
+          console.error("Live websocket parsing error", e);
+        }
+      });
+
+      clientWs.on("close", () => {
+        session.close();
+      });
+    } catch (e) {
+      console.error("Failed to connect to Live API", e);
+      clientWs.close(1011, "Live API connection failed");
+    }
   });
 }
 

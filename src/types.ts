@@ -23,6 +23,7 @@ export interface StyleConstraints {
   noNeonColors: boolean;
   noLoudPrints: boolean;
   preferredFabrics: string[];
+  preferredAesthetics: string[];
   maxPriceAED?: number;
 }
 
@@ -54,10 +55,21 @@ export interface CapturedProfile {
   isVoiceTriggered: boolean;
 }
 
-export type AppPhase = 'onboarding' | 'sizing' | 'guardrails' | 'discovery' | 'capsule';
+export type AppPhase = 'onboarding' | 'sizing' | 'guardrails' | 'discovery' | 'capsule' | 'ai-features' | 'moodboard' | 'fit-analytics' | 'social-lookbook';
 
 export interface CheckoutItem {
   look: FashionLook;
   selectedBrandSize: { [brandName: string]: string };
   totalAED: number;
+}
+
+export interface MoodboardItem {
+  id: string;
+  sourceLookId: string;
+  type: 'top' | 'bottom' | 'dress' | 'look';
+  description: string;
+  imageUrl: string;
+  x: number;
+  y: number;
+  zIndex: number;
 }

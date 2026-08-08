@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Heart, X, ShoppingCart, ShieldCheck, Sparkles, Check, ChevronDown, Layers } from 'lucide-react';
+import { Heart, X, ShoppingCart, ShieldCheck, Sparkles, Check, ChevronDown, Layers, Share } from 'lucide-react';
 import { FashionLook, StyleConstraints, BrandSizeMapping, CapturedProfile } from '../types';
 
 interface SwipeDiscoveryProps {
@@ -69,6 +69,25 @@ export const SwipeDiscovery: React.FC<SwipeDiscoveryProps> = ({
     setTimeout(() => setFeedbackToast(null), 2000);
   };
 
+  const handleShare = async () => {
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: activeLook.look_title,
+          text: `Check out this look: ${activeLook.look_title} by ${activeLook.brand}!`,
+          url: window.location.href,
+        });
+        showToast('Shared successfully!');
+      } catch (err) {
+        if ((err as Error).name !== 'AbortError') {
+          console.error('Error sharing:', err);
+        }
+      }
+    } else {
+      showToast('Sharing not supported on this device');
+    }
+  };
+
   return (
     <div id="module-swipe-discovery" className="min-h-[85vh] bg-stone-950 text-stone-100 max-w-md mx-auto flex flex-col justify-between relative p-3">
       {/* Sophisticated Hero Canvas - Occupies 85% Viewport */}
@@ -120,12 +139,22 @@ export const SwipeDiscovery: React.FC<SwipeDiscoveryProps> = ({
 
         {/* Card Details Overlay */}
         <div className="relative z-20 p-4 pt-10">
+          <div className="absolute right-4 top-0 z-30">
+            <button
+              onClick={handleShare}
+              className="p-2.5 rounded-full bg-stone-950/80 border border-stone-700 text-stone-300 hover:text-amber-400 hover:border-amber-400/50 backdrop-blur-md shadow-xl transition-all"
+              title="Share this look"
+            >
+              <Share className="w-4 h-4" />
+            </button>
+          </div>
+
           <div className="flex items-center justify-between mb-1">
             <span className="text-[11px] font-mono font-bold text-amber-400 tracking-wider uppercase bg-stone-950/80 px-2 py-0.5 rounded border border-amber-500/30">
               {activeLook.brand}
             </span>
             <div className="text-right">
-              <span className="text-lg font-serif font-bold text-stone-100 block leading-none">
+              <span className="text-lg font-serif font-bold text-stone-100 block leading-none pr-10">
                 AED {activeLook.priceAED.toLocaleString()}
               </span>
             </div>
