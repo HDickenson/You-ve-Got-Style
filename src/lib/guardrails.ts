@@ -1,4 +1,4 @@
-import { StyleConstraints } from '../types';
+import { GarmentAttributes, Neckline, StyleConstraints } from '../types';
 
 /**
  * The four rules the product plan calls hard cultural constraints, not taste.
@@ -75,76 +75,66 @@ export const SOFT_KEYS: ReadonlyArray<SoftGuardrailKey> = SOFT_RULES.map(
 );
 
 /**
- * The minimum a look has to describe for its guardrails to be checked. A full
- * `FashionLook` satisfies this; so does the raw shape the model returns
- * before the client attaches price, tags and a fabric line to it — the API
- * route validates on exactly this partial shape, before those extras exist.
+ * The minimum a look has to state for its guardrails to be checked — discrete
+ * facts, not prose to infer them from. A source that cannot answer "does this
+ * cover the knee" except by writing a sentence about a garment is not a
+ * source this can run against; `attributes` is required, not optional.
  */
 export interface GuardrailSubject {
-  top_garment: string;
-  bottom_garment: string;
-  dress_garment?: string;
-  fabric?: string;
-  tags?: readonly string[];
+  attributes: GarmentAttributes;
+  colorPalette: readonly string[];
 }
 
 /**
- * Terms that violate "high necklines, full coverage, opaque fabric" on their
- * own — independent of sleeve length and hemline, which are separate rules
- * with separate toggles and must not be double-counted under this one.
+ * Necklines that satisfy "high necklines, full coverage" on their own —
+ * independent of sleeve length and hemline, which are separate rules with
+ * separate toggles and must not be double-counted under this one. An
+ * allow-list, not a deny-list: a neckline this doesn't recognise fails
+ * closed rather than passing by default because nobody thought to ban it.
  */
-const IMMODEST_TERMS = [
-  'sleeveless',
-  'strapless',
-  'backless',
-  'low-cut',
-  'low cut',
-  'plunge',
-  'sheer',
-  'crop top',
-  'cropped top',
-  'bodycon',
-  'off-shoulder',
-  'off the shoulder',
-  'bare midriff',
-  'skin-tight',
-];
+const MODEST_NECKLINES: ReadonlySet<Neckline> = new Set(['high', 'crew', 'scoop', 'v-neck']);
 
-function subjectText(subject: GuardrailSubject): string {
-  return [
-    subject.top_garment,
-    subject.bottom_garment,
-    subject.dress_garment ?? '',
-    subject.fabric ?? '',
-    (subject.tags ?? []).join(' '),
-  ]
-    .join(' ')
-    .toLowerCase();
+/**
+ * Hex → HSL, thresholded. "Neon" is a fact about saturation and lightness a
+ * swatch already carries, not a tag someone remembered to attach — reading
+ * it here means a look tagged "Quiet colour" by mistake still gets caught,
+ * and a look correctly tagged still gets caught if its actual hex disagrees.
+ */
+function isNeonColor(hex: string): boolean {
+  const match = /^#?([0-9a-f]{6})$/i.exec(hex.trim());
+  if (!match) return false;
+  const [r, g, b] = [0, 2, 4].map((i) => parseInt(match[1].slice(i, i + 2), 16) / 255);
+  const max = Math.max(r, g, b);
+  const min = Math.min(r, g, b);
+  const lightness = (max + min) / 2;
+  if (max === min) return false;
+  const saturation = lightness > 0.5 ? (max - min) / (2 - max - min) : (max - min) / (max + min);
+  return saturation > 0.75 && lightness > 0.45 && lightness < 0.85;
 }
 
 /**
- * Whether a single guardrail holds, read only from what the look itself
- * describes — never from a self-reported "compliance_check" the same model
- * that wrote the garment copy also wrote. A garment the model never
- * described as sleeved, ankle-length or trouser-free does not get the
- * benefit of the doubt: every check here fails closed on the language that
- * matters to it.
+ * Whether a single guardrail holds, read only from the look's own typed
+ * attributes and colour data — never from a self-reported "compliance_check"
+ * the same model that wrote the garment copy also wrote, and never from
+ * scanning that copy for a keyword. A garment whose source did not state a
+ * modest neckline, an elbow-or-longer sleeve or a below-knee hemline does
+ * not get the benefit of the doubt.
  */
 export function holdsRule(key: GuardrailKey, subject: GuardrailSubject): boolean {
-  const text = subjectText(subject);
+  const a = subject.attributes;
   switch (key) {
     case 'modestWear':
-      return !IMMODEST_TERMS.some((term) => text.includes(term));
+      return MODEST_NECKLINES.has(a.neckline) && a.opacity === 'opaque';
     case 'sleevesBelowElbow':
-      return text.includes('sleeve') && !text.includes('sleeveless');
+      return a.sleeveLength === 'elbow' || a.sleeveLength === 'three-quarter' || a.sleeveLength === 'long';
     case 'hemlineBelowKnee':
-      return !text.includes('mini') && !text.includes('above the knee');
+      return a.hemline === 'knee' || a.hemline === 'midi' || a.hemline === 'maxi' || a.hemline === 'floor';
     case 'noTrousers':
-      return !text.includes('trouser');
+      return a.bottomCategory === 'skirt' || a.bottomCategory === 'dress';
     case 'noNeonColors':
-      return !text.includes('neon');
+      return !subject.colorPalette.some(isNeonColor);
     case 'noLoudPrints':
-      return !text.includes('print');
+      return a.pattern !== 'printed';
   }
 }
 
@@ -165,8 +155,8 @@ export interface GuardrailReport {
 
 /**
  * Evaluate every guardrail the user has switched on against what the look
- * actually describes. This is the enforcement step the model's own claim
- * never was: it runs after the look exists, on the look's own words, and it
+ * actually states. This is the enforcement step the model's own claim never
+ * was: it runs after the look exists, on the look's own typed facts, and it
  * is what discovery and the API route both call before deciding what a
  * customer is allowed to see.
  */

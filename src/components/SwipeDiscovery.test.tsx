@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { render, screen } from '@testing-library/react';
-import { FashionLook, StyleConstraints } from '../types';
+import { FashionLook, GarmentAttributes, StyleConstraints } from '../types';
 import { SwipeDiscovery } from './SwipeDiscovery';
 
 const ALL_GUARDRAILS_ON: StyleConstraints = {
@@ -11,6 +11,15 @@ const ALL_GUARDRAILS_ON: StyleConstraints = {
   noNeonColors: true,
   noLoudPrints: true,
   preferredFabrics: [],
+};
+
+const COMPLIANT_ATTRIBUTES: GarmentAttributes = {
+  hemline: 'floor',
+  sleeveLength: 'long',
+  neckline: 'high',
+  opacity: 'opaque',
+  bottomCategory: 'skirt',
+  pattern: 'solid',
 };
 
 function look(overrides: Partial<FashionLook>): FashionLook {
@@ -30,6 +39,7 @@ function look(overrides: Partial<FashionLook>): FashionLook {
     imageUrl: '/look-placeholder.svg',
     tags: ['Modest Wear'],
     brand_sizes: [],
+    attributes: COMPLIANT_ATTRIBUTES,
     ...overrides,
   };
 }
@@ -48,14 +58,20 @@ const capturedProfile = {
 describe('SwipeDiscovery — fail-closed rendering', () => {
   it('never renders a look that breaks an active hard guardrail, even though the model marked it compliant', () => {
     // The model's self-reported `compliance_check: true` is exactly the claim
-    // this whole guardrail system is not allowed to trust — the garments it
-    // actually describes break four active hard guardrails at once.
+    // this whole guardrail system is not allowed to trust — the garment's own
+    // typed attributes break four active hard guardrails at once.
     const violating = look({
       id: 'look-violating',
       look_title: 'Should Never Appear On Screen',
-      top_garment: 'Sleeveless Strapless Silk Camisole',
-      bottom_garment: 'Cropped Wide-Leg Trousers with Mini Hem',
       compliance_check: true,
+      attributes: {
+        hemline: 'mini',
+        sleeveLength: 'sleeveless',
+        neckline: 'strapless',
+        opacity: 'sheer',
+        bottomCategory: 'trousers',
+        pattern: 'printed',
+      },
     });
     const compliant = look({ id: 'look-compliant', look_title: 'The Only Look Allowed To Show' });
 
@@ -81,7 +97,7 @@ describe('SwipeDiscovery — fail-closed rendering', () => {
     const onlyViolating = look({
       id: 'look-violating',
       look_title: 'Should Never Appear On Screen',
-      bottom_garment: 'Tailored Trousers',
+      attributes: { ...COMPLIANT_ATTRIBUTES, bottomCategory: 'trousers' },
     });
 
     render(

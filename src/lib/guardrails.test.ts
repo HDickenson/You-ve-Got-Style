@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { FashionLook, StyleConstraints } from '../types';
+import { FashionLook, GarmentAttributes, StyleConstraints } from '../types';
 import { evaluateLook, filterByHardGuardrails, holdsRule, withinPriceCeiling } from './guardrails';
 
 const ALL_GUARDRAILS_ON: StyleConstraints = {
@@ -10,6 +10,15 @@ const ALL_GUARDRAILS_ON: StyleConstraints = {
   noNeonColors: true,
   noLoudPrints: true,
   preferredFabrics: [],
+};
+
+const COMPLIANT_ATTRIBUTES: GarmentAttributes = {
+  hemline: 'floor',
+  sleeveLength: 'long',
+  neckline: 'high',
+  opacity: 'opaque',
+  bottomCategory: 'skirt',
+  pattern: 'solid',
 };
 
 function look(overrides: Partial<FashionLook>): FashionLook {
@@ -29,30 +38,67 @@ function look(overrides: Partial<FashionLook>): FashionLook {
     imageUrl: '/look-placeholder.svg',
     tags: ['Modest Wear'],
     brand_sizes: [],
+    attributes: COMPLIANT_ATTRIBUTES,
     ...overrides,
   };
 }
 
-describe('holdsRule', () => {
-  it('fails noTrousers when the copy names trousers', () => {
-    expect(holdsRule('noTrousers', { top_garment: '', bottom_garment: 'Wide-Leg Trousers' })).toBe(false);
-  });
-
-  it('does not let "sleeveless" satisfy sleevesBelowElbow via substring match', () => {
+describe('holdsRule — typed attributes, no prose parsing', () => {
+  it('fails noTrousers when bottomCategory is trousers or jumpsuit', () => {
     expect(
-      holdsRule('sleevesBelowElbow', { top_garment: 'Sleeveless Silk Top', bottom_garment: '' }),
+      holdsRule('noTrousers', { attributes: { ...COMPLIANT_ATTRIBUTES, bottomCategory: 'trousers' }, colorPalette: [] }),
+    ).toBe(false);
+    expect(
+      holdsRule('noTrousers', { attributes: { ...COMPLIANT_ATTRIBUTES, bottomCategory: 'jumpsuit' }, colorPalette: [] }),
     ).toBe(false);
   });
 
-  it('passes sleevesBelowElbow when the copy actually describes sleeves', () => {
+  it('passes noTrousers for a skirt or a dress', () => {
+    expect(holdsRule('noTrousers', { attributes: COMPLIANT_ATTRIBUTES, colorPalette: [] })).toBe(true);
     expect(
-      holdsRule('sleevesBelowElbow', { top_garment: 'Long Sleeve Blouse', bottom_garment: '' }),
+      holdsRule('noTrousers', { attributes: { ...COMPLIANT_ATTRIBUTES, bottomCategory: 'dress' }, colorPalette: [] }),
     ).toBe(true);
   });
 
-  it('fails modestWear on immodest cut language, independent of compliance_check', () => {
+  it('fails sleevesBelowElbow for a sleeveless garment', () => {
     expect(
-      holdsRule('modestWear', { top_garment: 'Strapless Sheer Bodycon Top', bottom_garment: '' }),
+      holdsRule('sleevesBelowElbow', { attributes: { ...COMPLIANT_ATTRIBUTES, sleeveLength: 'sleeveless' }, colorPalette: [] }),
+    ).toBe(false);
+  });
+
+  it('passes sleevesBelowElbow for elbow, three-quarter and long sleeves', () => {
+    for (const sleeveLength of ['elbow', 'three-quarter', 'long'] as const) {
+      expect(
+        holdsRule('sleevesBelowElbow', { attributes: { ...COMPLIANT_ATTRIBUTES, sleeveLength }, colorPalette: [] }),
+      ).toBe(true);
+    }
+  });
+
+  it('fails modestWear on a plunge neckline even when opaque', () => {
+    expect(
+      holdsRule('modestWear', { attributes: { ...COMPLIANT_ATTRIBUTES, neckline: 'plunge' }, colorPalette: [] }),
+    ).toBe(false);
+  });
+
+  it('fails modestWear on sheer fabric even with a high neckline', () => {
+    expect(
+      holdsRule('modestWear', { attributes: { ...COMPLIANT_ATTRIBUTES, opacity: 'sheer' }, colorPalette: [] }),
+    ).toBe(false);
+  });
+
+  it('fails closed on an out-of-vocabulary neckline rather than passing by default', () => {
+    const unrecognised = { ...COMPLIANT_ATTRIBUTES, neckline: 'sweetheart' as GarmentAttributes['neckline'] };
+    expect(holdsRule('modestWear', { attributes: unrecognised, colorPalette: [] })).toBe(false);
+  });
+
+  it('reads noNeonColors from the actual hex, not a tag someone attached', () => {
+    expect(holdsRule('noNeonColors', { attributes: COMPLIANT_ATTRIBUTES, colorPalette: ['#39FF14'] })).toBe(false);
+    expect(holdsRule('noNeonColors', { attributes: COMPLIANT_ATTRIBUTES, colorPalette: ['#1A2B4C'] })).toBe(true);
+  });
+
+  it('fails noLoudPrints when pattern is printed', () => {
+    expect(
+      holdsRule('noLoudPrints', { attributes: { ...COMPLIANT_ATTRIBUTES, pattern: 'printed' }, colorPalette: [] }),
     ).toBe(false);
   });
 });
@@ -60,12 +106,17 @@ describe('holdsRule', () => {
 describe('evaluateLook — the deliberately violating look', () => {
   // Exactly the shape a model could plausibly hand back while still setting
   // its own self-reported `compliance_check: true` — the whole point of code
-  // enforcement is that this claim is never trusted.
+  // enforcement is that this claim is never trusted, typed attributes or not.
   const violatingLook = look({
-    top_garment: 'Sleeveless Strapless Silk Camisole',
-    bottom_garment: 'Cropped Neon Wide-Leg Trousers with Mini Hem',
+    attributes: {
+      hemline: 'mini',
+      sleeveLength: 'sleeveless',
+      neckline: 'strapless',
+      opacity: 'sheer',
+      bottomCategory: 'trousers',
+      pattern: 'printed',
+    },
     compliance_check: true,
-    tags: ['Evening', 'Bold Print'],
   });
 
   it('reports every active hard guardrail this look actually breaks', () => {
@@ -104,7 +155,7 @@ describe('evaluateLook — the deliberately violating look', () => {
       sleevesBelowElbow: false,
       hemlineBelowKnee: false,
     };
-    const trouserLook = look({ bottom_garment: 'Tailored Trousers' });
+    const trouserLook = look({ attributes: { ...COMPLIANT_ATTRIBUTES, bottomCategory: 'trousers' } });
 
     expect(evaluateLook(trouserLook, onlyNoTrousers).passesHard).toBe(false);
     expect(evaluateLook(trouserLook, { ...onlyNoTrousers, noTrousers: false }).passesHard).toBe(true);

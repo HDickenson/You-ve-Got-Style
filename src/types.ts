@@ -26,6 +26,38 @@ export interface StyleConstraints {
   maxPriceAED?: number;
 }
 
+export type Hemline = 'mini' | 'knee' | 'midi' | 'maxi' | 'floor';
+export type SleeveLength = 'sleeveless' | 'short' | 'elbow' | 'three-quarter' | 'long';
+export type Neckline =
+  | 'high'
+  | 'crew'
+  | 'scoop'
+  | 'v-neck'
+  | 'plunge'
+  | 'off-shoulder'
+  | 'halter'
+  | 'strapless';
+export type Opacity = 'opaque' | 'semi-sheer' | 'sheer';
+export type BottomCategory = 'trousers' | 'skirt' | 'dress' | 'jumpsuit';
+export type PatternType = 'solid' | 'textured' | 'printed';
+
+/**
+ * What a guardrail actually needs to know about a garment, as discrete facts
+ * rather than prose to infer them from. "Does this cover the knee" is
+ * answered by reading `hemline` — never by scanning `bottom_garment` for the
+ * word "mini". Every `FashionLook`, whichever source composed it, carries
+ * these; a source that cannot state them is not a source guardrails can run
+ * against.
+ */
+export interface GarmentAttributes {
+  hemline: Hemline;
+  sleeveLength: SleeveLength;
+  neckline: Neckline;
+  opacity: Opacity;
+  bottomCategory: BottomCategory;
+  pattern: PatternType;
+}
+
 export interface FashionLook {
   id: string;
   look_title: string;
@@ -45,6 +77,7 @@ export interface FashionLook {
   fabric: string;
   colorPalette: string[];
   tags: string[];
+  attributes: GarmentAttributes;
 }
 
 export interface CapturedProfile {

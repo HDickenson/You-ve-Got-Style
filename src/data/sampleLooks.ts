@@ -48,6 +48,14 @@ export const INITIAL_LOOKS: FashionLook[] = [
     colorPalette: ['#F7F5F0', '#1A2B4C', '#D4AF37'],
     imageUrl: LOOK_PLACEHOLDER,
     tags: ['Modest Wear', 'Structured', 'Business Professional', 'Sleeves Below Elbow'],
+    attributes: {
+      hemline: 'floor',
+      sleeveLength: 'long',
+      neckline: 'high',
+      opacity: 'opaque',
+      bottomCategory: 'trousers',
+      pattern: 'solid',
+    },
     brand_sizes: [
       { brandName: 'Chanel', recommendedSize: 'FR 38 (US 6)', fitsToType: 'Slightly tailored', fitDescription: 'Precision shoulder alignment' },
       { brandName: 'Loro Piana', recommendedSize: 'IT 42 (US 6)', fitsToType: 'Relaxed fit', fitDescription: 'Fluid drape through waist' },
@@ -70,6 +78,14 @@ export const INITIAL_LOOKS: FashionLook[] = [
     colorPalette: ['#0A4D3C', '#062B21', '#E2C044'],
     imageUrl: LOOK_PLACEHOLDER,
     tags: ['Modest Wear', 'Silk', 'Evening', 'No Trousers Friendly'],
+    attributes: {
+      hemline: 'floor',
+      sleeveLength: 'long',
+      neckline: 'crew',
+      opacity: 'opaque',
+      bottomCategory: 'skirt',
+      pattern: 'solid',
+    },
     brand_sizes: [
       { brandName: 'Zimmermann', recommendedSize: 'Size 1 (US 6)', fitsToType: 'True to size', fitDescription: 'Flowing silhouette with cinched cuffs' },
       { brandName: 'Chanel', recommendedSize: 'FR 38 (US 6)', fitsToType: 'Slightly tailored', fitDescription: 'Comfortable bust clearance' },
@@ -91,6 +107,14 @@ export const INITIAL_LOOKS: FashionLook[] = [
     colorPalette: ['#E6D7C3', '#F9F8F6', '#8C7A6B'],
     imageUrl: LOOK_PLACEHOLDER,
     tags: ['Cashmere', 'Modest Wear', 'Smart Casual', 'Neutral Tones'],
+    attributes: {
+      hemline: 'maxi',
+      sleeveLength: 'long',
+      neckline: 'high',
+      opacity: 'opaque',
+      bottomCategory: 'skirt',
+      pattern: 'solid',
+    },
     brand_sizes: [
       { brandName: 'Loro Piana', recommendedSize: 'IT 40 (US 4)', fitsToType: 'Relaxed fit', fitDescription: 'Ultra-soft relaxed fit' },
       { brandName: 'Massimo Dutti', recommendedSize: 'EUR 36 / S', fitsToType: 'True to size', fitDescription: 'Gentle waist drape' },
@@ -112,6 +136,14 @@ export const INITIAL_LOOKS: FashionLook[] = [
     colorPalette: ['#2F3136', '#121212', '#999999'],
     imageUrl: LOOK_PLACEHOLDER,
     tags: ['Architectural', 'Minimalist', 'Modest', 'Monochrome'],
+    attributes: {
+      hemline: 'floor',
+      sleeveLength: 'long',
+      neckline: 'crew',
+      opacity: 'opaque',
+      bottomCategory: 'trousers',
+      pattern: 'solid',
+    },
     brand_sizes: [
       { brandName: 'Khaite', recommendedSize: 'US 6 / M', fitsToType: 'Structured', fitDescription: 'Precision shoulder sculpting' },
       { brandName: 'Chanel', recommendedSize: 'FR 38 (US 6)', fitsToType: 'Slightly tailored', fitDescription: 'Clean chest line' }
@@ -132,6 +164,14 @@ export const INITIAL_LOOKS: FashionLook[] = [
     colorPalette: ['#E6D0AC', '#FAF8F5', '#C5A059'],
     imageUrl: LOOK_PLACEHOLDER,
     tags: ['Royal Gala', 'Modest Wear', 'Satin', 'Gold Accents'],
+    attributes: {
+      hemline: 'floor',
+      sleeveLength: 'long',
+      neckline: 'high',
+      opacity: 'opaque',
+      bottomCategory: 'dress',
+      pattern: 'textured',
+    },
     brand_sizes: [
       { brandName: 'Brunello Cucinelli', recommendedSize: 'IT 40 (M)', fitsToType: 'Structured', fitDescription: 'Majestic floor-length drape' },
       { brandName: 'Zimmermann', recommendedSize: 'Size 1 (US 6)', fitsToType: 'True to size', fitDescription: 'Perfect sleeve length drop' }

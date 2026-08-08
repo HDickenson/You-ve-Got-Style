@@ -4,7 +4,7 @@ import { createServer as createViteServer } from "vite";
 import { GoogleGenAI, Type } from "@google/genai";
 import dotenv from "dotenv";
 import { evaluateLook } from "./src/lib/guardrails";
-import type { StyleConstraints } from "./src/types";
+import type { GarmentAttributes, StyleConstraints } from "./src/types";
 
 dotenv.config();
 
@@ -90,14 +90,48 @@ async function startServer() {
         userPrompt = "",
       } = req.body;
 
+      const ATTRIBUTE_KEYS = [
+        "hemline",
+        "sleeveLength",
+        "neckline",
+        "opacity",
+        "bottomCategory",
+        "pattern",
+      ] as const;
+
+      function hasCompleteAttributes(value: unknown): value is GarmentAttributes {
+        if (!value || typeof value !== "object") return false;
+        const record = value as Record<string, unknown>;
+        return ATTRIBUTE_KEYS.every((key) => typeof record[key] === "string");
+      }
+
+      // Worst-cased on purpose, not left unchecked. A candidate whose source
+      // never stated its attributes gets none of the benefit of the doubt an
+      // absent field would otherwise buy it — it fails every active hard
+      // guardrail, exactly as a garment that stated them and failed honestly
+      // would.
+      const UNVERIFIABLE_ATTRIBUTES: GarmentAttributes = {
+        hemline: "mini",
+        sleeveLength: "sleeveless",
+        neckline: "strapless",
+        opacity: "sheer",
+        bottomCategory: "trousers",
+        pattern: "printed",
+      };
+
       // The model's own "compliance_check" is a claim the same model that
       // wrote the garment copy also wrote — it is never trusted as the
       // gate. Every candidate look, model-generated or fallback, is read
-      // against the guardrails the same way discovery reads it: from what
-      // the garments themselves describe.
-      const validate = (candidate: { top_garment?: string; bottom_garment?: string }) =>
+      // against the guardrails the same way discovery reads it: from typed
+      // attributes, never from parsing the garment description.
+      const validate = (candidate: { attributes?: unknown }) =>
         evaluateLook(
-          { top_garment: candidate.top_garment ?? "", bottom_garment: candidate.bottom_garment ?? "" },
+          {
+            attributes: hasCompleteAttributes(candidate.attributes)
+              ? candidate.attributes
+              : UNVERIFIABLE_ATTRIBUTES,
+            colorPalette: [],
+          },
           constraints,
         );
 
@@ -113,6 +147,14 @@ async function startServer() {
             ? "Pleated Silk-Chiffon Ankle-Length Column Skirt"
             : "Structured Wool-Crepe Wide-Leg High-Waist Trousers",
           capsule_synergy: "Pairs elegantly with monochrome trench coats and cashmere shawls.",
+          attributes: {
+            hemline: "floor",
+            sleeveLength: "long",
+            neckline: "high",
+            opacity: "opaque",
+            bottomCategory: constraints.noTrousers ? "skirt" : "trousers",
+            pattern: "solid",
+          } as GarmentAttributes,
         };
         const fallbackCheck = validate(fallback);
         if (!fallbackCheck.passesHard) {
@@ -131,7 +173,8 @@ Your goal is to evaluate a user's measurements and their "Style Like You" constr
 BEHAVIORAL RULES:
 1. Strict adherence to constraints: If a user specifies "modest wear" or "no trousers," or "sleeves below the elbow," you must NEVER recommend items that violate this.
 2. Capsule mentality: Recommend items that can be mixed and matched with luxury staple wardrobes.
-3. Premium quality: Focus on business-professional, smart-casual, and high-quality aesthetics (e.g. Chanel, Loro Piana, Khaite, Zimmermann).`;
+3. Premium quality: Focus on business-professional, smart-casual, and high-quality aesthetics (e.g. Chanel, Loro Piana, Khaite, Zimmermann).
+4. Structural honesty: "attributes" is read by code to verify compliance, not by a person to enjoy — it must precisely and honestly describe the same garments named in top_garment/bottom_garment. A mismatch between the prose and the attributes is treated as a failure, not as flavour text.`;
 
       const buildPrompt = (retryNote?: string) => `User Height: ${heightCm}cm. Occasion: "${occasion}".
 Constraints: Modest Wear = ${constraints.modestWear}, Sleeves Below Elbow = ${constraints.sleevesBelowElbow}, No Trousers = ${constraints.noTrousers}, Hemline Below Knee = ${constraints.hemlineBelowKnee}, No Neon = ${constraints.noNeonColors}, No Loud Prints = ${constraints.noLoudPrints}.${
@@ -171,8 +214,54 @@ Please generate a curated luxury look that complies 100% with these guardrails.$
             type: Type.STRING,
             description: "A short note on how these items can be mixed with standard wardrobe staples.",
           },
+          attributes: {
+            type: Type.OBJECT,
+            description:
+              "Discrete structural facts about the garments — the fields guardrails are actually verified against. Every field is required and must agree with top_garment/bottom_garment.",
+            properties: {
+              hemline: {
+                type: Type.STRING,
+                enum: ["mini", "knee", "midi", "maxi", "floor"],
+                description:
+                  "Where the lowest edge of the outfit sits. Full-length trousers count as 'floor'.",
+              },
+              sleeveLength: {
+                type: Type.STRING,
+                enum: ["sleeveless", "short", "elbow", "three-quarter", "long"],
+                description: "How far the sleeve extends down the arm.",
+              },
+              neckline: {
+                type: Type.STRING,
+                enum: ["high", "crew", "scoop", "v-neck", "plunge", "off-shoulder", "halter", "strapless"],
+                description: "The neckline shape.",
+              },
+              opacity: {
+                type: Type.STRING,
+                enum: ["opaque", "semi-sheer", "sheer"],
+                description: "Fabric opacity.",
+              },
+              bottomCategory: {
+                type: Type.STRING,
+                enum: ["trousers", "skirt", "dress", "jumpsuit"],
+                description: "The garment category of the lower body / overall silhouette.",
+              },
+              pattern: {
+                type: Type.STRING,
+                enum: ["solid", "textured", "printed"],
+                description: "Whether the fabric carries a visible print.",
+              },
+            },
+            required: ["hemline", "sleeveLength", "neckline", "opacity", "bottomCategory", "pattern"],
+          },
         },
-        required: ["look_title", "occasion", "top_garment", "bottom_garment", "compliance_check"],
+        required: [
+          "look_title",
+          "occasion",
+          "top_garment",
+          "bottom_garment",
+          "compliance_check",
+          "attributes",
+        ],
       };
 
       const generate = async (retryNote?: string) => {
