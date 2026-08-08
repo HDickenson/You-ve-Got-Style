@@ -27,12 +27,25 @@ const GROUND: Record<AppPhase, 'onyx' | 'cream'> = {
   capsule: 'cream',
 };
 
+const APP_PHASES: AppPhase[] = ['onboarding', 'sizing', 'guardrails', 'discovery', 'capsule'];
+
+// A customer never sees this — the entry point is always the studio, below.
+// It exists so the responsive-capture harness (scripts/capture.mjs) can load
+// any screen directly instead of clicking through the whole journey for each
+// one: ?phase=discovery.
+function phaseFromQueryString(): AppPhase | null {
+  const requested = new URLSearchParams(window.location.search).get('phase');
+  return APP_PHASES.includes(requested as AppPhase) ? (requested as AppPhase) : null;
+}
+
 export default function App() {
   // App Phase State
   // The product opens where it begins. Capture is the first thing YGS asks
   // for and everything after it depends on the answer, so the entry point is
   // the studio — not a working screen reached with the middle skipped.
-  const [currentPhase, setCurrentPhase] = useState<AppPhase>('onboarding');
+  const [currentPhase, setCurrentPhase] = useState<AppPhase>(
+    () => phaseFromQueryString() ?? 'onboarding'
+  );
   const [heightCm, setHeightCm] = useState<number>(170);
 
   // User Photogrammetry & Sizing State
