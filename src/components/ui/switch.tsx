@@ -42,7 +42,7 @@ export function Switch({
         className={cn(
           'relative block h-6 w-11 rounded-full border',
           'transition-colors duration-shift ease-shift',
-          checked ? 'border-transparent bg-fg' : 'border-rule bg-fg/10',
+          checked ? 'border-transparent bg-fg' : 'border-control bg-fg/10',
         )}
       >
         <span

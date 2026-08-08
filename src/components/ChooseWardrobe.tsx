@@ -115,7 +115,7 @@ export const ChooseWardrobe: React.FC<ChooseWardrobeProps> = ({
                   'motion-safe:active:scale-[0.98]',
                   active
                     ? 'border-fg bg-fg/5'
-                    : 'border-rule hoverable:hover:border-fg/60',
+                    : 'border-control hoverable:hover:border-fg/60',
                 )}
               >
                 <span className="flex w-full items-center justify-between gap-4">
