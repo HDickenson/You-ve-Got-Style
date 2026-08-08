@@ -54,6 +54,22 @@ jobs:
       - run: npm ci
       - run: node scripts/check-raw-hex.mjs
 
+  # YGS-23 follow-up: "build passes" previously meant "it compiled", not "it
+  # runs" — the import.meta/CJS crash shipped to main with every other check
+  # green because nothing started the artifact. Boots dist/server.cjs the way
+  # `npm start` does and fails if /api/health never answers.
+  smoke-boot:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+      - run: npm ci
+      - run: npm run build
+      - run: node scripts/smoke-boot.mjs
+
   # Every screen at 390x844, 820x1180 and 1180x820, plus one real click-through
   # journey — see scripts/capture.mjs. Blocking: a failed render, a phase the
   # journey can't reach, or a JS console error during either fails the job.
