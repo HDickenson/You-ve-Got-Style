@@ -97,6 +97,16 @@
   --color-muted-on-dark: #9c948a;
   --color-rule-on-dark: #2c2825;
 
+  /* A hairline divider and the boundary of a control are not the same job.
+     `rule` stays whisper-thin because a table of measurements separated by a
+     3:1 line reads as a spreadsheet. But WCAG 1.4.11 asks 3:1 of anything that
+     tells you where a control IS — and an unselected chip, an off switch or a
+     radio card whose only edge is the divider colour was measured at 1.03:1 on
+     sand and 1.29:1 on onyx. These are the same warm neutrals, walked up until
+     they clear it. */
+  --color-control-on-light: #8e8a83; /* 3.19:1 on cream, 3.19:1 on sand */
+  --color-control-on-dark: #68645d; /* 3.21:1 on onyx, 3.22:1 on forest */
+
   /* Ground-relative aliases live in the `@theme inline` block below, NOT here.
      See the comment there — declaring them in a plain `@theme` silently breaks
      the entire ground system. */
@@ -288,6 +298,7 @@
   --color-fg: var(--ygs-fg);
   --color-fg-muted: var(--ygs-fg-muted);
   --color-rule: var(--ygs-rule);
+  --color-control: var(--ygs-control);
 }
 
 /* --- Grounds --------------------------------------------------------------
@@ -304,6 +315,7 @@
     --ygs-fg: var(--color-ink);
     --ygs-fg-muted: var(--color-muted-on-light);
     --ygs-rule: var(--color-rule-on-light);
+    --ygs-control: var(--color-control-on-light);
     /* Gold measures 2.01:1 on cream — a focus ring nobody can see. On a
        conversation ground the ring is ink. */
     --ygs-focus: var(--color-ink);
@@ -317,6 +329,7 @@
     --ygs-fg: var(--color-ink);
     --ygs-fg-muted: var(--color-muted-on-light);
     --ygs-rule: var(--color-rule-on-light);
+    --ygs-control: var(--color-control-on-light);
     --ygs-focus: var(--color-ink);
     color-scheme: light;
   }
@@ -328,6 +341,7 @@
     --ygs-fg: var(--color-white);
     --ygs-fg-muted: var(--color-muted-on-dark);
     --ygs-rule: var(--color-rule-on-dark);
+    --ygs-control: var(--color-control-on-dark);
     /* On theatre grounds gold clears 3:1 comfortably and reads as the brand. */
     --ygs-focus: var(--color-gold);
     color-scheme: dark;
@@ -341,6 +355,7 @@
     --ygs-fg: var(--color-white);
     --ygs-fg-muted: var(--color-muted-on-dark);
     --ygs-rule: var(--color-rule-on-dark);
+    --ygs-control: var(--color-control-on-dark);
     --ygs-focus: var(--color-gold);
     color-scheme: dark;
   }

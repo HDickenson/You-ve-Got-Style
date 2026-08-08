@@ -234,7 +234,7 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
                       'has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-offset-2 has-[:focus-visible]:outline-fg',
                       selected
                         ? 'border-fg'
-                        : 'border-rule hoverable:hover:border-fg',
+                        : 'border-control hoverable:hover:border-fg',
                     )}
                   >
                     <input

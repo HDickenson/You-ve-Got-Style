@@ -19,7 +19,11 @@ const VARIANT: Record<ButtonVariant, string> = {
   primary:
     'bg-fg text-surface border border-transparent hoverable:hover:opacity-90',
   secondary:
-    'bg-transparent text-fg border border-rule hoverable:hover:border-fg',
+    // `control`, not `rule`: this border IS the affordance — it is the only
+    // thing saying where an unselected chip begins. `rule` is a hairline for
+    // dividers and sits at 1.03:1 on sand, well under the 3:1 that 1.4.11
+    // asks of a control boundary.
+    'bg-transparent text-fg border border-control hoverable:hover:border-fg',
   ghost:
     'bg-transparent text-fg-muted border border-transparent hoverable:hover:text-fg',
   selected: 'bg-gold text-on-gold border border-fg hoverable:hover:opacity-90',
