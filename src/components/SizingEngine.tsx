@@ -147,6 +147,10 @@ export const SizingEngine: React.FC<SizingEngineProps> = ({
   const fields =
     measurements.wardrobe === 'menswear' ? MENSWEAR_FIELDS : WOMENSWEAR_FIELDS;
 
+  // Has the customer given us anything of their own yet? Drives the live
+  // announcement below — before the first edit there is nothing to report.
+  const anyTouched = Object.values(touchedFields).some(Boolean);
+
   const handleFieldChange = (key: string, value: number) => {
     setMeasurements((prev) => ({ ...prev, [key]: value }) as UserMeasurements);
     setTouchedFields((prev) => ({ ...prev, [key]: true }));
@@ -245,10 +249,20 @@ export const SizingEngine: React.FC<SizingEngineProps> = ({
                         {field.label}
                       </label>
                       <span className="flex items-center gap-2">
-                        <Badge variant={isYours ? 'gold' : 'outline'}>
+                        {/* aria-hidden because the same distinction is carried
+                            into the slider's own value announcement below. A
+                            screen reader that read both would say "Yours"
+                            twice for one field. */}
+                        <Badge
+                          variant={isYours ? 'gold' : 'outline'}
+                          aria-hidden="true"
+                        >
                           {isYours ? 'Yours' : 'Estimated'}
                         </Badge>
-                        <span className="text-price tabular text-fg">
+                        <span
+                          className="text-price tabular text-fg"
+                          aria-hidden="true"
+                        >
                           {value} cm
                         </span>
                       </span>
@@ -259,7 +273,15 @@ export const SizingEngine: React.FC<SizingEngineProps> = ({
                       min={field.min}
                       max={field.max}
                       value={value}
-                      aria-valuetext={`${value} centimetres`}
+                      // The estimated/entered distinction is the whole point of
+                      // this screen, and it used to live only in a coloured
+                      // badge — a screen reader heard "Bust, 89" before and
+                      // after editing, identically. Putting it in the value
+                      // text means it is announced on the control the customer
+                      // is actually operating, at the moment it changes.
+                      aria-valuetext={`${value} centimetres, ${
+                        isYours ? 'your measurement' : 'estimated from your height'
+                      }`}
                       onValueChange={(next) =>
                         handleFieldChange(field.key, next)
                       }
@@ -272,6 +294,18 @@ export const SizingEngine: React.FC<SizingEngineProps> = ({
         </div>
 
         <Stack gap={24}>
+          {/* The sizes below recompute silently as the sliders move. Sighted
+              customers watch them change; without this nobody else is told.
+              Polite so it waits for a pause rather than interrupting the value
+              the customer is still adjusting. */}
+          <p role="status" aria-live="polite" className="sr-only">
+            {anyTouched
+              ? `Sizes updated from your measurements. ${brandSizes
+                  .map((item) => `${item.brandName} ${item.recommendedSize}`)
+                  .join(', ')}.`
+              : ''}
+          </p>
+
           <Stack gap={8}>
             <span className="text-control font-medium uppercase text-fg-muted">
               Your size by house

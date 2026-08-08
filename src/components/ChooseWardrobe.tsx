@@ -52,6 +52,29 @@ export const ChooseWardrobe: React.FC<ChooseWardrobeProps> = ({
   onSelect,
   intro = true,
 }) => {
+  /** A radiogroup is one tab stop and the arrows move within it. Mirrors the
+   *  occasion chips in discovery, which already did this correctly — the
+   *  newest screen had two tab stops and dead arrow keys. */
+  const moveOption = (event: React.KeyboardEvent<HTMLDivElement>) => {
+    const keys = ['ArrowRight', 'ArrowDown', 'ArrowLeft', 'ArrowUp'];
+    if (!keys.includes(event.key)) return;
+    const from = OPTIONS.findIndex((o) => o.value === selected);
+    const start = from < 0 ? 0 : from;
+    const forward = event.key === 'ArrowRight' || event.key === 'ArrowDown';
+    const to =
+      (start + (forward ? 1 : OPTIONS.length - 1)) % OPTIONS.length;
+
+    // Focus only. In a normal radiogroup an arrow key also selects, but
+    // selecting here advances the phase — a keyboard user exploring the two
+    // options with arrows would be shoved into capture before they chose.
+    // Space or Enter on the focused option commits it, which is the same
+    // gesture a mouse user makes.
+    event.preventDefault();
+    event.currentTarget
+      .querySelectorAll<HTMLElement>('[role="radio"]')
+      [to]?.focus();
+  };
+
   return (
     <AppContainer
       as="section"
@@ -73,9 +96,10 @@ export const ChooseWardrobe: React.FC<ChooseWardrobeProps> = ({
         <div
           role="radiogroup"
           aria-label="Wardrobe"
+          onKeyDown={moveOption}
           className="grid grid-cols-1 gap-4 md:grid-cols-2"
         >
-          {OPTIONS.map((option) => {
+          {OPTIONS.map((option, index) => {
             const active = selected === option.value;
             return (
               <button
@@ -83,6 +107,7 @@ export const ChooseWardrobe: React.FC<ChooseWardrobeProps> = ({
                 type="button"
                 role="radio"
                 aria-checked={active}
+                tabIndex={index === 0 ? 0 : -1}
                 onClick={() => onSelect(option.value)}
                 className={cn(
                   'flex flex-col items-start gap-2 rounded-card border p-6 text-left md:p-8',
