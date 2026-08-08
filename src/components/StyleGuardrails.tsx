@@ -1,7 +1,12 @@
 import React, { useId } from 'react';
 import { Lock } from 'lucide-react';
-import { StyleConstraints } from '../types';
-import { GuardrailKey, HARD_RULES, SOFT_RULES } from '../lib/guardrails';
+import { StyleConstraints, Wardrobe } from '../types';
+import {
+  GuardrailKey,
+  HARD_RULES,
+  SOFT_RULES,
+  rulesForWardrobe,
+} from '../lib/guardrails';
 import { ActionRow, AppContainer, Stack } from './layout';
 import { Button, Slider, Switch } from './ui';
 import { Price } from './brand';
@@ -10,6 +15,10 @@ import type { ElementProps } from '../lib/props';
 import { formatAED } from '../lib/currency';
 
 interface StyleGuardrailsProps {
+  /** What the customer said they were shopping for. Two of the hard rules are
+   *  womenswear cuts, and offering them to a menswear customer asks about a
+   *  garment category they are not shopping. */
+  wardrobe: Wardrobe;
   constraints: StyleConstraints;
   setConstraints: React.Dispatch<React.SetStateAction<StyleConstraints>>;
   onSaveAndProceed: () => void;
@@ -23,7 +32,7 @@ type RuleKey = GuardrailKey;
  * up promising "never shown to you" for a rule the deck no longer enforces;
  * one list, read by both, is what keeps the promise true.
  */
-const HARD = HARD_RULES;
+// Narrowed per wardrobe at render, not module load — see `rulesForWardrobe`.
 const SOFT = SOFT_RULES;
 
 const FABRICS: ReadonlyArray<string> = [
@@ -99,10 +108,15 @@ function ToggleRow({
  * conversation.
  */
 export const StyleGuardrails: React.FC<StyleGuardrailsProps> = ({
+  wardrobe,
   constraints,
   setConstraints,
   onSaveAndProceed,
 }) => {
+  // Narrowed here rather than at module load: the same screen serves both
+  // wardrobes and the customer can change wardrobe from the menu.
+  const HARD = rulesForWardrobe(HARD_RULES, wardrobe);
+
   const id = useId();
   const hardId = `${id}-hard`;
   const softId = `${id}-soft`;
