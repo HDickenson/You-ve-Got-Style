@@ -1,5 +1,7 @@
 import { useEffect, useState } from 'react';
 import { HeaderNav } from './components/HeaderNav';
+import { SplashScreen } from './components/SplashScreen';
+import { Introduction } from './components/Introduction';
 import { ChooseWardrobe } from './components/ChooseWardrobe';
 import { HandsFreeCapture } from './components/HandsFreeCapture';
 import { SizingEngine } from './components/SizingEngine';
@@ -15,12 +17,15 @@ import {
   LOOK_PLACEHOLDER,
 } from './data/sampleLooks';
 import { estimateMeasurementsFromHeight, mapMeasurementsToBrandSizes } from './data/brandGrading';
+import { cn } from './lib/cn';
 
 /**
  * Dark is theatre; cream is conversation. The app presents during capture,
  * the fit reveal and discovery; the user works in guardrails and the capsule.
  */
 const GROUND: Record<AppPhase, 'onyx' | 'cream'> = {
+  splash: 'onyx',
+  introduction: 'onyx',
   wardrobe: 'onyx',
   onboarding: 'onyx',
   sizing: 'onyx',
@@ -29,9 +34,18 @@ const GROUND: Record<AppPhase, 'onyx' | 'cream'> = {
   capsule: 'cream',
 };
 
-const APP_PHASES: AppPhase[] = ['wardrobe', 'onboarding', 'sizing', 'guardrails', 'discovery', 'capsule'];
+const APP_PHASES: AppPhase[] = [
+  'splash',
+  'introduction',
+  'wardrobe',
+  'onboarding',
+  'sizing',
+  'guardrails',
+  'discovery',
+  'capsule',
+];
 
-// A customer never sees this — the entry point is always the studio, below.
+// A customer never sees this — the entry point is always the splash, below.
 // It exists so the responsive-capture harness (scripts/capture.mjs) can load
 // any screen directly instead of clicking through the whole journey for each
 // one: ?phase=discovery.
@@ -42,11 +56,11 @@ function phaseFromQueryString(): AppPhase | null {
 
 export default function App() {
   // App Phase State
-  // The product opens where it begins. Capture is the first thing YGS asks
-  // for and everything after it depends on the answer, so the entry point is
-  // the studio — not a working screen reached with the middle skipped.
+  // The opening is a splash, then a voice-guided introduction (which is
+  // where the wardrobe question now lives), then consent and capture (D8) —
+  // not a question asked before the customer knows what the app is.
   const [currentPhase, setCurrentPhase] = useState<AppPhase>(
-    () => phaseFromQueryString() ?? 'wardrobe'
+    () => phaseFromQueryString() ?? 'splash'
   );
   const [heightCm, setHeightCm] = useState<number>(170);
 
@@ -137,8 +151,13 @@ export default function App() {
     setShowWardrobeModal(false);
     // Only the first, cold-start choice advances the phase — reopened from
     // the menu mid-journey, switching updates the value in place and the
-    // customer stays exactly where they were.
-    if (currentPhase === 'wardrobe') setCurrentPhase('onboarding');
+    // customer stays exactly where they were. 'wardrobe' is the standalone
+    // phase the capture harness still loads directly; 'introduction' is
+    // where a real customer actually makes this choice now (D8) — both are
+    // the same cold start, so both advance the same way.
+    if (currentPhase === 'wardrobe' || currentPhase === 'introduction') {
+      setCurrentPhase('onboarding');
+    }
   };
 
   const handleCaptureComplete = (profile: CapturedProfile) => {
@@ -277,29 +296,52 @@ export default function App() {
     }
   };
 
+  // No header, no menu, on the two opening screens — there is nothing yet to
+  // navigate to (no wardrobe chosen, no guardrails set), and D8's point is
+  // that the opening is a splash and a guided introduction, not a working
+  // screen with chrome around it.
+  const showChrome = currentPhase !== 'splash' && currentPhase !== 'introduction';
+
   return (
     <div
       id="app-root-container"
       data-ground={ground}
       className="flex min-h-dvh flex-col"
     >
-      <HeaderNav
-        currentPhase={currentPhase}
-        setPhase={setCurrentPhase}
-        savedCount={savedLooks.length}
-        constraints={constraints}
-        onOpenGuardrails={() => setShowGuardrailsModal(true)}
-        wardrobe={wardrobe}
-        onOpenWardrobe={() => setShowWardrobeModal(true)}
-        heightCm={heightCm}
-        onFindLook={handleFindLook}
-        isFinding={isFinding}
-      />
+      {showChrome ? (
+        <HeaderNav
+          currentPhase={currentPhase}
+          setPhase={setCurrentPhase}
+          savedCount={savedLooks.length}
+          constraints={constraints}
+          onOpenGuardrails={() => setShowGuardrailsModal(true)}
+          wardrobe={wardrobe}
+          onOpenWardrobe={() => setShowWardrobeModal(true)}
+          heightCm={heightCm}
+          onFindLook={handleFindLook}
+          isFinding={isFinding}
+        />
+      ) : null}
 
       {/* Screens own their own gutters (each mounts an AppContainer), so main
           adds none — but it does cap and centre them, so extra tablet width
-          becomes margin instead of a phone layout stretched to 1180px. */}
-      <main className="safe-bottom mx-auto flex min-h-0 w-full max-w-app flex-1 flex-col">
+          becomes margin instead of a phone layout stretched to 1180px. Without
+          the header, main also carries the top safe area the header would
+          otherwise have claimed. */}
+      <main
+        className={cn(
+          'safe-bottom mx-auto flex min-h-0 w-full max-w-app flex-1 flex-col',
+          !showChrome && 'safe-top',
+        )}
+      >
+        {currentPhase === 'splash' && (
+          <SplashScreen onBegin={() => setCurrentPhase('introduction')} />
+        )}
+
+        {currentPhase === 'introduction' && (
+          <Introduction onSelectWardrobe={handleChooseWardrobe} />
+        )}
+
         {currentPhase === 'wardrobe' && (
           <ChooseWardrobe selected={wardrobe} onSelect={handleChooseWardrobe} />
         )}

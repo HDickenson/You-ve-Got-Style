@@ -203,6 +203,46 @@ change, not something inherited through a merge.
 
 ---
 
+## D8 — The opening is wrong: splash, then a voice-guided introduction, then consent (YGS-48)
+
+**Decided by the owner, on seeing the running app.** The wardrobe question — *"What are you
+shopping for?"* — opened the app. A form's opening, not an app's: it asked the customer to
+answer before they knew what the thing was. One screen later, "Open the studio" asked for
+consent the product had not yet earned — the screen explained carefully what it would *not*
+do with the customer's data, having never once said what they get.
+
+**Replaces it:** a splash (this is an app, and it carries the tap gesture a browser requires
+before it will play audio) → a voice-guided introduction, narrated and always readable as
+text, the wardrobe question now living inside it rather than standing at the front door →
+consent and capture (`HandsFreeCapture`, unchanged), reached only once the reason for asking
+is already understood.
+
+**Voice-guided is not voice-controlled.** The app *speaking* needs no consent — only the app
+*listening* does, and that gate is still `HandsFreeCapture`'s, one screen further on. So the
+introduction asks for nothing; narration is opt-in, triggered only by an explicit "Listen
+instead" tap, never autoplayed and never assumed. Silence is a first-class path, not a
+degraded one: the text is the whole introduction whether or not anyone ever taps it.
+
+**Live TTS**, ruled over scripted audio, via `gemini-2.5-flash-preview-tts` (`/api/tts`,
+server-owned fixed script — nothing client-supplied reaches the model, so there is nothing
+to sanitise the way `sanitiseUserPrompt` has to). The response is headerless L16 PCM; the
+server wraps it in a WAV header before the client ever sees it, and caches it per process
+since the narration never changes. No key, or a failed call, degrades to text-only — the
+same fallback shape as the styling and try-on routes already use.
+
+**Scope held to what the ruling actually asks for.** The wardrobe question itself is
+unchanged (`ChooseWardrobe`, reused as-is) — only where it sits moved. The consent gate
+inside `HandsFreeCapture` is unchanged — only what precedes it moved. `'wardrobe'` stays a
+valid `AppPhase` for the capture harness's `?phase=` matrix even though no customer path
+reaches it directly anymore.
+
+**Copy is a first draft, not a ruling.** The introduction's narration states only what this
+codebase can back — guardrails checked in code, fit estimated from height, a capsule to save
+to — nothing about the sizing engine or the try-on renderer this product cannot. Mira owns
+the final wording.
+
+---
+
 ## Standing rules established during the sprint
 
 - **Delivered means pushed.** Work not reachable on the remote is not delivered. Two agents
