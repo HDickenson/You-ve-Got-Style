@@ -1,0 +1,83 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+      - 'feat/**'
+
+env:
+  NODE_VERSION: '22'
+
+jobs:
+  type-gate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+      - run: npm ci
+      - run: npm run lint
+
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+      - run: npm ci
+      - run: npm run build
+
+  impeccable-detector:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+      - run: npm ci
+      - run: node .claude/skills/impeccable/scripts/detect.mjs src/
+
+  raw-hex-boundary:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+      - run: npm ci
+      - run: node scripts/check-raw-hex.mjs
+
+  # The capture harness itself is tracked separately (YGS-10) and does not
+  # exist in this repo yet. This job picks it up automatically — once a
+  # `capture` script is added to package.json, this becomes a real, blocking
+  # check. Until then it reports its own absence rather than passing silently.
+  responsive-captures:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+      - run: npm ci
+      - name: Run capture harness if present, else report the gap
+        run: |
+          if npm run | grep -qE '^\s*capture\s*$'; then
+            npm run capture
+          else
+            echo "::warning title=Responsive captures not wired::No 'capture' script in package.json yet (tracked in YGS-10). Responsive captures at 390x844, 820x1180 and 1180x820 are NOT being verified by CI." | tee -a "$GITHUB_STEP_SUMMARY"
+          fi
+      - name: Upload captures
+        if: hashFiles('capture-output/**') != ''
+        uses: actions/upload-artifact@v4
+        with:
+          name: responsive-captures
+          path: capture-output/
