@@ -102,8 +102,9 @@ export const CapsuleWardrobe: React.FC<CapsuleWardrobeProps> = ({
               the empty state says it better. */}
           {count > 0 ? (
             <p className="max-w-[46ch] text-body text-fg-muted">
-              Every piece here pairs with the others. Buy a look on its own, or
-              keep building the set.
+              Buy a look on its own, or keep building the set. Nothing here is
+              checked against anything else yet — how these pieces work
+              together is a judgement this app does not make.
             </p>
           ) : null}
         </Stack>

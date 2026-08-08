@@ -14,14 +14,16 @@ interface CheckoutModalProps {
   onClose: () => void;
 }
 
-/** Where the courier goes, and how soon. No countdowns, no scarcity. */
-const DESTINATIONS: ReadonlyArray<{ city: string; when: string }> = [
-  { city: 'Dubai', when: 'Same day' },
-  { city: 'Abu Dhabi', when: 'Next morning' },
-  { city: 'Riyadh', when: 'Within 24 hours' },
-  { city: 'Jeddah', when: 'Within 24 hours' },
-  { city: 'Doha', when: 'Within 24 hours' },
-  { city: 'Kuwait City', when: 'Within 24 hours' },
+/** Where the courier would go. No timings: there is no logistics integration
+ *  behind this, and "Same day" is a promise nothing in this system can keep.
+ *  The cities are real choices; the speed was decoration. */
+const DESTINATIONS: ReadonlyArray<{ city: string }> = [
+  { city: 'Dubai' },
+  { city: 'Abu Dhabi' },
+  { city: 'Riyadh' },
+  { city: 'Jeddah' },
+  { city: 'Doha' },
+  { city: 'Kuwait City' },
 ];
 
 /** Wide-tracked uppercase, the label voice for every section on this sheet. */
@@ -111,7 +113,7 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
       // because it names the dialog and carries the close control with it.
       title="Checkout"
       description={
-        isOrdered ? undefined : 'Your size is held while you finish here.'
+        isOrdered ? undefined : 'Nothing here is reserved. This is a demonstration checkout.'
       }
       footer={
         isOrdered ? (
@@ -131,7 +133,7 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
               role="status"
               className="text-eyebrow font-medium uppercase text-fg-muted"
             >
-              {isProcessing ? 'Reserving your size' : ''}
+              {isProcessing ? 'Preparing your summary' : ''}
             </span>
             <Button
               id="btn-confirm-purchase"
@@ -154,16 +156,18 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
           </span>
 
           <Stack gap={12} align="center">
-            <OccasionTitle as="p">{shown.look_title} is yours.</OccasionTitle>
+            <OccasionTitle as="p">{shown.look_title}, ready to order.</OccasionTitle>
             <p className="max-w-measure text-body text-fg-muted">
-              On its way to {city}. You’ll get a note the moment it ships.
+              This is where it would go. Nothing has been ordered, charged or shipped —
+              this checkout is a demonstration.
             </p>
           </Stack>
 
           <Stack gap={12} className="w-full border-y border-rule py-6 text-start">
-            <DetailRow label="Order" value="YGS-88492" />
+            {/* No order number. There is no order, and a fixed literal that never
+                changes between checkouts is the clearest kind of fiction. */}
             <DetailRow label={shown.brand} value={sizeValue} />
-            <DetailRow label="Paid" value={formatAED(shown.priceAED)} />
+            <DetailRow label="Would cost" value={formatAED(shown.priceAED)} />
           </Stack>
         </Stack>
       ) : (
@@ -245,9 +249,6 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
                       <span className="block truncate text-body text-fg">
                         {destination.city}
                       </span>
-                      <span className="block text-eyebrow font-medium uppercase text-fg-muted">
-                        {destination.when}
-                      </span>
                     </span>
                     {selected ? (
                       // Marking the selection is exactly what gold is for. On
@@ -266,7 +267,7 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
           <Stack gap={12}>
             <Separator />
             <DetailRow label="Subtotal" value={formatAED(shown.priceAED)} />
-            <DetailRow label="Delivery" value="Included" />
+            <DetailRow label="Delivery" value="Not calculated" />
             <div className="flex items-baseline justify-between gap-4 border-t border-rule pt-3">
               <span className="text-body font-medium text-fg">Total</span>
               <Price className="font-medium">{formatAED(shown.priceAED)}</Price>

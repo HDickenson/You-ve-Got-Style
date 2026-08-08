@@ -194,8 +194,8 @@ export const StyleGuardrails: React.FC<StyleGuardrailsProps> = ({
               Preference
             </h3>
             <p className="mt-3 max-w-measure text-body text-fg-muted">
-              These shape the order you see things in. They never rule a look
-              out.
+              These are recorded with your looks and never rule one out. Only
+              your spend ceiling changes the order you see things in today.
             </p>
 
             <Stack gap={24} className="mt-6">
