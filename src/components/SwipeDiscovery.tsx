@@ -354,6 +354,17 @@ export const SwipeDiscovery: React.FC<SwipeDiscoveryProps> = ({
                     className="pointer-events-none absolute inset-0 h-full w-full object-cover object-center"
                   />
 
+                  {/* A failed render is a stated failure, not a placeholder
+                      passed off as the real thing. */}
+                  {activeLook.imageGenerationFailed ? (
+                    <p
+                      role="status"
+                      className="ground-onyx absolute inset-x-0 top-0 bg-onyx px-6 py-3 text-center text-eyebrow font-medium uppercase text-fg-muted"
+                    >
+                      Photo preview unavailable — styling details below still apply
+                    </p>
+                  ) : null}
+
                   {/* The caption always sits on theatre, whatever ground the
                       screen is on — and it is painted, not tinted. A gradient
                       thin enough to leave the photograph readable is too thin

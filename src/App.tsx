@@ -145,6 +145,7 @@ export default function App() {
       if (data.look_title) {
         // Now attempt try-on image generation
         let generatedImageUrl = LOOK_PLACEHOLDER;
+        let imageGenerationFailed = false;
         try {
           const tryonRes = await fetch('/api/generate-tryon', {
             method: 'POST',
@@ -155,11 +156,14 @@ export default function App() {
             }),
           });
           const tryonData = await tryonRes.json();
-          if (tryonData.imageUrl) {
+          if (tryonData.success && tryonData.imageUrl) {
             generatedImageUrl = tryonData.imageUrl;
+          } else {
+            imageGenerationFailed = true;
           }
         } catch (e) {
-          console.warn('Tryon image API fallback used:', e);
+          imageGenerationFailed = true;
+          console.warn('Tryon image generation failed:', e);
         }
 
         const foundLook: FashionLook = {
@@ -177,6 +181,7 @@ export default function App() {
           compliance_check: data.compliance_check === true,
           capsule_synergy: data.capsule_synergy || 'Pairs seamlessly with your existing luxury capsule wardrobe.',
           imageUrl: generatedImageUrl,
+          imageGenerationFailed,
           brand_sizes: brandSizes,
         };
 
