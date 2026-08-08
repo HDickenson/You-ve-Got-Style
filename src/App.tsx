@@ -87,6 +87,13 @@ export default function App() {
 
   // Style Intelligence State
   const [isFinding, setIsFinding] = useState<boolean>(false);
+  // Nothing on screen spins to fake motion — but three seconds of silence
+  // reads as broken, so the copy itself changes instead.
+  const [isFindingSlow, setIsFindingSlow] = useState<boolean>(false);
+  // A failed search is not a look — it never enters looksList — so it is
+  // held as its own state and shown honestly instead of being logged and
+  // dropped.
+  const [findError, setFindError] = useState<string | null>(null);
   const [showGuardrailsModal, setShowGuardrailsModal] = useState<boolean>(false);
 
   const ground = GROUND[currentPhase];
@@ -129,6 +136,13 @@ export default function App() {
   // The machinery has no name in the UI and no name here either.
   const handleFindLook = async (occasion: string) => {
     setIsFinding(true);
+    setIsFindingSlow(false);
+    setFindError(null);
+
+    // The slow path is not a spinner, it is different words — so it needs
+    // its own clock, started here and always cleared below.
+    const slowTimer = setTimeout(() => setIsFindingSlow(true), 3000);
+
     try {
       const res = await fetch('/api/style-recommendations', {
         method: 'POST',
@@ -140,57 +154,72 @@ export default function App() {
         }),
       });
 
+      if (!res.ok) {
+        throw new Error(`style-recommendations responded ${res.status}`);
+      }
+
       const data = await res.json();
 
-      if (data.look_title) {
-        // Now attempt try-on image generation
-        let generatedImageUrl = LOOK_PLACEHOLDER;
-        let imageGenerationFailed = false;
-        try {
-          const tryonRes = await fetch('/api/generate-tryon', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              prompt: `${data.look_title}: ${data.top_garment} with ${data.bottom_garment}. Modest elegant GCC high fashion.`,
-              userPhotoBase64: capturedProfile.frontPhoto,
-            }),
-          });
-          const tryonData = await tryonRes.json();
-          if (tryonData.success && tryonData.imageUrl) {
-            generatedImageUrl = tryonData.imageUrl;
-          } else {
-            imageGenerationFailed = true;
-          }
-        } catch (e) {
-          imageGenerationFailed = true;
-          console.warn('Tryon image generation failed:', e);
-        }
-
-        const foundLook: FashionLook = {
-          ...COMPOSED_LOOK_TEMPLATE,
-          id: `look-${Date.now()}`,
-          look_title: data.look_title,
-          occasion: data.occasion || occasion,
-          top_garment: data.top_garment,
-          bottom_garment: data.bottom_garment,
-          // Fail CLOSED. Modest wear and the other Style Like You rules are hard
-          // guardrails, not preferences — a look whose compliance the model did
-          // not assert is unverified, and unverified must never render as
-          // "Guardrail Verified". Defaulting to true asserts a cultural
-          // constraint was honoured on no evidence at all.
-          compliance_check: data.compliance_check === true,
-          capsule_synergy: data.capsule_synergy || 'Pairs seamlessly with your existing luxury capsule wardrobe.',
-          imageUrl: generatedImageUrl,
-          imageGenerationFailed,
-          brand_sizes: brandSizes,
-        };
-
-        setLooksList((prev) => [foundLook, ...prev]);
+      if (!data.look_title) {
+        throw new Error('style-recommendations returned no look');
       }
+
+      // Now attempt try-on image generation. Its own failure never fails the
+      // whole search — a look with an honest placeholder plate is still a
+      // look — but it must not be allowed to pass a stock photo off as a
+      // render of it, so only a call that reports success is trusted, and a
+      // failure here is stated on the card itself rather than hidden behind
+      // the placeholder (YGS-27).
+      let generatedImageUrl = LOOK_PLACEHOLDER;
+      let imageGenerationFailed = false;
+      try {
+        const tryonRes = await fetch('/api/generate-tryon', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            prompt: `${data.look_title}: ${data.top_garment} with ${data.bottom_garment}. Modest elegant GCC high fashion.`,
+            userPhotoBase64: capturedProfile.frontPhoto,
+          }),
+        });
+        const tryonData = await tryonRes.json();
+        if (tryonRes.ok && tryonData.success && tryonData.imageUrl) {
+          generatedImageUrl = tryonData.imageUrl;
+        } else {
+          imageGenerationFailed = true;
+        }
+      } catch (e) {
+        imageGenerationFailed = true;
+        console.warn('Tryon image generation failed:', e);
+      }
+
+      const foundLook: FashionLook = {
+        ...COMPOSED_LOOK_TEMPLATE,
+        id: `look-${Date.now()}`,
+        look_title: data.look_title,
+        occasion: data.occasion || occasion,
+        top_garment: data.top_garment,
+        bottom_garment: data.bottom_garment,
+        // Fail CLOSED. Modest wear and the other Style Like You rules are hard
+        // guardrails, not preferences — a look whose compliance the model did
+        // not assert is unverified, and unverified must never render as
+        // "Guardrail Verified". Defaulting to true asserts a cultural
+        // constraint was honoured on no evidence at all.
+        compliance_check: data.compliance_check === true,
+        capsule_synergy: data.capsule_synergy || 'Pairs seamlessly with your existing luxury capsule wardrobe.',
+        imageUrl: generatedImageUrl,
+        imageGenerationFailed,
+        brand_sizes: brandSizes,
+      };
+
+      setLooksList((prev) => [foundLook, ...prev]);
     } catch (err) {
       console.error('Failed to find a look:', err);
+      // What happened, what to do — nothing the model or the network said.
+      setFindError("Nothing came back — the connection may have dropped.");
     } finally {
+      clearTimeout(slowTimer);
       setIsFinding(false);
+      setIsFindingSlow(false);
     }
   };
 
@@ -249,6 +278,8 @@ export default function App() {
             onBuyLook={(look) => setCheckoutLook(look)}
             onFindLook={handleFindLook}
             isFinding={isFinding}
+            isFindingSlow={isFindingSlow}
+            findError={findError}
           />
         )}
 
