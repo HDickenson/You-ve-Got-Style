@@ -109,8 +109,10 @@ export const SizingEngine: React.FC<SizingEngineProps> = ({
           <span className="text-eyebrow font-medium uppercase text-fg-muted">
             Your fit
           </span>
-          {/* The one editorial moment on this screen: the reveal itself. */}
-          <Display>This is your fit.</Display>
+          {/* The one editorial moment on this screen — a claim about the
+              numbers below, true whether they are still the height-derived
+              estimate or a tape measure has already corrected them. */}
+          <Display>Your fit, in numbers.</Display>
           <p className="max-w-measure text-body text-fg-muted">
             Graded from your height against standard proportions — a starting
             point, not a tape measure. Every look you are shown from here is cut
