@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { HeaderNav } from './components/HeaderNav';
 import { HandsFreeCapture } from './components/HandsFreeCapture';
 import { SizingEngine } from './components/SizingEngine';
@@ -6,23 +6,46 @@ import { StyleGuardrails } from './components/StyleGuardrails';
 import { SwipeDiscovery } from './components/SwipeDiscovery';
 import { CapsuleWardrobe } from './components/CapsuleWardrobe';
 import { CheckoutModal } from './components/CheckoutModal';
+import { ResponsiveSheet } from './components/ui';
 import { AppPhase, CapturedProfile, UserMeasurements, BrandSizeMapping, StyleConstraints, FashionLook } from './types';
-import { INITIAL_LOOKS } from './data/sampleLooks';
+import {
+  COMPOSED_LOOK_TEMPLATE,
+  INITIAL_LOOKS,
+  LOOK_PLACEHOLDER,
+} from './data/sampleLooks';
 import { calculatePhotogrammetryMeasurements, mapMeasurementsToBrandSizes } from './data/brandGrading';
+
+/**
+ * Dark is theatre; cream is conversation. The app presents during capture,
+ * the fit reveal and discovery; the user works in guardrails and the capsule.
+ */
+const GROUND: Record<AppPhase, 'onyx' | 'cream'> = {
+  onboarding: 'onyx',
+  sizing: 'onyx',
+  guardrails: 'cream',
+  discovery: 'onyx',
+  capsule: 'cream',
+};
 
 export default function App() {
   // App Phase State
-  const [currentPhase, setCurrentPhase] = useState<AppPhase>('discovery'); // Default to instant working discovery UI!
+  // The product opens where it begins. Capture is the first thing YGS asks
+  // for and everything after it depends on the answer, so the entry point is
+  // the studio — not a working screen reached with the middle skipped.
+  const [currentPhase, setCurrentPhase] = useState<AppPhase>('onboarding');
   const [heightCm, setHeightCm] = useState<number>(170);
 
   // User Photogrammetry & Sizing State
+  // Nothing has been captured yet, and the app does not pretend otherwise —
+  // a stock photograph of a stranger standing in for the user's own body scan
+  // is not a placeholder, it is a lie with a face on it.
   const [capturedProfile, setCapturedProfile] = useState<CapturedProfile>({
-    frontPhoto: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=800&q=80',
-    sidePhoto: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&w=800&q=80',
+    frontPhoto: null,
+    sidePhoto: null,
     heightCm: 170,
     timestamp: Date.now(),
-    isSensorVerified: true,
-    isVoiceTriggered: true,
+    isSensorVerified: false,
+    isVoiceTriggered: false,
   });
 
   const [measurements, setMeasurements] = useState<UserMeasurements>(
@@ -49,9 +72,17 @@ export default function App() {
   const [savedLooks, setSavedLooks] = useState<FashionLook[]>([INITIAL_LOOKS[0]]);
   const [checkoutLook, setCheckoutLook] = useState<FashionLook | null>(null);
 
-  // AI Loading State
-  const [isGeneratingAi, setIsGeneratingAi] = useState<boolean>(false);
+  // Style Intelligence State
+  const [isFinding, setIsFinding] = useState<boolean>(false);
   const [showGuardrailsModal, setShowGuardrailsModal] = useState<boolean>(false);
+
+  const ground = GROUND[currentPhase];
+
+  // The ground belongs to the document, not just to a div — otherwise an
+  // overscroll bounce or a notch shows the wrong colour behind the app.
+  useEffect(() => {
+    document.body.dataset.ground = ground;
+  }, [ground]);
 
   // Handlers
   const handleCaptureComplete = (profile: CapturedProfile) => {
@@ -82,8 +113,9 @@ export default function App() {
     setSavedLooks((prev) => prev.filter((item) => item.id !== lookId));
   };
 
-  const handleGenerateAiLook = async (occasion: string) => {
-    setIsGeneratingAi(true);
+  // The machinery has no name in the UI and no name here either.
+  const handleFindLook = async (occasion: string) => {
+    setIsFinding(true);
     try {
       const res = await fetch('/api/style-recommendations', {
         method: 'POST',
@@ -99,7 +131,7 @@ export default function App() {
 
       if (data.look_title) {
         // Now attempt try-on image generation
-        let generatedImageUrl = 'https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?auto=format&fit=crop&w=1000&q=80';
+        let generatedImageUrl = LOOK_PLACEHOLDER;
         try {
           const tryonRes = await fetch('/api/generate-tryon', {
             method: 'POST',
@@ -117,36 +149,34 @@ export default function App() {
           console.warn('Tryon image API fallback used:', e);
         }
 
-        const newAiLook: FashionLook = {
-          id: `ai-look-${Date.now()}`,
+        const foundLook: FashionLook = {
+          ...COMPOSED_LOOK_TEMPLATE,
+          id: `look-${Date.now()}`,
           look_title: data.look_title,
           occasion: data.occasion || occasion,
           top_garment: data.top_garment,
           bottom_garment: data.bottom_garment,
           compliance_check: data.compliance_check ?? true,
           capsule_synergy: data.capsule_synergy || 'Pairs seamlessly with your existing luxury capsule wardrobe.',
-          brand: 'Gemini Haute Couture',
-          priceUSD: 2300,
-          priceAED: 8440,
-          fabric: 'Mulberry Silk & Italian Cashmere',
-          colorPalette: ['#E2C044', '#1A2B4C', '#F7F5F0'],
           imageUrl: generatedImageUrl,
-          tags: ['AI Generated', 'Modest Wear', 'Custom Fitting'],
           brand_sizes: brandSizes,
         };
 
-        setLooksList((prev) => [newAiLook, ...prev]);
+        setLooksList((prev) => [foundLook, ...prev]);
       }
     } catch (err) {
-      console.error('Failed to generate AI look:', err);
+      console.error('Failed to find a look:', err);
     } finally {
-      setIsGeneratingAi(false);
+      setIsFinding(false);
     }
   };
 
   return (
-    <div id="app-root-container" className="min-h-screen bg-stone-950 text-stone-100 font-sans antialiased selection:bg-amber-500 selection:text-stone-950 flex flex-col justify-between">
-      {/* Top Header Navigation */}
+    <div
+      id="app-root-container"
+      data-ground={ground}
+      className="flex min-h-dvh flex-col"
+    >
       <HeaderNav
         currentPhase={currentPhase}
         setPhase={setCurrentPhase}
@@ -154,12 +184,14 @@ export default function App() {
         constraints={constraints}
         onOpenGuardrails={() => setShowGuardrailsModal(true)}
         heightCm={heightCm}
-        onGenerateAiLook={handleGenerateAiLook}
-        isGeneratingAi={isGeneratingAi}
+        onFindLook={handleFindLook}
+        isFinding={isFinding}
       />
 
-      {/* Main Phase View Controller */}
-      <main className="flex-1 pb-4">
+      {/* Screens own their own gutters (each mounts an AppContainer), so main
+          adds none — but it does cap and centre them, so extra tablet width
+          becomes margin instead of a phone layout stretched to 1180px. */}
+      <main className="safe-bottom mx-auto flex min-h-0 w-full max-w-app flex-1 flex-col">
         {currentPhase === 'onboarding' && (
           <HandsFreeCapture
             onCaptureComplete={handleCaptureComplete}
@@ -192,8 +224,8 @@ export default function App() {
             onSwipeRight={handleSwipeRight}
             onSwipeLeft={handleSwipeLeft}
             onBuyLook={(look) => setCheckoutLook(look)}
-            onGenerateAiLook={handleGenerateAiLook}
-            isGeneratingAi={isGeneratingAi}
+            onFindLook={handleFindLook}
+            isFinding={isFinding}
           />
         )}
 
@@ -207,18 +239,20 @@ export default function App() {
         )}
       </main>
 
-      {/* Guardrails Settings Modal overlay if requested from header */}
-      {showGuardrailsModal && (
-        <div className="fixed inset-0 z-50 bg-stone-950/90 backdrop-blur-md flex items-center justify-center p-3">
-          <div className="bg-stone-900 border border-stone-800 text-stone-100 w-full max-w-md rounded-2xl p-4 max-h-[85vh] overflow-y-auto shadow-2xl">
-            <StyleGuardrails
-              constraints={constraints}
-              setConstraints={setConstraints}
-              onSaveAndProceed={() => setShowGuardrailsModal(false)}
-            />
-          </div>
-        </div>
-      )}
+      {/* Guardrails opened from the menu — a sheet on phone, a dialog on tablet. */}
+      <ResponsiveSheet
+        open={showGuardrailsModal}
+        onOpenChange={setShowGuardrailsModal}
+        ground="cream"
+        title="Style guardrails"
+        description="What you will and will not wear. Every look respects these."
+      >
+        <StyleGuardrails
+          constraints={constraints}
+          setConstraints={setConstraints}
+          onSaveAndProceed={() => setShowGuardrailsModal(false)}
+        />
+      </ResponsiveSheet>
 
       {/* Atomic Checkout Modal */}
       <CheckoutModal

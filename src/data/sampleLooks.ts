@@ -1,5 +1,37 @@
 import { FashionLook } from '../types';
 
+/**
+ * A 4:5 sand plate at 800×1000, served locally. It stands in until a look has
+ * an image of its own — nothing borrowed from a third party, and it reserves
+ * its own space rather than reflowing the card when it lands.
+ */
+export const LOOK_PLACEHOLDER = '/look-placeholder.svg';
+
+/**
+ * Everything about a look the app composes for you except the words: house,
+ * price, cloth, swatches. It lives here rather than in the shell because a
+ * colour swatch is garment colour — real dye on real silk — and no brand token
+ * can stand in for it. The shell holds no hex.
+ */
+export const COMPOSED_LOOK_TEMPLATE: Pick<
+  FashionLook,
+  | 'brand'
+  | 'priceUSD'
+  | 'priceAED'
+  | 'fabric'
+  | 'colorPalette'
+  | 'imageUrl'
+  | 'tags'
+> = {
+  brand: 'Atelier Édition',
+  priceUSD: 2300,
+  priceAED: 8440,
+  fabric: 'Mulberry Silk & Italian Cashmere',
+  colorPalette: ['#E6D0AC', '#1A2B4C', '#F7F5F0'],
+  imageUrl: LOOK_PLACEHOLDER,
+  tags: ['Made for you', 'Modest Wear', 'Custom Fitting'],
+};
+
 export const INITIAL_LOOKS: FashionLook[] = [
   {
     id: 'look-1',

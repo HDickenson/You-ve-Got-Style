@@ -10,8 +10,8 @@ interface SwipeDiscoveryProps {
   onSwipeRight: (look: FashionLook) => void;
   onSwipeLeft: (look: FashionLook) => void;
   onBuyLook: (look: FashionLook) => void;
-  onGenerateAiLook: (occasion: string) => Promise<void>;
-  isGeneratingAi: boolean;
+  onFindLook: (occasion: string) => Promise<void>;
+  isFinding: boolean;
 }
 
 const OCCASIONS = [
@@ -31,8 +31,8 @@ export const SwipeDiscovery: React.FC<SwipeDiscoveryProps> = ({
   onSwipeRight,
   onSwipeLeft,
   onBuyLook,
-  onGenerateAiLook,
-  isGeneratingAi,
+  onFindLook,
+  isFinding,
 }) => {
   const [selectedOccasion, setSelectedOccasion] = useState<string>('All Occasions');
   const [currentIndex, setCurrentIndex] = useState<number>(0);

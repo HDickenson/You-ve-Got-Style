@@ -1,1 +1,443 @@
 @import "tailwindcss";
+
+/* ============================================================================
+   YGS — token layer.
+   This is the ONLY file in the app permitted to contain a raw hex value.
+   Everything downstream consumes tokens: bg-onyx, text-fg, rounded-card,
+   ease-place, duration-reveal, page-gutter.
+   ========================================================================= */
+
+/* --- Self-hosted type. No CDN, no <link>, no third-party request. ---------
+   Two voices, both variable, both latin-subset and sitting in src/assets/fonts.
+
+   Bodoni Moda is the editorial voice — a fashion didone with the hairline
+   contrast the occasion titles and reveals want, on an optical-size axis so it
+   stays sturdy at 20px and gets sharper as it grows.
+
+   Instrument Sans is the functional voice and the stand-in for Satoshi.
+   Satoshi is free and downloadable, but the Fontshare EULA forbids copying or
+   "uploading them in a public server" and points web delivery at their CDN, so
+   self-hosting it is not licensed. Instrument Sans is OFL — self-hostable,
+   subsettable, shippable — with the same tall x-height and open apertures,
+   even caps for wide-tracked labels, and it holds at 13px. */
+
+@font-face {
+  font-family: "Bodoni Moda YGS";
+  font-style: normal;
+  font-weight: 400 600;
+  font-display: swap;
+  src: url("./assets/fonts/bodoni-moda-latin-var.woff2") format("woff2");
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA,
+    U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193,
+    U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+@font-face {
+  font-family: "Bodoni Moda YGS";
+  font-style: italic;
+  font-weight: 400 600;
+  font-display: swap;
+  src: url("./assets/fonts/bodoni-moda-latin-var-italic.woff2") format("woff2");
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA,
+    U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193,
+    U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+@font-face {
+  font-family: "Instrument Sans YGS";
+  font-style: normal;
+  font-weight: 400 700;
+  font-display: swap;
+  src: url("./assets/fonts/instrument-sans-latin-var.woff2") format("woff2");
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA,
+    U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193,
+    U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+@font-face {
+  font-family: "Instrument Sans YGS";
+  font-style: italic;
+  font-weight: 400 700;
+  font-display: swap;
+  src: url("./assets/fonts/instrument-sans-latin-var-italic.woff2") format("woff2");
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA,
+    U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193,
+    U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+@theme {
+  /* --- Colour --------------------------------------------------------------
+     The stock Tailwind palettes are deleted on purpose. stone / zinc / slate /
+     gray / neutral / amber / emerald are not part of this brand, so a class
+     like `bg-stone-950` must not silently work. Brand tokens only. */
+  --color-*: initial;
+
+  --color-transparent: transparent;
+  --color-current: currentColor;
+  --color-inherit: inherit;
+
+  --color-onyx: #111111; /* cinematic / presentation surface */
+  --color-forest: #1e2c26; /* Style Intelligence surface ONLY */
+  --color-gold: #c8a86b; /* rationed: selection, intelligence, signature */
+  --color-sand: #e7dfd3; /* secondary neutral surface */
+  --color-cream: #faf6f1; /* primary working surface */
+  --color-white: #ffffff; /* type on dark, raised card on cream */
+  --color-ink: #171717; /* type on light — a TEXT colour, never a ground */
+
+  /* Derived warm neutrals — biased toward sand, never a pure grey. */
+  --color-muted-on-light: #6e645a;
+  --color-rule-on-light: #e4dcd1;
+  --color-muted-on-dark: #9c948a;
+  --color-rule-on-dark: #2c2825;
+
+  /* Ground-relative aliases. A `.ground-*` class rebinds these, so
+     `bg-surface text-fg border-rule` inverts correctly on any ground and no
+     component has to know whether it is on cream or onyx. */
+  --color-surface: var(--ygs-surface);
+  --color-surface-raised: var(--ygs-surface-raised);
+  --color-fg: var(--ygs-fg);
+  --color-fg-muted: var(--ygs-fg-muted);
+  --color-rule: var(--ygs-rule);
+  --color-on-gold: var(--color-onyx);
+
+  /* --- Spacing -------------------------------------------------------------
+     0.25rem base, so the permitted scale is 1=4 2=8 3=12 4=16 6=24 8=32
+     12=48 16=64.
+
+     Be honest about what this does and does not enforce: Tailwind v4 computes
+     every spacing utility from this one number, so p-5 (20) and gap-9 (36) are
+     just as valid at the CSS layer as p-6. The eight-step scale is a rule you
+     keep, not a rule the build keeps for you — the only place it is mechanical
+     is the GAP map inside Stack / ResponsiveGrid. Sizes that are not spacing
+     (h-11 = 44px touch target, h-14, size-5 icons) legitimately live off it. */
+  --spacing: 0.25rem;
+
+  /* --- Page margins — 24 phone / 32 tablet portrait / 48 tablet landscape -- */
+  --page-margin-phone: 24px;
+  --page-margin-tablet: 32px;
+  --page-margin-tablet-landscape: 48px;
+
+  /* --- Radius ------------------------------------------------------------- */
+  --radius-*: initial;
+  --radius-control: 12px;
+  --radius-card: 20px;
+  --radius-hero: 28px;
+  --radius-full: 9999px;
+
+  /* --- Breakpoints — phone base, md tablet portrait, lg tablet landscape.
+     sm / xl / 2xl are deleted: this is an app, desktop is not a target, and
+     640px is neither a phone nor a tablet — leaving it is an invitation to
+     invent a fourth tier. --------------------------------------------------- */
+  --breakpoint-sm: initial;
+  --breakpoint-xl: initial;
+  --breakpoint-2xl: initial;
+
+  /* --- Elevation ----------------------------------------------------------
+     Two shadows only, both warm-black and diffuse. Cards do not float. */
+  --shadow-sheet: 0 -8px 40px rgb(17 17 17 / 0.28);
+  --shadow-dialog: 0 24px 60px rgb(17 17 17 / 0.28);
+
+  /* --- Measures ----------------------------------------------------------- */
+  --container-measure: 66ch; /* prose never runs past ~70 characters */
+  --container-action: 480px; /* an action row never spans a tablet */
+  --container-drawer: 420px; /* side drawer at md: and up */
+  --container-sheet: 560px; /* centred dialog at md: and up */
+  --container-app: 1024px; /* content cap on tablet landscape */
+
+  /* --- Type ----------------------------------------------------------------
+     Two voices. Editorial serif for occasion titles and reveal moments only.
+     Functional sans for every control, label, price, setting and paragraph. */
+  --font-*: initial;
+  --font-sans: "Instrument Sans YGS", ui-sans-serif, system-ui, sans-serif;
+  --font-serif: "Bodoni Moda YGS", "Didot", "Bodoni MT", "Iowan Old Style",
+    Georgia, serif;
+
+  /* Editorial — serif, one moment per screen, steps up on tablet. */
+  --text-display: 2.5rem; /* 40 */
+  --text-display--line-height: 1.04;
+  --text-display--letter-spacing: -0.02em;
+  --text-display-md: 3.5rem; /* 56 — md: */
+  --text-display-md--line-height: 1.02;
+  --text-display-md--letter-spacing: -0.02em;
+  --text-display-lg: 4rem; /* 64 — lg: */
+  --text-display-lg--line-height: 1;
+  --text-display-lg--letter-spacing: -0.02em;
+
+  --text-occasion: 1.25rem; /* 20 */
+  --text-occasion--line-height: 1.15;
+  --text-occasion--letter-spacing: -0.01em;
+  --text-occasion-md: 1.75rem; /* 28 — md: */
+  --text-occasion-md--line-height: 1.1;
+  --text-occasion-md--letter-spacing: -0.01em;
+
+  /* Functional — sans. Body never scales down; it is 17px at every size. */
+  --text-screen: 1.375rem; /* 22 screen title */
+  --text-screen--line-height: 1.2;
+  --text-screen--letter-spacing: -0.01em;
+
+  --text-body: 1.0625rem; /* 17 body */
+  --text-body--line-height: 1.6;
+
+  --text-price: 0.9375rem; /* 15 price */
+  --text-price--line-height: 1.2;
+
+  --text-control: 0.8125rem; /* 13 control label */
+  --text-control--line-height: 1.25;
+  --text-control--letter-spacing: 0.14em;
+
+  --text-eyebrow: 0.6875rem; /* 11 eyebrow */
+  --text-eyebrow--line-height: 1.2;
+  --text-eyebrow--letter-spacing: 0.2em;
+
+  /* --- Motion — only Reveal / Place / Shift / Resolve exist. ---------------
+     No bounce, no elastic, no overshoot: every curve decelerates and stops. */
+  --ease-*: initial;
+  --ease-reveal: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-place: cubic-bezier(0.22, 0.61, 0.36, 1);
+  --ease-shift: cubic-bezier(0.33, 0, 0.15, 1);
+  --ease-resolve: cubic-bezier(0.16, 1, 0.3, 1);
+
+  --duration-reveal: 420ms; /* Y aperture opens to disclose imagery */
+  --duration-place: 340ms; /* garment settles onto the avatar */
+  --duration-shift: 280ms; /* one look crossfades into another */
+  --duration-resolve: 360ms; /* intelligence finishes, controls appear */
+
+  /* Delete Tailwind's stock animations. Without this line the spin, bounce,
+     ping and pulse utilities all still resolve — and the contract names the
+     spinner and the bounce as violations to remove. Only the four transitions
+     plus the placeholder's breath survive. */
+  --animate-*: initial;
+
+  --animate-reveal: reveal var(--duration-reveal) var(--ease-reveal) both;
+  --animate-place: place var(--duration-place) var(--ease-place) both;
+  --animate-shift: shift var(--duration-shift) var(--ease-shift) both;
+  --animate-resolve: resolve var(--duration-resolve) var(--ease-resolve) both;
+
+  /* The one looping animation: a placeholder breathing while it waits. It is
+     not a fifth transition — nothing is transitioning — so it borrows the
+     shift curve rather than inventing one, and it must not outlast the load. */
+  --animate-breath: breath 1.8s var(--ease-shift) infinite alternate;
+
+  @keyframes reveal {
+    from {
+      opacity: 0;
+      clip-path: inset(0 0 100% 0);
+    }
+    to {
+      opacity: 1;
+      clip-path: inset(0 0 0 0);
+    }
+  }
+  @keyframes place {
+    from {
+      opacity: 0;
+      transform: translateY(12px);
+    }
+    to {
+      opacity: 1;
+      transform: none;
+    }
+  }
+  @keyframes shift {
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
+  }
+  @keyframes resolve {
+    from {
+      opacity: 0;
+      transform: translateY(4px);
+    }
+    to {
+      opacity: 1;
+      transform: none;
+    }
+  }
+  @keyframes breath {
+    from {
+      opacity: 1;
+    }
+    to {
+      opacity: 0.55;
+    }
+  }
+}
+
+/* --- Grounds --------------------------------------------------------------
+   Dark is theatre; cream is conversation. A ground sets its own surface and
+   rebinds the fg / rule / muted tokens so nested components invert for free.
+   Usable as a class or as `data-ground="onyx"` (the shell sets it on <body>). */
+
+@layer base {
+  :root,
+  .ground-cream,
+  [data-ground="cream"] {
+    --ygs-surface: var(--color-cream);
+    --ygs-surface-raised: var(--color-white);
+    --ygs-fg: var(--color-ink);
+    --ygs-fg-muted: var(--color-muted-on-light);
+    --ygs-rule: var(--color-rule-on-light);
+    /* Gold measures 2.01:1 on cream — a focus ring nobody can see. On a
+       conversation ground the ring is ink. */
+    --ygs-focus: var(--color-ink);
+    color-scheme: light;
+  }
+
+  .ground-sand,
+  [data-ground="sand"] {
+    --ygs-surface: var(--color-sand);
+    --ygs-surface-raised: var(--color-white);
+    --ygs-fg: var(--color-ink);
+    --ygs-fg-muted: var(--color-muted-on-light);
+    --ygs-rule: var(--color-rule-on-light);
+    --ygs-focus: var(--color-ink);
+    color-scheme: light;
+  }
+
+  .ground-onyx,
+  [data-ground="onyx"] {
+    --ygs-surface: var(--color-onyx);
+    --ygs-surface-raised: var(--color-rule-on-dark);
+    --ygs-fg: var(--color-white);
+    --ygs-fg-muted: var(--color-muted-on-dark);
+    --ygs-rule: var(--color-rule-on-dark);
+    /* On theatre grounds gold clears 3:1 comfortably and reads as the brand. */
+    --ygs-focus: var(--color-gold);
+    color-scheme: dark;
+  }
+
+  /* Style Intelligence only. */
+  .ground-forest,
+  [data-ground="forest"] {
+    --ygs-surface: var(--color-forest);
+    --ygs-surface-raised: var(--color-rule-on-dark);
+    --ygs-fg: var(--color-white);
+    --ygs-fg-muted: var(--color-muted-on-dark);
+    --ygs-rule: var(--color-rule-on-dark);
+    --ygs-focus: var(--color-gold);
+    color-scheme: dark;
+  }
+
+  .ground-cream,
+  .ground-sand,
+  .ground-onyx,
+  .ground-forest,
+  [data-ground] {
+    background-color: var(--ygs-surface);
+    color: var(--ygs-fg);
+  }
+
+  html {
+    -webkit-text-size-adjust: 100%;
+    /* Let the editorial face use its optical-size axis rather than one cut
+       stretched across 20px and 64px. */
+    font-optical-sizing: auto;
+  }
+
+  body {
+    background-color: var(--ygs-surface);
+    color: var(--ygs-fg);
+    font-family: var(--font-sans);
+    font-size: var(--text-body);
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    /* The page never scrolls sideways; wide content scrolls inside itself. */
+    overflow-x: hidden;
+  }
+
+  ::selection {
+    background-color: var(--color-gold);
+    color: var(--color-onyx);
+  }
+
+  /* One focus ring everywhere, but ground-relative: it must clear 3:1 against
+     whatever it sits on (WCAG 1.4.11 / 2.4.11), and gold does not do that on
+     cream or sand. `.ground-*` rebinds --ygs-focus, so this rule is written
+     once and stays legible on all four grounds. */
+  :focus-visible {
+    outline: 2px solid var(--ygs-focus);
+    outline-offset: 2px;
+  }
+
+  /* Motion is fabric being placed. If the reader has asked for stillness,
+     nothing moves — this is the substrate-level guarantee so no component can
+     forget it. */
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
+    }
+  }
+}
+
+/* --- Utilities ----------------------------------------------------------- */
+
+/* Page gutters: 24 phone / 32 tablet portrait / 48 tablet landscape. */
+@utility page-gutter {
+  padding-inline: var(--page-margin-phone);
+  @media (width >= 48rem) {
+    padding-inline: var(--page-margin-tablet);
+  }
+  @media (width >= 64rem) {
+    padding-inline: var(--page-margin-tablet-landscape);
+  }
+}
+
+/* Safe areas for notches and home indicators, added to the page gutter. */
+@utility safe-inline {
+  padding-left: max(var(--page-margin-phone), env(safe-area-inset-left));
+  padding-right: max(var(--page-margin-phone), env(safe-area-inset-right));
+  @media (width >= 48rem) {
+    padding-left: max(var(--page-margin-tablet), env(safe-area-inset-left));
+    padding-right: max(var(--page-margin-tablet), env(safe-area-inset-right));
+  }
+  @media (width >= 64rem) {
+    padding-left: max(
+      var(--page-margin-tablet-landscape),
+      env(safe-area-inset-left)
+    );
+    padding-right: max(
+      var(--page-margin-tablet-landscape),
+      env(safe-area-inset-right)
+    );
+  }
+}
+
+@utility safe-top {
+  padding-top: env(safe-area-inset-top);
+}
+
+@utility safe-bottom {
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+/* Durations, named after the four transitions and nothing else. */
+@utility duration-reveal {
+  transition-duration: var(--duration-reveal);
+}
+@utility duration-place {
+  transition-duration: var(--duration-place);
+}
+@utility duration-shift {
+  transition-duration: var(--duration-shift);
+}
+@utility duration-resolve {
+  transition-duration: var(--duration-resolve);
+}
+
+/* Prices and stacked measurements align on the decimal. */
+@utility tabular {
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum" 1;
+}
+
+/* Hover is an enhancement, never the sole affordance — tablets have no hover. */
+@custom-variant hoverable (@media (hover: hover) and (pointer: fine));
