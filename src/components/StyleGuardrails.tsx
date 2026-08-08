@@ -135,7 +135,7 @@ export const StyleGuardrails: React.FC<StyleGuardrailsProps> = ({
     <AppContainer
       as="section"
       aria-label="Style guardrails"
-      className="@container animate-place py-8 md:py-12"
+      className="@container py-8 md:py-12"
     >
       <Stack gap={32}>
         <h2 className="text-screen font-medium text-fg">Set your guardrails</h2>

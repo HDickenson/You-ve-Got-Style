@@ -28,8 +28,6 @@ export type { SeparatorProps } from './separator';
 export { Sheet } from './sheet';
 export type { SheetProps, SheetSide } from './sheet';
 
-export { Skeleton } from './skeleton';
-
 export { Slider } from './slider';
 export type { SliderProps } from './slider';
 

@@ -94,7 +94,13 @@ export const SizingEngine: React.FC<SizingEngineProps> = ({
   ];
 
   return (
-    <AppContainer id="module-sizing-engine" className="py-8 md:py-12">
+    // Resolve, not Reveal: this is a computed result settling into place, not
+    // imagery behind an aperture. Every screen either side of this one moves
+    // on entry; this was the one silent cut in the flow.
+    <AppContainer
+      id="module-sizing-engine"
+      className="motion-safe:animate-resolve py-8 md:py-12"
+    >
       <Stack gap={48}>
         <Stack gap={16}>
           <span className="text-eyebrow font-medium uppercase text-fg-muted">

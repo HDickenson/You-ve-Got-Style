@@ -1,10 +1,12 @@
 import React, { useEffect, useRef, useState } from 'react';
+import { useReducedMotion } from 'motion/react';
 import { Bookmark, ShoppingBag, X } from 'lucide-react';
 import { FashionLook, StyleConstraints, BrandSizeMapping, CapturedProfile } from '../types';
 import { evaluateLook, filterByHardGuardrails, withinPriceCeiling } from '../lib/guardrails';
 import { OccasionTitle, YMark } from './brand';
 import { Button, Separator } from './ui';
 import { AppContainer, Stack } from './layout';
+import { DURATION } from '../lib/motion';
 import { cn } from '../lib/cn';
 
 interface SwipeDiscoveryProps {
@@ -41,6 +43,10 @@ const OCCASIONS = [
 
 /** How far a look has to travel before the gesture counts as a decision. */
 const SWIPE_COMMIT = 96;
+
+/** Clear of the plate at every width this card is capped to (420px) — the
+ *  throw carries the card off-frame rather than cutting it out mid-flight. */
+const EXIT_X = 640;
 
 /**
  * One card, centred, capped. The 4:5 plate never grows to tablet width — a
@@ -82,7 +88,14 @@ export const SwipeDiscovery: React.FC<SwipeDiscoveryProps> = ({
   const [currentIndex, setCurrentIndex] = useState<number>(0);
   const [note, setNote] = useState<{ text: string; id: number } | null>(null);
   const [dragX, setDragX] = useState<number>(0);
+  // True only while a finger/pointer is actually down. `dragX` alone cannot
+  // tell a live drag from the post-release snap-back or throw — both also
+  // move `dragX` — and those two need the transition this flag gates.
+  const [dragging, setDragging] = useState<boolean>(false);
   const dragOrigin = useRef<number | null>(null);
+  const dragBaseline = useRef<number>(0);
+  const throwTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const reducedMotion = useReducedMotion();
 
   // A confirmation is a sentence that leaves, not a badge that celebrates.
   useEffect(() => {
@@ -129,6 +142,9 @@ export const SwipeDiscovery: React.FC<SwipeDiscoveryProps> = ({
       onSwipeLeft(activeLook);
       say('Noted');
     }
+    // The look that is leaving may have just finished a throw at ±EXIT_X —
+    // clear it so the next look mounts centred rather than off-frame.
+    setDragX(0);
     setCurrentIndex((prev) => prev + 1);
   };
 
@@ -138,7 +154,17 @@ export const SwipeDiscovery: React.FC<SwipeDiscoveryProps> = ({
     onBuyLook(activeLook);
   };
 
+  const cancelThrow = () => {
+    if (throwTimer.current === null) return;
+    clearTimeout(throwTimer.current);
+    throwTimer.current = null;
+  };
+
+  useEffect(() => cancelThrow, []);
+
   const chooseOccasion = (occasion: string) => {
+    cancelThrow();
+    setDragX(0);
     setSelectedOccasion(occasion);
     setCurrentIndex(0);
   };
@@ -169,22 +195,58 @@ export const SwipeDiscovery: React.FC<SwipeDiscoveryProps> = ({
   // code path; `touch-pan-y` keeps the page scrollable underneath it.
   const startDrag = (event: React.PointerEvent<HTMLElement>) => {
     if (event.pointerType === 'mouse' && event.button !== 0) return;
+    // Grabbing the card cancels a swap already in flight — a throw thrown a
+    // moment ago is still just a look sliding, and a hand landing on it mid-
+    // slide should catch it, not lose it to a swap that lands underneath.
+    cancelThrow();
+    // Read where the card actually is, not where state last set it to. Mid
+    // throw or mid snap-back, `dragX` already holds the transition's *target*
+    // — the computed transform is the one number that also holds the frame
+    // the eye is on right now, which is what a catch has to start from or the
+    // card jumps to wherever `dragX` last said before it starts tracking.
+    const computed = window.getComputedStyle(event.currentTarget).transform;
+    dragBaseline.current =
+      computed && computed !== 'none' ? new DOMMatrixReadOnly(computed).m41 : 0;
     dragOrigin.current = event.clientX;
+    setDragging(true);
+    setDragX(dragBaseline.current);
     event.currentTarget.setPointerCapture(event.pointerId);
   };
 
   const moveDrag = (event: React.PointerEvent<HTMLElement>) => {
     if (dragOrigin.current === null) return;
-    setDragX(event.clientX - dragOrigin.current);
+    setDragX(dragBaseline.current + (event.clientX - dragOrigin.current));
   };
 
   const endDrag = (event: React.PointerEvent<HTMLElement>) => {
     if (dragOrigin.current === null) return;
-    const travelled = event.clientX - dragOrigin.current;
+    // Absolute position, not travel since this grab — a card caught already
+    // most of the way through a throw is already a decision; it should not
+    // have to cross another 96px from wherever the hand happened to land.
+    const position = dragBaseline.current + (event.clientX - dragOrigin.current);
     dragOrigin.current = null;
-    setDragX(0);
-    if (travelled > SWIPE_COMMIT) decide('save');
-    else if (travelled < -SWIPE_COMMIT) decide('pass');
+    setDragging(false);
+
+    const committed = position > SWIPE_COMMIT ? 'save' : position < -SWIPE_COMMIT ? 'pass' : null;
+    if (!committed) {
+      setDragX(0);
+      return;
+    }
+    if (reducedMotion) {
+      // No flight to catch: land the decision immediately rather than hold a
+      // still frame at arm's length for the sake of a throw nobody asked to see.
+      setDragX(0);
+      decide(committed);
+      return;
+    }
+    // Follow the gesture through rather than cutting it: the card keeps
+    // travelling the way it was already headed, off-frame, and only then is
+    // it replaced. Catchable the whole way — a new `startDrag` cancels this.
+    setDragX(position > 0 ? EXIT_X : -EXIT_X);
+    throwTimer.current = setTimeout(() => {
+      throwTimer.current = null;
+      decide(committed);
+    }, DURATION.shift * 1000);
   };
 
   // Hard guardrails never reach here missed — activeLook is already refused
@@ -316,18 +378,26 @@ export const SwipeDiscovery: React.FC<SwipeDiscoveryProps> = ({
                 style={
                   dragX
                     ? {
-                        transform: `translateX(${dragX}px) rotate(${dragX * 0.02}deg)`,
+                        // The tilt is a flourish on top of the decision, not
+                        // the decision itself — translateX alone still says
+                        // which way this is going, so reduced motion drops
+                        // the rotation and keeps the position.
+                        transform: reducedMotion
+                          ? `translateX(${dragX}px)`
+                          : `translateX(${dragX}px) rotate(${dragX * 0.02}deg)`,
                       }
                     : undefined
                 }
                 className={cn(
                   'relative isolate w-full touch-pan-y select-none overflow-hidden',
                   'rounded-hero border border-rule bg-surface-raised',
-                  // Only on release: while a finger is down the card tracks it
-                  // one to one. The mount crossfade is Shift — the transition
-                  // for one look becoming another — and it owns opacity, so
-                  // the drag moves the card and does not fade it.
-                  !dragX && 'transition-transform duration-shift ease-shift',
+                  // While a finger is down the card tracks it one to one, with
+                  // no transition to lag behind it. Released — snapping back
+                  // to centre, or thrown on to ±EXIT_X — it eases on Shift,
+                  // the transition for one look becoming another. The mount
+                  // crossfade is the same transition and owns opacity, so
+                  // between them the drag moves the card and never fades it.
+                  !dragging && 'transition-transform duration-shift ease-shift',
                   'motion-safe:animate-shift',
                 )}
               >
