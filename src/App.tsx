@@ -14,7 +14,7 @@ import {
   INITIAL_LOOKS,
   LOOK_PLACEHOLDER,
 } from './data/sampleLooks';
-import { calculatePhotogrammetryMeasurements, mapMeasurementsToBrandSizes } from './data/brandGrading';
+import { estimateMeasurementsFromHeight, mapMeasurementsToBrandSizes } from './data/brandGrading';
 
 /**
  * Dark is theatre; cream is conversation. The app presents during capture,
@@ -56,7 +56,7 @@ export default function App() {
   const [wardrobe, setWardrobe] = useState<Wardrobe | null>(null);
   const [showWardrobeModal, setShowWardrobeModal] = useState<boolean>(false);
 
-  // User Photogrammetry & Sizing State
+  // Sizing state — measurements are estimated from height, not scanned.
   // Nothing has been captured yet, and the app does not pretend otherwise —
   // a stock photograph of a stranger standing in for the user's own body scan
   // is not a placeholder, it is a lie with a face on it.
@@ -70,7 +70,7 @@ export default function App() {
   });
 
   const [measurements, setMeasurements] = useState<UserMeasurements>(
-    calculatePhotogrammetryMeasurements(170)
+    estimateMeasurementsFromHeight(170)
   );
 
   const [brandSizes, setBrandSizes] = useState<BrandSizeMapping[]>(
@@ -129,7 +129,7 @@ export default function App() {
     // known by the time a capture completes — the fallback only covers the
     // capture harness (scripts/capture.mjs), which can load this phase
     // directly via ?phase=onboarding without walking through wardrobe first.
-    const newMeas = calculatePhotogrammetryMeasurements(profile.heightCm, wardrobe ?? 'womenswear');
+    const newMeas = estimateMeasurementsFromHeight(profile.heightCm, wardrobe ?? 'womenswear');
     setMeasurements(newMeas);
     setBrandSizes(mapMeasurementsToBrandSizes(newMeas));
     setCurrentPhase('sizing');
