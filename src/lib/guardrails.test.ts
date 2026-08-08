@@ -3,6 +3,7 @@ import { FashionLook, GarmentAttributes, StyleConstraints } from '../types';
 import { evaluateLook, filterByHardGuardrails, holdsRule, withinPriceCeiling } from './guardrails';
 
 const ALL_GUARDRAILS_ON: StyleConstraints = {
+  wardrobe: 'womenswear',
   modestWear: true,
   sleevesBelowElbow: true,
   noTrousers: true,
