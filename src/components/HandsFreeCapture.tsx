@@ -86,10 +86,10 @@ function Gauge({
       <div className="relative h-6 min-w-0 flex-1" aria-hidden="true">
         <span className="absolute inset-x-0 top-1/2 block h-px -translate-y-1/2 bg-rule" />
         {/* The target, marked once in the middle of the run. */}
-        <span className="absolute top-1/2 left-1/2 block h-3 w-px -translate-x-1/2 -translate-y-1/2 bg-fg-muted" />
+        <span className="absolute top-1/2 start-1/2 block h-3 w-px -translate-x-1/2 -translate-y-1/2 bg-fg-muted" />
         <span
-          className="absolute top-1/2 block h-4 w-0.5 -translate-x-1/2 -translate-y-1/2 rounded-full bg-fg transition-[left] duration-resolve ease-resolve"
-          style={{ left: `${percent}%` }}
+          className="absolute top-1/2 block h-4 w-0.5 -translate-x-1/2 -translate-y-1/2 rounded-full bg-fg transition-[inset-inline-start] duration-resolve ease-resolve"
+          style={{ insetInlineStart: `${percent}%` }}
         />
       </div>
     </div>
@@ -137,10 +137,10 @@ function Silhouette({ aligned }: { aligned: boolean }) {
 }
 
 const CORNER = [
-  'top-4 left-4 border-t border-l',
-  'top-4 right-4 border-t border-r',
-  'bottom-4 left-4 border-b border-l',
-  'bottom-4 right-4 border-b border-r',
+  'top-4 start-4 border-t border-s',
+  'top-4 end-4 border-t border-e',
+  'bottom-4 start-4 border-b border-s',
+  'bottom-4 end-4 border-b border-e',
 ];
 
 export const HandsFreeCapture: React.FC<HandsFreeCaptureProps> = ({
@@ -405,7 +405,7 @@ export const HandsFreeCapture: React.FC<HandsFreeCaptureProps> = ({
                 {PROMISES.map((promise) => (
                   <div
                     key={promise.title}
-                    className="border-t border-rule pt-4 lg:border-t-0 lg:border-l lg:pt-0 lg:pl-6"
+                    className="border-t border-rule pt-4 lg:border-t-0 lg:border-s lg:pt-0 lg:ps-6"
                   >
                     <p className="text-body font-medium text-fg">{promise.title}</p>
                     <p className="max-w-measure text-body text-fg-muted">

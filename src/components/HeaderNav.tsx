@@ -45,7 +45,7 @@ const DESTINATIONS: ReadonlyArray<{
 ];
 
 const ROW = [
-  'flex min-h-14 w-full items-center gap-4 rounded-control px-4 py-3 text-left',
+  'flex min-h-14 w-full items-center gap-4 rounded-control px-4 py-3 text-start',
   'transition-colors duration-shift ease-shift',
 ].join(' ');
 

@@ -111,7 +111,7 @@ export const CapsuleWardrobe: React.FC<CapsuleWardrobeProps> = ({
         {count > 0 ? (
           <Stack
             gap={4}
-            className="shrink-0 border-t border-rule pt-4 lg:border-t-0 lg:border-l lg:pt-0 lg:pl-8"
+            className="shrink-0 border-t border-rule pt-4 lg:border-t-0 lg:border-s lg:pt-0 lg:ps-8"
           >
             <span className="text-eyebrow font-medium uppercase text-fg-muted">
               {count === 1 ? '1 look saved' : `${count} looks saved`}

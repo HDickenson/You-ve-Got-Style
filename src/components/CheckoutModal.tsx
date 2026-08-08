@@ -163,7 +163,7 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
             </p>
           </Stack>
 
-          <Stack gap={12} className="w-full border-y border-rule py-6 text-left">
+          <Stack gap={12} className="w-full border-y border-rule py-6 text-start">
             <DetailRow label="Order" value="YGS-88492" />
             <DetailRow label={shown.brand} value={sizeValue} />
             <DetailRow label="Paid" value={formatAED(shown.priceAED)} />
