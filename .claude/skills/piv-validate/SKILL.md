@@ -57,6 +57,27 @@ rg -n 'font-serif' src/
 rg -ni 'gemini|AI Recommendation|Generating AI' src/ --glob '*.tsx'
 ```
 
+## 4b. Unbacked compliance and security claims
+
+These must return **nothing**. A regulatory or security guarantee rendered as a label,
+with no implementation behind it, is the most damaging class of dishonest UI in this
+product — it invites a customer to hand over biometric data on a promise the code does
+not keep.
+
+```bash
+rg -ni 'PDPL|GDPR|on-device|end-to-end|encrypted|compliant|compliance|
+        bank.?level|military.?grade|secure(ly)?|guaranteed|certified' src/ --glob '*.tsx'
+```
+
+**This is a regression guard, not a hypothetical.** `main` shipped
+`<p>Security: UAE PDPL On-Device Compliance</p>` in `HeaderNav.tsx` while the app had —
+and still has — **zero on-device inference of any kind**: no ONNX, no WASM runtime, no
+WebGPU, no Whisper, no MediaPipe. Every model call goes to a third party. The foundation
+rewrite removed the string, but nothing stops it returning.
+
+If a hit is a genuine claim, it does not ship until the capability exists. If it is
+describing something real, cite the implementing file in the same PR.
+
 ## 5. Summary report
 
 One line per check with ✅ / ❌, then **Overall: PASS or FAIL**.
