@@ -100,6 +100,23 @@ async function captureMatrix(browser) {
   }
 }
 
+// A minimal valid 1x1 PNG, handed to the file input directly as a buffer —
+// the upload path (not the camera) is the only route through onboarding a
+// headless runner can take without a real webcam and mic grant.
+const FIXTURE_FRAME = Buffer.from(
+  'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=',
+  'base64'
+);
+
+async function uploadFrame(page) {
+  await page.getByRole('button', { name: 'Upload this frame' }).click();
+  await page.locator('input[type="file"]').setInputFiles({
+    name: 'frame.png',
+    mimeType: 'image/png',
+    buffer: FIXTURE_FRAME,
+  });
+}
+
 async function captureJourney(browser) {
   const viewport = VIEWPORTS[0];
   const page = await browser.newPage({ viewport });
@@ -113,19 +130,33 @@ async function captureJourney(browser) {
   await page.waitForSelector('#app-root-container', { state: 'visible' });
   await shot('01-onboarding');
 
-  // Onboarding -> Sizing: align the sensor, then submit the capture.
-  await page.click('#btn-calibrate-90');
-  await page.click('#btn-proceed-sizing');
+  // Onboarding -> Sizing: locators are by accessible role/name, not id — the
+  // ids this journey used to hardcode never existed on any component (only
+  // in this script), and role/name survives a copy-refactor an id would not.
+  // Consent gate, then two uploaded frames (upload, not the camera/mic
+  // shutter, since a headless runner has no webcam to grant), then submit.
+  await page.getByRole('switch', { name: 'Use my camera to take my two frames' }).click();
+  await page.getByRole('button', { name: 'Open the studio' }).click();
+  await uploadFrame(page); // front
+  await uploadFrame(page); // side
+  await page.getByRole('button', { name: 'Read my fit' }).click();
   await page.waitForSelector('#module-sizing-engine', { state: 'visible' });
   await shot('02-sizing');
 
-  // Sizing -> Guardrails
-  await page.click('#btn-proceed-guardrails');
-  await page.waitForSelector('#module-style-guardrails', { state: 'visible' });
+  // Sizing -> Guardrails. StyleGuardrails has no #module-* id (unlike its
+  // sibling screens) — its root carries aria-label="Style guardrails"
+  // instead, so wait on that landmark rather than adding a coupling this
+  // script would own on a flow-owned component.
+  await page.getByRole('button', { name: 'Set your guardrails' }).click();
+  await page.getByRole('region', { name: 'Style guardrails' }).waitFor({ state: 'visible' });
   await shot('03-guardrails');
 
-  // Guardrails -> Discovery
-  await page.click('#btn-save-guardrails');
+  // Guardrails -> Discovery. This is the main-flow mount of StyleGuardrails
+  // (App.tsx wires its onSaveAndProceed to advance the phase); a second
+  // mount inside the header's guardrails sheet reuses the same "Show me
+  // looks" label but only closes the sheet, so the journey must not detour
+  // through the header menu here.
+  await page.getByRole('button', { name: 'Show me looks' }).click();
   await page.waitForSelector('#module-swipe-discovery', { state: 'visible' });
   await shot('04-discovery');
 
@@ -136,8 +167,13 @@ async function captureJourney(browser) {
   // mounted underneath while the sheet is still visibly closing — wait for
   // its overlay to fully detach, not just for the content behind it to exist.
   await page.click('[aria-label="Open menu"]');
-  await page.getByRole('navigation', { name: 'Sections' }).waitFor({ state: 'visible' });
-  await page.getByRole('button', { name: 'Capsule' }).click();
+  const nav = page.getByRole('navigation', { name: 'Sections' });
+  await nav.waitFor({ state: 'visible' });
+  // Scoped to the nav and matched by prefix: the seeded look means the item's
+  // accessible name is "Capsule 1 saved", not "Capsule" — a bare, unscoped
+  // name match also collides with the discovery card's "Save to capsule"
+  // button, which contains the same substring.
+  await nav.getByRole('button', { name: /^Capsule/ }).click();
   await page.waitForSelector('[data-slot="overlay"]', { state: 'detached' });
   await page.waitForSelector('#module-capsule-wardrobe', { state: 'visible' });
   await shot('05-capsule');
